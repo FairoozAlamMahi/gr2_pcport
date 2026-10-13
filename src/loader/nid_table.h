@@ -19,6 +19,10 @@ public:
     // Resolve an 11-character NID prefix to a function address
     uintptr_t Resolve(const std::string& nid_prefix, const std::string& full_symbol = "") const;
 
+    bool HasSymbol(const std::string& nid_prefix) const {
+        return m_symbols.find(nid_prefix) != m_symbols.end();
+    }
+
     // Register host implementations for all known system modules
     void RegisterHostSubsystems();
 

@@ -414,8 +414,8 @@ bool ElfLoader::ResolveImports(const u8* data) {
             std::string nid_prefix = (hash_pos != std::string::npos) ? sym_str.substr(0, hash_pos) : sym_str;
 
             uintptr_t target_addr = NidTable::Instance().Resolve(nid_prefix, sym_str);
-            if (target_addr != 0) {
-                got_table[i - 2] = target_addr;
+            got_table[i - 2] = target_addr;
+            if (NidTable::Instance().HasSymbol(nid_prefix)) {
                 resolved_count++;
             } else {
                 stubbed_count++;

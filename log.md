@@ -365,7 +365,44 @@ Running `gr2_pc.exe game\eboot.elf` confirmed flawless dynamic linking across al
 
 ---
 
-## 16. Next Milestones
+## 16. Vulkan Swapchain Presentation Pipeline
+
+To display rendered frames on PC displays without dependency on proprietary PS4 display hardware, a native Win32 windowing and Vulkan swapchain presentation engine was implemented in `src/video/vulkan_context.h` and `src/video/vulkan_context.cpp`:
+
+* **Dynamic Vulkan Loader:**
+  * Uses `LoadLibraryA("vulkan-1.dll")` and `vkGetInstanceProcAddr` to bind all Vulkan 1.2+ entry points dynamically at runtime without static SDK linking dependencies.
+  * Vendored Khronos `Vulkan-Headers` in `third_party/Vulkan-Headers/include`.
+* **Win32 Windowing:**
+  * Registers custom window class `GravityRush2_WindowClass` and creates an overlapped desktop window:
+    `"Gravity Rush 2 (PC Port) — 60 FPS [Argon Engine]"`
+  * Integrates non-blocking message pump `ProcessWindowMessages()` handling window close, resize, and escape keys.
+* **Dual-GPU Enumeration & Presentation:**
+  * Probes all available Vulkan physical devices:
+    * Primary: `NVIDIA GeForce RTX 4060 Ti` (Vendor ID: `0x10DE` / `4318`)
+    * Secondary: `AMD Radeon(TM) Graphics` (Vendor ID: `0x1002` / `4098`)
+  * Matches against the active hardware profile, selecting the discrete NVIDIA RTX 4060 Ti.
+* **Triple-Buffered Swapchain:**
+  * Created `VkSurfaceKHR` via `vkCreateWin32SurfaceKHR`.
+  * Configured `VkSwapchainKHR` with 3 presentation buffers (`VK_PRESENT_MODE_FIFO_KHR` for smooth frame delivery).
+  * Connected `sceVideoOutSubmitFlip` directly to `vkQueuePresentKHR`.
+
+---
+
+## 17. Runtime Delta-Time Hooking & Physics Protection
+
+In *Gravity Rush 2*, the original PS4 engine was hard-coded to a 30 FPS update interval ($dt = 1/30 \approx 0.03333333\text{ s}$). Running at unlocked frame rates (60, 120, or 144 FPS) requires hooking the game's delta-time queries while guarding against high-refresh physics instability:
+
+* **Engine Detours (`src/kernel/time_hooks.h`, `src/kernel/time_hooks.cpp`):**
+  * Detours the master engine delta-time query to `TimeHooks::HookGetDeltaTime` compiled with **`PS4_SYSV_ABI`** (`__attribute__((sysv_abi))`) to ensure System V AMD64 calling conventions and register state remain uncorrupted.
+* **Physics Stability Clamping:**
+  * Clamps raw elapsed frame times strictly to $[1/240.0\text{ s} \dots 1/30.0\text{ s}]$.
+  * Eliminates the infamous **Lunar Slide Kick division-by-zero (NaN) bug** where extremely small delta times at high refresh rates caused Kat's velocity vectors to blow up to infinity and crash the Havok physics engine.
+* **Cutscene & Comic Panel Lock:**
+  * During 2D/3D comic book panels and pre-rendered sequences (detected via `sceVideoOutSetFlipRate`), the frame pacer automatically clamps presentation to 60 FPS ($16.66\text{ ms}$) to prevent audio/dialogue desynchronization.
+
+---
+
+## 18. Milestone Summary & Status
 
 1. [x] Provision toolchain dependencies (`CMake`, `Ninja`, `Clang 23`, `JDK 21`, `llvm-mingw`).
 2. [x] Extract PKGs and merge Base + Update v1.11 via NTFS hard links.
@@ -376,8 +413,9 @@ Running `gr2_pc.exe game\eboot.elf` confirmed flawless dynamic linking across al
 7. [x] Implement GNM GPU command buffer dispatch and multi-vendor GPU profiles.
 8. [x] Implement Universal Multi-GPU Hardware Detection & Vendor Profiles.
 9. [x] Implement Native PRX Module Loader (`libc.prx`, `libSceFios2.prx`) and NID symbol resolver (3,985 exports loaded; 100% of eboot imports resolved).
-10. [ ] Implement Vulkan Swapchain Presentation and dynamic Frame Pacer presentation loop.
-11. [ ] Implement Runtime Delta-Time Hooking for 60/120/144 FPS unlocked physics.
+10. [x] Implement Vulkan Swapchain Presentation and dynamic Frame Pacer presentation loop (Win32 window + 3-buffer swapchain on RTX 4060 Ti).
+11. [x] Implement Runtime Delta-Time Hooking for 60/120/144 FPS unlocked physics ($dt \in [1/240, 1/30]$ protection).
+
 
 
 

@@ -19,7 +19,10 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     endif()
 endif()
 
-include_directories(src)
+include_directories(
+    src
+    third_party/Vulkan-Headers/include
+)
 
 set(SOURCES
     src/main.cpp
@@ -28,8 +31,10 @@ set(SOURCES
     src/loader/prx_module.cpp
     src/loader/nid_table.cpp
     src/kernel/libkernel.cpp
+    src/kernel/time_hooks.cpp
     src/pad/pad_handler.cpp
     src/video/video_out.cpp
+    src/video/vulkan_context.cpp
     src/audio/audio_out.cpp
     src/gpu/gnm_driver.cpp
 )
@@ -42,8 +47,10 @@ set(HEADERS
     src/loader/prx_module.h
     src/loader/nid_table.h
     src/kernel/libkernel.h
+    src/kernel/time_hooks.h
     src/pad/pad_handler.h
     src/video/video_out.h
+    src/video/vulkan_context.h
     src/audio/audio_out.h
     src/gpu/gnm_driver.h
 )
@@ -53,6 +60,8 @@ add_executable(gr2_pc ${SOURCES} ${HEADERS})
 target_link_libraries(gr2_pc PRIVATE
     xinput
     onecore
+    user32
+    gdi32
 )
 
 set_target_properties(gr2_pc PROPERTIES

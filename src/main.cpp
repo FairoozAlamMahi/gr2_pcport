@@ -5,6 +5,7 @@
 #include "loader/prx_module.h"
 #include "loader/nid_table.h"
 #include "kernel/libkernel.h"
+#include "kernel/time_hooks.h"
 #include "pad/pad_handler.h"
 #include "video/video_out.h"
 #include "audio/audio_out.h"
@@ -91,6 +92,9 @@ int main(int argc, char* argv[]) {
         Memory::VirtualMemoryManager::Instance().Shutdown();
         return 1;
     }
+
+    // 3b. Install Dynamic Delta-Time Detours & Physics Protection Hooks
+    Kernel::TimeHooks::Instance().Install(Loader::ElfLoader::Instance().GetBaseAddress());
 
     // 4. Initialize Main Thread TCB in Windows TEB
     void* main_tcb = Loader::ElfLoader::Instance().SetupThreadTCB();

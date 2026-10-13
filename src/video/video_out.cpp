@@ -1,4 +1,5 @@
 #include "video/video_out.h"
+#include "video/vulkan_context.h"
 #include "common/logger.h"
 #include <algorithm>
 
@@ -85,10 +86,13 @@ float FramePacer::PaceAndComputeDeltaTime() {
 
 void Initialize() {
     FramePacer::Instance().Initialize(FrameRateCap::Cap60);
+    // Initialize Vulkan presentation context (1080p 60 FPS standard)
+    VulkanContext::Instance().Initialize(1920, 1080, false, false);
     LOG_INFO("VIDEO", "libSceVideoOut subsystem initialized.");
 }
 
 void Shutdown() {
+    VulkanContext::Instance().Shutdown();
     LOG_INFO("VIDEO", "libSceVideoOut subsystem shut down.");
 }
 
@@ -104,6 +108,10 @@ PS4_SYSV_ABI s32 sceVideoOutClose(s32 handle) {
 }
 
 PS4_SYSV_ABI s32 sceVideoOutSubmitFlip(s32 handle, s32 buffer_index, u32 flip_mode, s64 flip_arg) {
+    if (VulkanContext::Instance().IsInitialized()) {
+        VulkanContext::Instance().ProcessWindowMessages();
+        VulkanContext::Instance().PresentFrame();
+    }
     // Pace frame and compute delta-time
     float dt = FramePacer::Instance().PaceAndComputeDeltaTime();
     (void)dt;

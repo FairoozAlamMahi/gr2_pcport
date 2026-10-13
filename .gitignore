@@ -1,0 +1,41 @@
+# Build output
+build/
+bin/
+dist/
+out/
+*.exe
+*.dll
+*.so
+*.dylib
+*.lib
+*.a
+*.pdb
+
+# Game binaries & dumps (Keep outside repo or ignored)
+*.pkg
+*.bin
+*.elf
+*.self
+*.dump
+*.pfs
+*.sfo
+*.iso
+*.rar
+*.zip
+*.7z
+
+# Cache & intermediate artifacts
+.cache/
+.ninja_*
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+
+# Editor & OS files
+.vscode/
+.idea/
+*.suo
+*.user
+Thumbs.db
+[Dd]esktop.ini
+.DS_Store

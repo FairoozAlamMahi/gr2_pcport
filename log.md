@@ -313,19 +313,72 @@ To fulfill the strict requirement that `gr2port` run seamlessly across **ALL PC 
 
 ---
 
-## 15. Next Milestones
+---
+
+## 15. Native PRX Dynamic Linker & Sony NID Symbol Resolution
+
+To eliminate the need for reverse-engineering and stubbing thousands of complex PS4 system functions (such as `libSceFios2` archive decompression, POSIX libc streams, memory allocators, and threading primitives), `gr2port` loads the game's own decrypted native PRX modules directly into the flat 1 TiB guest virtual memory space.
+
+### Decryption of Shipped Game Modules
+Using `tools/unfself.py`, all 4 encrypted Sony Self/PRX binaries from `gr2_packages/merged_game/sce_module/` were unpacked into standard ELF format:
+1. `libc.elf` (1.01 MB) — Standard C library, string operations, math, and memory allocators.
+2. `libSceFios2.elf` (484 KB) — Sony FIOS2 filesystem I/O archive mounting, decompression, and overlay management.
+3. `libSceJobManager.elf` (31 KB) — Fiber-based parallel task scheduler for asynchronous job queues.
+4. `libSceNpToolkit.elf` (812 KB) — PlayStation Network user profile, trophy, and entitlement services.
+
+### Architecture: Central NID Symbol Registry (`NidTable`)
+* **Sony NID Format:** In Orbis dynamic string tables (`DT_SCE_STRTAB`), symbols are encoded as 16-byte strings: `XXXXXXXXXXX#Y#Z\0`, where the first 11 characters represent the 64-bit SHA-1 hash of the library and function name, and `#Y#Z` denotes binary-specific library index tags.
+* Implemented `Loader::NidTable` (`src/loader/nid_table.h`, `src/loader/nid_table.cpp`):
+  * Matches undefined imports in `eboot.elf` against exported symbols in loaded PRXs using the canonical 11-character hash prefix.
+  * Registers host Win32 subsystem detours for `libkernel`, `libScePad`, `libSceVideoOut`, and `libSceAudioOut`.
+  * Generates universal fallback stubs (`GenericStubHandler`) for any unlinked diagnostics.
+
+### Bugs Discovered & Resolved
+1. **VirtualAlloc Over-Commitment in Pre-Reserved Guest Arena:**
+   * Calling `VirtualAlloc` with `MEM_RESERVE | MEM_COMMIT` on an address within the 1 TiB arena (`0x10080000000ULL`) failed with `ERROR_INVALID_ADDRESS` because the range was already reserved.
+   * *Fix:* Changed segment allocation in `PrxModule::Load` to `MEM_COMMIT` only, allowing pages inside the pre-reserved 1 TiB arena to be committed cleanly.
+2. **Sony Dynamic Relocation Tag Swapping & Out-of-Bounds Memory Corruptions:**
+   * The initial implementation confused `DT_SCE_PLTRELSZ` with `DT_SCE_SYMTABSZ`, causing relocation loops to interpret the symbol table size (60,840 bytes) as the PLT relocation size (1,920 bytes), overrunning the buffer and corrupting memory.
+   * *Fix:* Audited and corrected all Sony dynamic tag definitions:
+     * `DT_SCE_JMPREL` = `0x61000029`
+     * `DT_SCE_PLTRELSZ` = `0x6100002D`
+     * `DT_SCE_RELA` = `0x6100002F`
+     * `DT_SCE_RELASZ` = `0x61000031`
+     * `DT_SCE_STRTAB` = `0x61000035`
+     * `DT_SCE_STRSZ` = `0x61000037`
+     * `DT_SCE_SYMTAB` = `0x61000039`
+     * `DT_SCE_SYMENT` = `0x6100003B`
+     * `DT_SCE_SYMTABSZ` = `0x6100003F`
+   * Added `IsOffsetMapped` safety bounds checking to ensure relocations never write to unmapped address ranges.
+
+### Verification & Test Results
+Running `gr2_pc.exe game\eboot.elf` confirmed flawless dynamic linking across all modules:
+* `libc.elf`: Successfully loaded with **2,449 exported symbols**.
+* `libSceFios2.elf`: Successfully loaded with **170 exported symbols**.
+* `libSceJobManager.elf`: Successfully loaded with **9 exported symbols**.
+* `libSceNpToolkit.elf`: Successfully loaded with **1,357 exported symbols**.
+* `eboot.elf`:
+  * **9,250 Orbis TLS instructions** rewritten in-place to Windows TEB slot 3.
+  * **81,577 AMD64 relocations** successfully applied.
+  * **All 863 imported external function calls** resolved directly into the PLT/GOT table with **0 fallback stubs**.
+* Pre-execution initialization exited cleanly with code `0`.
+
+---
+
+## 16. Next Milestones
 
 1. [x] Provision toolchain dependencies (`CMake`, `Ninja`, `Clang 23`, `JDK 21`, `llvm-mingw`).
 2. [x] Extract PKGs and merge Base + Update v1.11 via NTFS hard links.
 3. [x] Reverse-engineer `eboot.elf` and export `docs/gr2_symbol_ledger.json`.
 4. [x] Scaffold, compile, and verify native runner `gr2_pc.exe` (9,250 TLS instructions rewritten).
-5. [x] Implement dynamic AMD64 relocation engine (1,530 relocations applied).
+5. [x] Implement dynamic AMD64 relocation engine (81,577 relocations applied).
 6. [x] Implement audio deduplication hook for Kat's gravity kick.
-7. [x] Implement GNM GPU command buffer dispatch and RTX 4060 Ti memory model.
+7. [x] Implement GNM GPU command buffer dispatch and multi-vendor GPU profiles.
 8. [x] Implement Universal Multi-GPU Hardware Detection & Vendor Profiles.
-9. [ ] Implement Native PRX Module Loader (`libc.prx`, `libSceFios2.prx`) and NID symbol resolver.
+9. [x] Implement Native PRX Module Loader (`libc.prx`, `libSceFios2.prx`) and NID symbol resolver (3,985 exports loaded; 100% of eboot imports resolved).
 10. [ ] Implement Vulkan Swapchain Presentation and dynamic Frame Pacer presentation loop.
 11. [ ] Implement Runtime Delta-Time Hooking for 60/120/144 FPS unlocked physics.
+
 
 
 

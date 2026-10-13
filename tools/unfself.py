@@ -291,9 +291,13 @@ def self_extended_information(file):
 
 
 def main(argc, argv):
-        import os
-        base_name = os.path.splitext(argv[1])[0]
-        out_path = argv[2] if argc > 2 else base_name + '.elf'
+    if argc < 2:
+        print("Usage: unfself.py <input.self/eboot.bin> [output.elf]")
+        sys.exit(1)
+    import os
+    base_name = os.path.splitext(argv[1])[0]
+    out_path = argv[2] if argc > 2 else base_name + '.elf'
+    try:
         with open(argv[1], 'rb') as input, open(out_path, 'wb') as output:
             print('\nParsing PS4 SELF Header...')
             entry_count = self_header(input)
@@ -330,7 +334,8 @@ def main(argc, argv):
             
             print('\nDone!')
         
-    except:
+    except Exception as e:
+        print(f"Error parsing SELF: {e}")
         raise SystemExit('\nError: Unable to Parse PS4 SELF File!!!')
 
 if __name__ == '__main__':

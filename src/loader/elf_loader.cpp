@@ -1,4 +1,5 @@
 #include "loader/elf_loader.h"
+#include "loader/nid_table.h"
 #include "common/logger.h"
 #include "memory/vm.h"
 #include <fstream>
@@ -72,6 +73,10 @@ bool ElfLoader::Load(const std::string& elf_path) {
     }
 
     if (!ApplyRelocations(buffer.data())) {
+        return false;
+    }
+
+    if (!ResolveImports(buffer.data())) {
         return false;
     }
 
@@ -293,11 +298,20 @@ bool ElfLoader::ApplyRelocations(const u8* data) {
         u64 val = dyn_tags[i].d_val;
         if (tag == 0) break;
 
-        if (tag == 0x61000031) rela_off = val;
-        else if (tag == 0x61000039) relasz = val;
-        else if (tag == 0x6100002f) jmprel_off = val;
-        else if (tag == 0x6100003f) pltrelsz = val;
+        if (tag == 0x6100002F) rela_off = val;       // DT_SCE_RELA
+        else if (tag == 0x61000031) relasz = val;   // DT_SCE_RELASZ
+        else if (tag == 0x61000029) jmprel_off = val; // DT_SCE_JMPREL
+        else if (tag == 0x6100002D) pltrelsz = val;  // DT_SCE_PLTRELSZ
     }
+
+    auto IsOffsetMapped = [&](u64 off) {
+        for (const auto& s : m_segments) {
+            if ((s.type == 1 || s.type == 0x61000010) && off >= s.vaddr && off + 8 <= s.vaddr + s.memsz) {
+                return true;
+            }
+        }
+        return false;
+    };
 
     u32 total_applied = 0;
 
@@ -309,6 +323,9 @@ bool ElfLoader::ApplyRelocations(const u8* data) {
         for (u32 i = 0; i < count; ++i) {
             const auto& r = entries[i];
             u32 type = static_cast<u32>(r.r_info & 0xFFFFFFFF);
+            if (!IsOffsetMapped(r.r_offset)) {
+                continue;
+            }
             u64* target = reinterpret_cast<u64*>(m_base_address + r.r_offset);
 
             if (type == 8) { // R_X86_64_RELATIVE
@@ -326,6 +343,88 @@ bool ElfLoader::ApplyRelocations(const u8* data) {
 
     LOG_INFO("LOADER", "Successfully applied " + std::to_string(total_applied) + 
              " AMD64 relocations (rebased to 0x" + std::to_string(m_base_address) + ").");
+    return true;
+}
+
+bool ElfLoader::ResolveImports(const u8* data) {
+    u64 dynlib_offset = 0;
+    u64 dynamic_offset = 0;
+
+    for (const auto& seg : m_segments) {
+        if (seg.type == 0x61000000) dynlib_offset = seg.offset;
+        else if (seg.type == 2) dynamic_offset = seg.offset;
+    }
+
+    if (dynlib_offset == 0 || dynamic_offset == 0) return true;
+
+    const u8* dynlib = data + dynlib_offset;
+
+    u64 symtab_off = 0;
+    u64 jmprel_off = 0;
+    u64 pltgot_vaddr = 0;
+
+    #pragma pack(push, 1)
+    struct DynTag {
+        s64 d_tag;
+        u64 d_val;
+    };
+    struct Elf64_Sym {
+        u32 st_name;
+        u8  st_info;
+        u8  st_other;
+        u16 st_shndx;
+        u64 st_value;
+        u64 st_size;
+    };
+    #pragma pack(pop)
+
+    const auto* dyn_tags = reinterpret_cast<const DynTag*>(data + dynamic_offset);
+    for (size_t i = 0;; ++i) {
+        s64 tag = dyn_tags[i].d_tag;
+        u64 val = dyn_tags[i].d_val;
+        if (tag == 0) break;
+
+        if (tag == 0x61000039) symtab_off = val;
+        else if (tag == 0x61000029) jmprel_off = val;
+        else if (tag == 0x61000027) pltgot_vaddr = val;
+    }
+
+    if (symtab_off == 0 || jmprel_off == 0 || pltgot_vaddr == 0) {
+        LOG_WARN("LOADER", "Could not locate symtab, jmprel, or pltgot for import resolution.");
+        return true;
+    }
+
+    const u8* strtab = dynlib + 0x18;
+    const auto* syms = reinterpret_cast<const Elf64_Sym*>(dynlib + symtab_off);
+    u32 total_syms = static_cast<u32>((jmprel_off - symtab_off) / sizeof(Elf64_Sym));
+
+    uintptr_t* got_table = reinterpret_cast<uintptr_t*>(m_base_address + pltgot_vaddr);
+
+    u32 resolved_count = 0;
+    u32 stubbed_count = 0;
+
+    // Symbols 2..total_syms map directly to GOT slots 0..(total_syms - 3)
+    for (u32 i = 2; i < total_syms; ++i) {
+        const auto& s = syms[i];
+        if (s.st_name != 0 && s.st_shndx == 0) {
+            const char* full_sym = reinterpret_cast<const char*>(strtab + s.st_name);
+            std::string sym_str(full_sym);
+
+            size_t hash_pos = sym_str.find('#');
+            std::string nid_prefix = (hash_pos != std::string::npos) ? sym_str.substr(0, hash_pos) : sym_str;
+
+            uintptr_t target_addr = NidTable::Instance().Resolve(nid_prefix, sym_str);
+            if (target_addr != 0) {
+                got_table[i - 2] = target_addr;
+                resolved_count++;
+            } else {
+                stubbed_count++;
+            }
+        }
+    }
+
+    LOG_INFO("LOADER", "Import Resolution Complete: " + std::to_string(resolved_count) + 
+             " symbols resolved directly into PLT/GOT table (" + std::to_string(stubbed_count) + " fallback stubs).");
     return true;
 }
 

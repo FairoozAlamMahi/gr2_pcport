@@ -25,6 +25,8 @@ set(SOURCES
     src/main.cpp
     src/memory/vm.cpp
     src/loader/elf_loader.cpp
+    src/loader/prx_module.cpp
+    src/loader/nid_table.cpp
     src/kernel/libkernel.cpp
     src/pad/pad_handler.cpp
     src/video/video_out.cpp
@@ -37,6 +39,8 @@ set(HEADERS
     src/common/logger.h
     src/memory/vm.h
     src/loader/elf_loader.h
+    src/loader/prx_module.h
+    src/loader/nid_table.h
     src/kernel/libkernel.h
     src/pad/pad_handler.h
     src/video/video_out.h

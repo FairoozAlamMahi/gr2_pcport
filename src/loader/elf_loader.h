@@ -34,6 +34,7 @@ public:
     void* GetEntryPoint() const { return m_entry_point; }
     u64 GetBaseAddress() const { return m_base_address; }
     const TlsInfo& GetTlsInfo() const { return m_tls_info; }
+    DWORD GetGuestTlsSlot() const { return m_tls_info.win_tls_slot; }
 
     // Prepare Thread Control Block (TCB) for a new guest thread
     void* SetupThreadTCB();
@@ -46,6 +47,7 @@ private:
     bool MapSegments(const u8* data);
     bool PatchTlsInstructions();
     bool ApplyRelocations(const u8* data);
+    bool ResolveImports(const u8* data);
 
     u64 m_base_address{GUEST_ARENA_BASE};
     void* m_entry_point{nullptr};

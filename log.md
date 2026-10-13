@@ -127,12 +127,15 @@ Through the interactive planning and design interview, all architectural branche
 ### Directory Layout Established
 ```
 C:\Users\faalv\Desktop\Personal project\
-├── gr2_packages\              <-- External storage for raw PKG files & asset dumps
-└── gr2port\                   <-- Clean Git Repository (Connected to GitHub)
-    ├── .git\
-    ├── .gitignore
-    ├── README.md
-    └── log.md                 <-- This comprehensive engineering log
+├── efaz_website\              <-- Unrelated project
+└── gravityrush2port\          <-- Master container folder for this project
+    ├── gr2_packages\          <-- Helper folder: Raw PKG dumps and asset containers (outside git)
+    ├── REA\                   <-- Helper folder: REA reverse-engineering framework and engine (outside git)
+    └── gr2port\               <-- Standalone Git Repository (Auto-pushed to GitHub)
+        ├── .git\
+        ├── .gitignore
+        ├── README.md
+        └── log.md             <-- This comprehensive engineering log
 ```
 
 ### Git Remote Configuration

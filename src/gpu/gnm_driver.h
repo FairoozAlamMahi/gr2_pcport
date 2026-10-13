@@ -2,11 +2,39 @@
 
 #include "common/types.h"
 #include <windows.h>
+#include <string>
 
 namespace GPU {
 
-void Initialize();
+enum class GpuVendor {
+    Unknown,
+    NVIDIA,
+    AMD,
+    Intel,
+    Generic
+};
+
+enum class MemoryModel {
+    UniversalCoherentStaging, // Safe across all GPUs & integrated graphics
+    MirroredVehStaging,       // NVIDIA optimization (bypasses sparse binding driver stalls)
+    DirectDeviceVisible       // AMD / ReBAR native memory mapping (matches PS4 APU)
+};
+
+struct GpuCapabilities {
+    GpuVendor vendor{GpuVendor::Unknown};
+    std::string device_name{"Universal Vulkan Display Device"};
+    u32 vendor_id{0};
+    u32 device_id{0};
+    u32 subgroup_size{32};
+    bool is_discrete{true};
+    bool native_wave64{false};
+    MemoryModel memory_model{MemoryModel::UniversalCoherentStaging};
+};
+
+void Initialize(const std::string& vendor_override = "auto");
 void Shutdown();
+
+const GpuCapabilities& GetCapabilities();
 
 // Exported libSceGnmDriver functions
 extern "C" {

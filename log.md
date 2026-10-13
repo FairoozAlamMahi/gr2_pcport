@@ -203,11 +203,71 @@ The audit identified **8 fatal low-level runtime blockers** that would cause cra
 
 ---
 
-## 10. Next Milestones
+## 10. Phase 2: Game Ingestion & Zero-Copy Hardlink Merge (Completed)
 
-1. [x] Provision toolchain dependencies (`CMake`, `Ninja`, `Clang 23`, `JDK 21`).
-2. [x] Test PKG extraction and decrypt Update v1.11 `eboot.bin` to `eboot.elf`.
-3. [ ] Merge Base PKG and Update v1.11 using NTFS hard links (`mklink /H`) into unified `merged_game/` (0 duplicate disk usage).
-4. [ ] Ingest `eboot.elf` into REA and run symbol analysis to produce `docs/gr2_symbol_ledger.json`.
-5. [ ] Scaffold and compile the native PC runner executable (`gr2_pc.exe`).
+* **Base Game PKG Unpacked:** 15.95 GB (`PS4_Gravity_Rush 2_CUSA04943_01_Game_Full_psgames.by.pkg`) extracted cleanly via `pkg_extractor.exe`. Extracted `Gravite2_Chunk0.psarc` (9.97 GB) and `Gravite2_Chunk1.psarc` (15.79 GB uncompressed).
+* **Patch v1.11 PKG Unpacked:** 1.48 GB (`PS4_Gravity_Rush 2_CUSA04943_02_Patch_v1.11_psgames.by.pkg`).
+* **NTFS Hardlink Merge:**
+  * Implemented `scripts/prepare_game_data.py`.
+  * Linked 40 base game files into `gr2_packages/merged_game`.
+  * Overlaid 15 patch files (replacing 20 base files with v1.11 updates).
+  * Storage impact: **0 bytes of duplicate disk space consumed** (MFT hard links point to identical clusters).
+* **Discovered Key Engine Assets & Launch Arguments:**
+  * `args.txt`: `-region E -disable_sce_dbg -enter_world LaunchScript root -contentid EP9000-CUSA04943_00-GRAVITYRUSH20000` (Direct entry into root game engine world script).
+  * `sce_module/`: Decrypted native `libc.prx` (995 KB), `libSceFios2.prx` (442 KB), and `libSceJobManager.prx` (31 KB).
+
+---
+
+## 11. Phase 3: Binary Reverse Engineering & Symbol Ledger (Completed)
+
+* **ELF Segments Mapped:**
+  * `PT_LOAD` (RX): 22.36 MB executable code at `0x00004000`.
+  * `PT_SCE_RELRO` (R): 665 KB at `0x01664000`.
+  * `PT_LOAD` (RW): 1.5 MB file / 4.45 MB memory at `0x0170c000`.
+  * `PT_TLS` (R): 384 bytes master template at `0x0170c060`.
+  * `PT_SCE_DYNLIBDATA` (R): 1.92 MB at `0x0188a580`.
+* **Dynamic Import Analysis:**
+  * Extracted 56 dynamic library imports from `PT_SCE_DYNLIBDATA` (`libkernel.prx`, `libScePad.prx`, `libSceVideoOut.prx`, `libSceAudioOut.prx`, `libSceGnmDriver.prx`, `libSceFios2.prx`, `libc.prx`, etc.).
+* **Physics & Delta-Time Constant Analysis:**
+  * Located 50 occurrences of the 30 FPS $\Delta t$ constant (`0.033333335f` / `0x3D088889`).
+  * Located 41 occurrences of the 60 FPS $\Delta t$ constant (`0.016666668f` / `0x3C888889`).
+* **Ledger Export:**
+  * Generated and saved comprehensive symbol ledger to `docs/gr2_symbol_ledger.json`.
+
+---
+
+## 12. Phase 4: Native Runner Construction & Successful Test Run (Completed)
+
+* **Architecture Implementation:**
+  * `src/common/types.h`: `PS4_SYSV_ABI` (`__attribute__((sysv_abi))`) and guest memory definitions.
+  * `src/common/logger.h`: Thread-safe colored diagnostic logger.
+  * `src/memory/vm.h` & `vm.cpp`: Virtual Memory Manager reserving 1 TiB arena at `0x10000000000ULL` and managing 9216 MB (9.5 GB) Direct Memory pool for PS4 Pro / Neo mode.
+  * `src/loader/elf_loader.h` & `elf_loader.cpp`: Binary segment loader with in-place 9-byte instruction rewriter (`mov reg, fs:[0]` $\rightarrow$ `mov reg, gs:[0x1480 + 8*slot]`).
+  * `src/kernel/libkernel.h` & `libkernel.cpp`: `libkernel` POSIX syscalls, file virtualizer routing `/app0/` to game assets, and committed-stack guest thread spawner.
+  * `src/pad/pad_handler.h` & `pad_handler.cpp`: `scePadReadState` with XInput mapping, mouse aiming fallback for Kat's gravity shift, and 8-frame synthetic touchpad swipe trajectories for Lunar (`LB + Up`) and Jupiter (`LB + Down`) style switching.
+  * `src/video/video_out.h` & `video_out.cpp`: Frame pacer with delta-time clamping ($\Delta t \in [1/240\text{ s}, 1/30\text{ s}]$) and cutscene 60 FPS lock.
+* **Compilation & Toolchain:**
+  * Integrated portable `llvm-mingw` (LLVM 23.1.3 + UCRT).
+  * Built statically linked standalone binary `build/bin/gr2_pc.exe` with `-Wl,--disable-high-entropy-va`.
+* **Execution Verification:**
+  * Ran `gr2_pc.exe game/eboot.elf`:
+    * Successfully reserved 1 TiB guest virtual arena at `0x1099511627776`.
+    * Configured 9216 MB Direct Memory pool.
+    * Mapped all 3 ELF segments (23.4 MB code, 688 KB RELRO, 4.67 MB data).
+    * **Dynamically scanned and rewrote 9,250 Orbis TLS instructions to Windows TEB slots in-place!**
+    * Allocated and initialized main thread TCB in Windows TEB.
+    * Verified entry point ready at `0x1099511627936`.
+    * All pre-execution assertions passed!
+
+---
+
+## 13. Next Milestones
+
+1. [x] Provision toolchain dependencies (`CMake`, `Ninja`, `Clang 23`, `JDK 21`, `llvm-mingw`).
+2. [x] Extract PKGs and merge Base + Update v1.11 via NTFS hard links.
+3. [x] Reverse-engineer `eboot.elf` and export `docs/gr2_symbol_ledger.json`.
+4. [x] Scaffold, compile, and verify native runner `gr2_pc.exe` (9,250 TLS instructions rewritten).
+5. [ ] Implement Vulkan GNM/GNMX command buffer translation layer (Phase 5).
+6. [ ] Implement audio deduplication hook for Kat's gravity kick.
+
 

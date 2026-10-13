@@ -1,0 +1,129 @@
+#include "video/video_out.h"
+#include "common/logger.h"
+#include <algorithm>
+
+namespace Video {
+
+FramePacer& FramePacer::Instance() {
+    static FramePacer s_instance;
+    return s_instance;
+}
+
+void FramePacer::Initialize(FrameRateCap cap) {
+    m_target_cap = cap;
+    QueryPerformanceFrequency(&m_qpc_freq);
+    QueryPerformanceCounter(&m_last_qpc);
+
+    // Create high-resolution waitable timer if available
+    m_waitable_timer = CreateWaitableTimerExW(
+        nullptr, nullptr,
+        CREATE_WAITABLE_TIMER_HIGH_RESOLUTION,
+        TIMER_ALL_ACCESS
+    );
+
+    if (!m_waitable_timer) {
+        m_waitable_timer = CreateWaitableTimerW(nullptr, FALSE, nullptr);
+    }
+
+    LOG_INFO("VIDEO", "Frame Pacer initialized with target FPS cap: " + 
+             (cap == FrameRateCap::Uncapped ? "Uncapped" : std::to_string(static_cast<int>(cap))));
+}
+
+void FramePacer::SetTargetFps(FrameRateCap cap) {
+    m_target_cap = cap;
+    LOG_INFO("VIDEO", "Target FPS cap changed to: " + 
+             (cap == FrameRateCap::Uncapped ? "Uncapped" : std::to_string(static_cast<int>(cap))));
+}
+
+void FramePacer::SetCutsceneMode(bool in_cutscene) {
+    m_in_cutscene = in_cutscene;
+}
+
+float FramePacer::PaceAndComputeDeltaTime() {
+    LARGE_INTEGER now;
+    QueryPerformanceCounter(&now);
+
+    double elapsed_sec = static_cast<double>(now.QuadPart - m_last_qpc.QuadPart) / 
+                         static_cast<double>(m_qpc_freq.QuadPart);
+
+    // Determine effective target frame time
+    double target_frame_time = 0.0;
+    if (m_in_cutscene) {
+        // Cutscenes and comic panels strictly clamped to 60 FPS (16.66 ms)
+        target_frame_time = 1.0 / 60.0;
+    } else if (m_target_cap != FrameRateCap::Uncapped) {
+        target_frame_time = 1.0 / static_cast<double>(m_target_cap);
+    }
+
+    // High-resolution pacing wait
+    if (target_frame_time > 0.0 && elapsed_sec < target_frame_time) {
+        double wait_sec = target_frame_time - elapsed_sec;
+        if (m_waitable_timer && wait_sec > 0.001) {
+            LARGE_INTEGER due_time;
+            due_time.QuadPart = -static_cast<LONGLONG>((wait_sec - 0.0005) * 10000000.0);
+            SetWaitableTimer(m_waitable_timer, &due_time, 0, nullptr, nullptr, FALSE);
+            WaitForSingleObject(m_waitable_timer, INFINITE);
+        }
+
+        // Spin-wait remainder for microsecond precision
+        do {
+            QueryPerformanceCounter(&now);
+            elapsed_sec = static_cast<double>(now.QuadPart - m_last_qpc.QuadPart) / 
+                          static_cast<double>(m_qpc_freq.QuadPart);
+        } while (elapsed_sec < target_frame_time);
+    }
+
+    m_last_qpc = now;
+
+    // Strict physics stability clamping: [1/240.0f, 1/30.0f]
+    // Prevents Lunar Slide Kick division-by-zero (NaN) crashes at high FPS
+    float raw_dt = static_cast<float>(elapsed_sec);
+    float clamped_dt = std::clamp(raw_dt, 1.0f / 240.0f, 1.0f / 30.0f);
+
+    return clamped_dt;
+}
+
+void Initialize() {
+    FramePacer::Instance().Initialize(FrameRateCap::Cap60);
+    LOG_INFO("VIDEO", "libSceVideoOut subsystem initialized.");
+}
+
+void Shutdown() {
+    LOG_INFO("VIDEO", "libSceVideoOut subsystem shut down.");
+}
+
+extern "C" {
+
+PS4_SYSV_ABI s32 sceVideoOutOpen(s32 user_id, s32 bus_type, s32 index, const void* param) {
+    LOG_INFO("VIDEO", "sceVideoOutOpen called (user_id=" + std::to_string(user_id) + ")");
+    return 1; // Video handle 1
+}
+
+PS4_SYSV_ABI s32 sceVideoOutClose(s32 handle) {
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceVideoOutSubmitFlip(s32 handle, s32 buffer_index, u32 flip_mode, s64 flip_arg) {
+    // Pace frame and compute delta-time
+    float dt = FramePacer::Instance().PaceAndComputeDeltaTime();
+    (void)dt;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceVideoOutSetFlipRate(s32 handle, s32 flip_rate) {
+    // flip_rate 0 = 60 Hz, flip_rate 1 = 30 Hz (often set during comic book panels or cutscenes)
+    if (flip_rate > 0) {
+        FramePacer::Instance().SetCutsceneMode(true);
+    } else {
+        FramePacer::Instance().SetCutsceneMode(false);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceVideoOutGetVblankStatus(s32 handle, void* status) {
+    return 0;
+}
+
+} // extern "C"
+
+} // namespace Video

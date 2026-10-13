@@ -39,3 +39,11 @@ cmake_install.cmake
 Thumbs.db
 [Dd]esktop.ini
 .DS_Store
+
+# Toolchains & Local Packages (Outside Git)
+tools/llvm-mingw/
+tools/shadps4_extractor/
+tools/pkgextract/
+tools/test_dlc_out/
+game/
+

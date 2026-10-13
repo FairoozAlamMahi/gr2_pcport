@@ -28,6 +28,8 @@ set(SOURCES
     src/kernel/libkernel.cpp
     src/pad/pad_handler.cpp
     src/video/video_out.cpp
+    src/audio/audio_out.cpp
+    src/gpu/gnm_driver.cpp
 )
 
 set(HEADERS
@@ -38,6 +40,8 @@ set(HEADERS
     src/kernel/libkernel.h
     src/pad/pad_handler.h
     src/video/video_out.h
+    src/audio/audio_out.h
+    src/gpu/gnm_driver.h
 )
 
 add_executable(gr2_pc ${SOURCES} ${HEADERS})

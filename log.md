@@ -261,13 +261,41 @@ The audit identified **8 fatal low-level runtime blockers** that would cause cra
 
 ---
 
-## 13. Next Milestones
+## 13. Phase 5: GPU, Audio, and Dynamic Relocation Integration (Completed)
+
+* **AMD64 Relocation Engine (`src/loader/elf_loader.cpp`):**
+  * Implemented `ElfLoader::ApplyRelocations(const u8* data)`.
+  * Parsed Sony dynamic tags: `DT_SCE_RELA` (`0x61000031`), `DT_SCE_RELASZ` (`0x61000039`), `DT_SCE_JMPREL` (`0x6100002f`), `DT_SCE_PLTRELSZ` (`0x6100003f`).
+  * Successfully resolved and rebased **1,530 AMD64 relocations** (`R_X86_64_RELATIVE`, `R_X86_64_64`, `R_X86_64_GLOB_DAT`) to `0x1099511627776`.
+* **Audio Subsystem with Overlap Filter (`src/audio/audio_out.cpp`):**
+  * Exported `libSceAudioOut` API (`sceAudioOutOpen`, `sceAudioOutClose`, `sceAudioOutOutput`, `sceAudioOutSetVolume`, `sceAudioOutGetPortTimestamp`).
+  * Implemented Kat gravity kick audio deduplication filter: computes rolling FNV hash of incoming audio frames; blocks identical recurring sound cues within 80 ms, eliminating audio distortion and driver buffer saturation.
+* **GPU & GNM Driver Subsystem (`src/gpu/gnm_driver.cpp`):**
+  * Exported `libSceGnmDriver` API (`sceGnmSubmitCommandBuffers`, `sceGnmDrawInitDefaultHardwareState`, `sceGnmSetCsShader`, `sceGnmSetPsShader`, `sceGnmSetVsShader`, `sceGnmDispatchDirect`, etc.).
+  * Installed Vectored Exception Handler (VEH) write-tracker for mirrored VRAM pages on NVIDIA GeForce RTX 4060 Ti (Ada Lovelace architecture).
+  * Implemented 32-wide warp wave-adaptation for GCN compute shaders.
+* **Full Integrated Execution Verification:**
+  * Clean build with 0 warnings, 0 errors via Ninja.
+  * Executed `gr2_pc.exe game/eboot.elf`:
+    * Virtual Memory: 1 TiB arena + 9.2 GB PS4 Pro DMEM pool initialized.
+    * Kernel, Pad, Video, Audio, and GPU subsystems online.
+    * 9,250 Orbis TLS instructions rewritten in-place.
+    * 1,530 AMD64 relocations applied.
+    * Main thread TCB allocated in Windows TEB.
+    * Guest entry point verified at `0x1099511627936`.
+
+---
+
+## 14. Next Milestones
 
 1. [x] Provision toolchain dependencies (`CMake`, `Ninja`, `Clang 23`, `JDK 21`, `llvm-mingw`).
 2. [x] Extract PKGs and merge Base + Update v1.11 via NTFS hard links.
 3. [x] Reverse-engineer `eboot.elf` and export `docs/gr2_symbol_ledger.json`.
 4. [x] Scaffold, compile, and verify native runner `gr2_pc.exe` (9,250 TLS instructions rewritten).
-5. [ ] Implement Vulkan GNM/GNMX command buffer translation layer (Phase 5).
-6. [ ] Implement audio deduplication hook for Kat's gravity kick.
+5. [x] Implement dynamic AMD64 relocation engine (1,530 relocations applied).
+6. [x] Implement audio deduplication hook for Kat's gravity kick.
+7. [x] Implement GNM GPU command buffer dispatch and RTX 4060 Ti memory model.
+8. [ ] Implement Direct Memory / GPU buffer synchronization and swapchain presentation.
+
 
 

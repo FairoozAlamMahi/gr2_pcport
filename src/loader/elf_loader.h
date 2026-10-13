@@ -45,7 +45,7 @@ private:
     bool ParseHeaders(const u8* data, usize size);
     bool MapSegments(const u8* data);
     bool PatchTlsInstructions();
-    bool ApplyRelocations();
+    bool ApplyRelocations(const u8* data);
 
     u64 m_base_address{GUEST_ARENA_BASE};
     void* m_entry_point{nullptr};

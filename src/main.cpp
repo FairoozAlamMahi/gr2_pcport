@@ -5,6 +5,8 @@
 #include "kernel/libkernel.h"
 #include "pad/pad_handler.h"
 #include "video/video_out.h"
+#include "audio/audio_out.h"
+#include "gpu/gnm_driver.h"
 #include <iostream>
 #include <string>
 #include <filesystem>
@@ -57,6 +59,8 @@ int main(int argc, char* argv[]) {
     Kernel::Initialize();
     Pad::Initialize();
     Video::Initialize();
+    Audio::Initialize();
+    GPU::Initialize();
 
     // 3. Load ELF into Guest Arena
     if (!Loader::ElfLoader::Instance().Load(elf_path)) {

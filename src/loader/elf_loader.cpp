@@ -71,6 +71,10 @@ bool ElfLoader::Load(const std::string& elf_path) {
         return false;
     }
 
+    if (!ApplyRelocations(buffer.data())) {
+        return false;
+    }
+
     LOG_INFO("LOADER", "ELF loaded successfully. Entry point: " + 
              std::to_string(reinterpret_cast<uintptr_t>(m_entry_point)));
     return true;
@@ -245,6 +249,84 @@ void* ElfLoader::SetupThreadTCB() {
     TlsSetValue(m_tls_info.win_tls_slot, tcb_block);
 
     return tcb_block;
+}
+
+bool ElfLoader::ApplyRelocations(const u8* data) {
+    u64 dynlib_offset = 0;
+    u64 dynamic_offset = 0;
+
+    for (const auto& seg : m_segments) {
+        if (seg.type == 0x61000000) { // PT_SCE_DYNLIBDATA
+            dynlib_offset = seg.offset;
+        } else if (seg.type == 2) { // PT_DYNAMIC
+            dynamic_offset = seg.offset;
+        }
+    }
+
+    if (dynlib_offset == 0 || dynamic_offset == 0) {
+        LOG_WARN("LOADER", "No PT_SCE_DYNLIBDATA or PT_DYNAMIC found for relocations.");
+        return true;
+    }
+
+    const u8* dynlib = data + dynlib_offset;
+
+    u64 rela_off = 0;
+    u64 relasz = 0;
+    u64 jmprel_off = 0;
+    u64 pltrelsz = 0;
+
+    #pragma pack(push, 1)
+    struct DynTag {
+        s64 d_tag;
+        u64 d_val;
+    };
+    struct Elf64_Rela {
+        u64 r_offset;
+        u64 r_info;
+        s64 r_addend;
+    };
+    #pragma pack(pop)
+
+    const auto* dyn_tags = reinterpret_cast<const DynTag*>(data + dynamic_offset);
+    for (size_t i = 0;; ++i) {
+        s64 tag = dyn_tags[i].d_tag;
+        u64 val = dyn_tags[i].d_val;
+        if (tag == 0) break;
+
+        if (tag == 0x61000031) rela_off = val;
+        else if (tag == 0x61000039) relasz = val;
+        else if (tag == 0x6100002f) jmprel_off = val;
+        else if (tag == 0x6100003f) pltrelsz = val;
+    }
+
+    u32 total_applied = 0;
+
+    auto ProcessRelas = [&](u64 table_off, u64 table_sz) {
+        if (table_off == 0 || table_sz == 0) return;
+        const auto* entries = reinterpret_cast<const Elf64_Rela*>(dynlib + table_off);
+        u32 count = static_cast<u32>(table_sz / sizeof(Elf64_Rela));
+
+        for (u32 i = 0; i < count; ++i) {
+            const auto& r = entries[i];
+            u32 type = static_cast<u32>(r.r_info & 0xFFFFFFFF);
+            u64* target = reinterpret_cast<u64*>(m_base_address + r.r_offset);
+
+            if (type == 8) { // R_X86_64_RELATIVE
+                *target = m_base_address + r.r_addend;
+                total_applied++;
+            } else if (type == 1 || type == 6) { // R_X86_64_64 or R_X86_64_GLOB_DAT
+                *target = m_base_address + r.r_addend;
+                total_applied++;
+            }
+        }
+    };
+
+    ProcessRelas(rela_off, relasz);
+    ProcessRelas(jmprel_off, pltrelsz);
+
+    LOG_INFO("LOADER", "Successfully applied " + std::to_string(total_applied) + 
+             " AMD64 relocations (rebased to 0x" + std::to_string(m_base_address) + ").");
+    return true;
 }
 
 } // namespace Loader

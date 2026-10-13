@@ -178,9 +178,36 @@ The audit identified **8 fatal low-level runtime blockers** that would cause cra
 
 ---
 
-## 9. Next Milestones (Phase 1 & Phase 2 Execution)
+## 9. Phase 1 & Ingestion Verification Milestones
 
-1. [ ] Install toolchain dependencies (`winget install Kitware.CMake Ninja-build.Ninja LLVM.LLVM KhronosGroup.VulkanSDK Microsoft.OpenJDK.21`).
-2. [ ] Ingest Gravity Rush 2 PKG files into `gr2_packages/`.
-3. [ ] Extract base files, apply Update v1.11 deltas via NTFS hardlinks, verify `param.sfo == 01.11`, and decrypt `eboot.bin` to `eboot.elf`.
-4. [ ] Run Phase 3 REA binary reverse engineering and export `docs/gr2_symbol_ledger.json`.
+### Toolchain Provisioning (Completed)
+* **CMake:** v4.4.4 installed and operational.
+* **Ninja:** v1.13.2 installed and operational.
+* **LLVM / Clang:** v23.1.3 installed, linked in system PATH, and operational (`clang version 23.1.3`).
+* **Java Development Kit:** Microsoft OpenJDK 21 LTS installed and verified (`openjdk 21.0.12.1`).
+* **Python Runtime:** Python 3.11 with `pycryptodomex` verified.
+
+### Package Extraction & SELF Decryption Proof-of-Concept (Completed)
+* Integrated **ShadPs4Plus PKG Extractor v1.1** for streaming PS4 package unpacking without RAM exhaustion.
+* Verified against **Gravity Rush 2 Update v1.11 PKG** (`PS4_Gravity_Rush 2_CUSA04943_02_Patch_v1.11_psgames.by.pkg`):
+  * Unpacked all 26 package components cleanly in under 20 seconds.
+  * Verified `param.sfo`:
+    * `TITLE_ID`: `CUSA04943`
+    * `APP_VER`: `01.11`
+    * `CATEGORY`: `gp`
+    * `TITLE`: `GRAVITY RUSH 2`
+* Integrated and patched `tools/unfself.py`:
+  * Parsed SELF container headers and 10 segment descriptors.
+  * Decrypted and reconstructed native **`eboot.elf`** (27,759,096 bytes / 26.47 MB).
+  * Validated ELF header: `Magic: 0x7F454C46`, `Class: ELF64`, `Endian: Little Endian`, `OS/ABI: FreeBSD (Orbis OS)`, `Machine: AMD x86-64`.
+
+---
+
+## 10. Next Milestones
+
+1. [x] Provision toolchain dependencies (`CMake`, `Ninja`, `Clang 23`, `JDK 21`).
+2. [x] Test PKG extraction and decrypt Update v1.11 `eboot.bin` to `eboot.elf`.
+3. [ ] Merge Base PKG and Update v1.11 using NTFS hard links (`mklink /H`) into unified `merged_game/` (0 duplicate disk usage).
+4. [ ] Ingest `eboot.elf` into REA and run symbol analysis to produce `docs/gr2_symbol_ledger.json`.
+5. [ ] Scaffold and compile the native PC runner executable (`gr2_pc.exe`).
+

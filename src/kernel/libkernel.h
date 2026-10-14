@@ -8,9 +8,10 @@ namespace Kernel {
 // Initialization of host POSIX and kernel virtualization
 void Initialize();
 void Shutdown();
-
 // Exported libkernel functions (marked with PS4_SYSV_ABI)
 extern "C" {
+
+void TriggerEqueueWithUdata(void* eq, void* udata);
 
 // Direct & Flexible Memory
 PS4_SYSV_ABI s32 sceKernelAllocateDirectMemory(s64 search_start, s64 search_end, u64 length, u64 alignment, s32 type, s64* out_dest);

@@ -1,5 +1,6 @@
 #include "video/video_out.h"
 #include "video/vulkan_context.h"
+#include "kernel/libkernel.h"
 #include "common/logger.h"
 #include <algorithm>
 
@@ -108,6 +109,17 @@ static inline std::string ToHex(u64 val) {
     return std::string(buf);
 }
 
+void* GetRegisteredBuffer(size_t index) {
+    if (index < s_registered_buffers.size()) {
+        return s_registered_buffers[index];
+    }
+    return nullptr;
+}
+
+size_t GetRegisteredBufferCount() {
+    return s_registered_buffers.size();
+}
+
 extern "C" {
 
 PS4_SYSV_ABI s32 sceVideoOutOpen(s32 user_id, s32 bus_type, s32 index, const void* param) {
@@ -191,7 +203,7 @@ PS4_SYSV_ABI s32 sceVideoOutSubmitFlip(s32 handle, s32 buffer_index, u32 flip_mo
 
     // Signal flip event if registered
     if (s_flip_equeue) {
-        SetEvent(reinterpret_cast<HANDLE>(s_flip_equeue));
+        Kernel::TriggerEqueueWithUdata(s_flip_equeue, s_flip_udata);
     }
 
     // Pace frame and compute delta-time

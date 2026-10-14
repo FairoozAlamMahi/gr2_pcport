@@ -112,6 +112,7 @@ PS4_SYSV_ABI s32 scePadReadState(s32 handle, ScePadData* data) {
 
         data->buttons = ps4_btn;
 
+        // Merge keyboard controls if active
         // Thumbsticks: map [-32768, 32767] -> [0, 255]
         data->leftStickX  = static_cast<u8>(((xi_state.Gamepad.sThumbLX + 32768) >> 8) & 0xFF);
         data->leftStickY  = static_cast<u8>(((32767 - xi_state.Gamepad.sThumbLY) >> 8) & 0xFF);
@@ -141,6 +142,63 @@ PS4_SYSV_ABI s32 scePadReadState(s32 handle, ScePadData* data) {
         data->rightStickX = 128;
         data->rightStickY = 128;
     }
+
+    // Full PC Keyboard & Mouse fallback engine
+    auto IsKeyDown = [](int vk) -> bool {
+        return (GetAsyncKeyState(vk) & 0x8000) != 0;
+    };
+
+    u32 kb_btn = 0;
+    if (IsKeyDown(VK_RETURN) || IsKeyDown(VK_SPACE)) kb_btn |= 0x4000; // Cross
+    if (IsKeyDown(VK_ESCAPE) || IsKeyDown(VK_BACK))  kb_btn |= 0x2000; // Circle
+    if (IsKeyDown('E') || IsKeyDown('F'))            kb_btn |= 0x8000; // Square
+    if (IsKeyDown('Q') || IsKeyDown('R'))            kb_btn |= 0x1000; // Triangle
+    if (IsKeyDown(VK_SHIFT))                         kb_btn |= 0x0800; // R1 (Gravity Shift/Kick)
+    if (IsKeyDown(VK_CONTROL))                       kb_btn |= 0x0400; // L1 (Cancel Gravity)
+    if (IsKeyDown(VK_TAB))                           kb_btn |= 0x0008; // Options
+    if (IsKeyDown(VK_UP))                            kb_btn |= 0x0010; // D-Pad Up
+    if (IsKeyDown(VK_RIGHT))                         kb_btn |= 0x0020; // D-Pad Right
+    if (IsKeyDown(VK_DOWN))                          kb_btn |= 0x0040; // D-Pad Down
+    if (IsKeyDown(VK_LEFT))                          kb_btn |= 0x0080; // D-Pad Left
+
+    // Synthetic touchpad gesture hotkeys on PC:
+    // Key '1' -> Lunar Style (Swipe Up)
+    // Key '2' -> Jupiter Style (Swipe Down)
+    // Key '3' -> Normal Style (Tap Center)
+    if (IsKeyDown('1') && s_swipe.gesture == SwipeGesture::None) {
+        s_swipe.gesture = SwipeGesture::SwipeUp;
+        s_swipe.current_frame = 0;
+    } else if (IsKeyDown('2') && s_swipe.gesture == SwipeGesture::None) {
+        s_swipe.gesture = SwipeGesture::SwipeDown;
+        s_swipe.current_frame = 0;
+    } else if (IsKeyDown('3') && s_swipe.gesture == SwipeGesture::None) {
+        s_swipe.gesture = SwipeGesture::TapCenter;
+        s_swipe.current_frame = 0;
+    }
+
+    // WASD movement mapping when no analog stick active
+    if (data->leftStickX == 128 && data->leftStickY == 128) {
+        int lx = 128, ly = 128;
+        if (IsKeyDown('W')) ly -= 120;
+        if (IsKeyDown('S')) ly += 120;
+        if (IsKeyDown('A')) lx -= 120;
+        if (IsKeyDown('D')) lx += 120;
+        data->leftStickX = static_cast<u8>(std::clamp(lx, 0, 255));
+        data->leftStickY = static_cast<u8>(std::clamp(ly, 0, 255));
+    }
+
+    // IJKL Camera mapping when no right stick active
+    if (data->rightStickX == 128 && data->rightStickY == 128) {
+        int rx = 128, ry = 128;
+        if (IsKeyDown('I')) ry -= 120;
+        if (IsKeyDown('K')) ry += 120;
+        if (IsKeyDown('J')) rx -= 120;
+        if (IsKeyDown('L')) rx += 120;
+        data->rightStickX = static_cast<u8>(std::clamp(rx, 0, 255));
+        data->rightStickY = static_cast<u8>(std::clamp(ry, 0, 255));
+    }
+
+    data->buttons |= kb_btn;
 
     // 3. Inject synthetic touchpad swipe data into ScePadTouchData
     if (s_swipe.gesture != SwipeGesture::None) {

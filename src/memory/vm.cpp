@@ -142,7 +142,10 @@ void* VirtualMemoryManager::MapDirectMemory(u64 dmem_offset, u64 size, void* tar
         target_vaddr
     );
 
-    if (!mapped && target_vaddr) {
+    if (mapped) {
+        // Ensure mapped view pages are committed if backing section was reserved
+        VirtualAlloc(mapped, size, MEM_COMMIT, win_prot);
+    } else if (target_vaddr) {
         // Fallback: commit regular virtual pages if view mapping failed
         mapped = VirtualAlloc(target_vaddr, size, MEM_COMMIT, win_prot);
     }

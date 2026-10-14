@@ -8,6 +8,12 @@
 
 namespace Video {
 
+static inline std::string ToHex(u64 val) {
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%llX", static_cast<unsigned long long>(val));
+    return std::string(buf);
+}
+
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
     case WM_PAINT: {
@@ -640,6 +646,20 @@ void VulkanContext::PresentFrame(const void* frame_data) {
         MEMORY_BASIC_INFORMATION mbi{};
         if (src_pixels && VirtualQuery(src_pixels, &mbi, sizeof(mbi)) != 0 && mbi.State == MEM_COMMIT) {
             std::memcpy(m_staging_mapped_ptr, src_pixels, m_staging_size);
+
+            static u64 s_frame_check_counter = 0;
+            if (++s_frame_check_counter <= 10 || s_frame_check_counter % 60 == 0) {
+                const u32* px = static_cast<const u32*>(src_pixels);
+                u32 total_pixels = m_width * m_height;
+                u32 non_zero = 0;
+                for (u32 p = 0; p < total_pixels; p += 64) {
+                    if (px[p] != 0) non_zero++;
+                }
+                LOG_INFO("VULKAN", "Frame #" + std::to_string(s_frame_check_counter) + 
+                         " src_pixels at 0x" + ToHex(reinterpret_cast<uintptr_t>(src_pixels)) + 
+                         ": non-zero sample count=" + std::to_string(non_zero) + 
+                         " (center=0x" + ToHex(px[total_pixels / 2]) + ")");
+            }
         }
 
         VkCommandBufferBeginInfo bi{};

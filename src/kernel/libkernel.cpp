@@ -12,11 +12,18 @@
 #include <intrin.h>
 #include <rpc.h>
 #include <filesystem>
+#include <atomic>
 
 namespace Kernel {
 
 namespace fs = std::filesystem;
 static std::string s_app0_root = "../gr2_packages/merged_game";
+
+static inline std::string ToHex(u64 val) {
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%llX", static_cast<unsigned long long>(val));
+    return std::string(buf);
+}
 
 void Initialize() {
     if (fs::exists("../gr2_packages/merged_game")) {
@@ -279,8 +286,11 @@ PS4_SYSV_ABI s32 sceKernelClose(s32 fd) {
     return _close(fd);
 }
 
+static std::mutex s_file_io_mutex;
+
 PS4_SYSV_ABI s64 sceKernelPread(s32 fd, void* buf, u64 nbytes, s64 offset) {
     if (fd < 0 || !buf) return -1;
+    std::lock_guard<std::mutex> lock(s_file_io_mutex);
     _lseeki64(fd, offset, SEEK_SET);
     int res = _read(fd, buf, static_cast<unsigned int>(nbytes));
     return static_cast<s64>(res);
@@ -288,6 +298,7 @@ PS4_SYSV_ABI s64 sceKernelPread(s32 fd, void* buf, u64 nbytes, s64 offset) {
 
 PS4_SYSV_ABI s64 sceKernelPwrite(s32 fd, const void* buf, u64 nbytes, s64 offset) {
     if (fd < 0 || !buf) return -1;
+    std::lock_guard<std::mutex> lock(s_file_io_mutex);
     _lseeki64(fd, offset, SEEK_SET);
     int res = _write(fd, buf, static_cast<unsigned int>(nbytes));
     return static_cast<s64>(res);
@@ -471,9 +482,10 @@ static DWORD WINAPI GuestThreadStub(LPVOID param) {
     // Set up TCB for this thread in Windows TEB
     Loader::ElfLoader::Instance().SetupThreadTCB();
 
-    // Execute System V ABI guest thread entry
-    entry(arg);
-    return 0;
+    LOG_INFO("THREAD", "Thread " + std::to_string(GetCurrentThreadId()) + " started guest execution.");
+    void* ret = entry(arg);
+    LOG_INFO("THREAD", "Thread " + std::to_string(GetCurrentThreadId()) + " completed guest execution.");
+    return static_cast<DWORD>(reinterpret_cast<uintptr_t>(ret));
 }
 
 PS4_SYSV_ABI s32 scePthreadCreate(void** thread, const void* attr, PthreadEntry entry, void* arg, const char* name) {
@@ -501,6 +513,9 @@ PS4_SYSV_ABI s32 scePthreadCreate(void** thread, const void* attr, PthreadEntry 
 
     info->handle = hThread;
     info->id = thread_id;
+
+    LOG_INFO("THREAD", "scePthreadCreate: '" + std::string(name ? name : "unnamed") + 
+             "' (entry=0x" + ToHex(reinterpret_cast<uintptr_t>(entry)) + ", tid=" + std::to_string(thread_id) + ")");
 
     *thread = info;
     return 0;
@@ -911,10 +926,15 @@ PS4_SYSV_ABI s32 sceKernelCreateSema(void** sema, const char* name, u32 attr, s3
 }
 
 PS4_SYSV_ABI s32 sceKernelWaitSema(void* sema, s32 need, void* timeout) {
+    (void)need;
     if (!sema) return -1;
-    DWORD wait_ms = timeout ? 1000 : INFINITE;
+    DWORD wait_ms = INFINITE;
+    if (timeout) {
+        u32 usec = *reinterpret_cast<const u32*>(timeout);
+        wait_ms = usec / 1000;
+    }
     DWORD res = WaitForSingleObject(reinterpret_cast<HANDLE>(sema), wait_ms);
-    return (res == WAIT_OBJECT_0) ? 0 : -1;
+    return (res == WAIT_OBJECT_0) ? 0 : ((res == WAIT_TIMEOUT) ? 0x8002000B : -1);
 }
 
 PS4_SYSV_ABI s32 sceKernelPollSema(void* sema, s32 need) {
@@ -996,10 +1016,14 @@ PS4_SYSV_ABI s32 sceKernelWaitEventFlag(void* flag, u64 bits, u32 wait_mode, u64
             LeaveCriticalSection(&ef->cs);
             return 0;
         }
-        DWORD ms = timeout ? 1000 : INFINITE;
+        DWORD ms = INFINITE;
+        if (timeout) {
+            u32 usec = *reinterpret_cast<const u32*>(timeout);
+            ms = usec / 1000;
+        }
         if (!SleepConditionVariableCS(&ef->cv, &ef->cs, ms)) {
             LeaveCriticalSection(&ef->cs);
-            return -1;
+            return (GetLastError() == ERROR_TIMEOUT) ? 0x8002000B : -1;
         }
     }
 }
@@ -1033,6 +1057,9 @@ PS4_SYSV_ABI s32 sceKernelCancelEventFlag(void* flag, u64 pattern, s32* num_thre
 }
 
 // Event Queues
+static std::mutex s_equeue_mutex;
+static std::unordered_map<void*, void*> s_equeue_udata;
+
 PS4_SYSV_ABI s32 sceKernelCreateEqueue(void** eq, const char* name) {
     if (!eq) return -1;
     HANDLE hEvent = CreateEventW(nullptr, FALSE, FALSE, nullptr);
@@ -1041,14 +1068,34 @@ PS4_SYSV_ABI s32 sceKernelCreateEqueue(void** eq, const char* name) {
 }
 
 PS4_SYSV_ABI s32 sceKernelDeleteEqueue(void* eq) {
-    if (eq) CloseHandle(reinterpret_cast<HANDLE>(eq));
+    if (eq) {
+        {
+            std::lock_guard<std::mutex> lock(s_equeue_mutex);
+            s_equeue_udata.erase(eq);
+        }
+        CloseHandle(reinterpret_cast<HANDLE>(eq));
+    }
     return 0;
+}
+
+void TriggerEqueueWithUdata(void* eq, void* udata) {
+    if (eq) {
+        {
+            std::lock_guard<std::mutex> lock(s_equeue_mutex);
+            s_equeue_udata[eq] = udata;
+        }
+        SetEvent(reinterpret_cast<HANDLE>(eq));
+    }
 }
 
 PS4_SYSV_ABI s32 sceKernelWaitEqueue(void* eq, void* events, s32 num_events, s32* out_events, void* timeout) {
     if (out_events) *out_events = 0;
     if (!eq) return -1;
-    DWORD ms = timeout ? 50 : INFINITE;
+    DWORD ms = INFINITE;
+    if (timeout) {
+        u32 usec = *reinterpret_cast<const u32*>(timeout);
+        ms = usec / 1000;
+    }
     DWORD res = WaitForSingleObject(reinterpret_cast<HANDLE>(eq), ms);
     if (res == WAIT_OBJECT_0) {
         if (out_events) *out_events = 1;
@@ -1061,13 +1108,21 @@ PS4_SYSV_ABI s32 sceKernelWaitEqueue(void* eq, void* events, s32 num_events, s32
                 intptr_t data;
                 void* udata;
             };
+            void* ev_udata = nullptr;
+            {
+                std::lock_guard<std::mutex> lock(s_equeue_mutex);
+                auto it = s_equeue_udata.find(eq);
+                if (it != s_equeue_udata.end()) {
+                    ev_udata = it->second;
+                }
+            }
             auto* ev = reinterpret_cast<SceKernelEvent*>(events);
             ev[0].ident = reinterpret_cast<uintptr_t>(eq);
             ev[0].filter = -1;
             ev[0].flags = 0;
             ev[0].fflags = 0;
             ev[0].data = 1;
-            ev[0].udata = nullptr;
+            ev[0].udata = ev_udata;
         }
         return 0;
     }
@@ -1083,7 +1138,7 @@ PS4_SYSV_ABI s32 sceKernelDeleteReadEvent(void* eq, s32 fd) { return 0; }
 PS4_SYSV_ABI s32 sceKernelDeleteWriteEvent(void* eq, s32 fd) { return 0; }
 PS4_SYSV_ABI s32 sceKernelDeleteTimerEvent(void* eq, s32 id) { return 0; }
 PS4_SYSV_ABI s32 sceKernelTriggerUserEvent(void* eq, s32 id, void* udata) {
-    if (eq) SetEvent(reinterpret_cast<HANDLE>(eq));
+    TriggerEqueueWithUdata(eq, udata);
     return 0;
 }
 PS4_SYSV_ABI s32 sceKernelGetEventFilter(void* event) { return 0; }
@@ -1421,21 +1476,64 @@ PS4_SYSV_ABI s32 sceSystemServiceParamGetInt(s32 param_id, s32* out_val) {
     return 0;
 }
 
-PS4_SYSV_ABI s32 sceSystemServiceGetStatus(void* status) {
-    if (status) {
-        std::memset(status, 0, 64);
-        *reinterpret_cast<s32*>(status) = 0;
+[[maybe_unused]] static void DumpCallerBytes(const char* name, void* ret_addr) {
+    if (!ret_addr) return;
+    char buf[128];
+    std::snprintf(buf, sizeof(buf), "%p", ret_addr);
+    std::string hex_str = " caller=" + std::string(buf) + " code: ";
+    const u8* b = static_cast<const u8*>(ret_addr);
+    for (int i = 0; i < 32; ++i) {
+        char h[8];
+        std::snprintf(h, sizeof(h), "%02X ", b[i]);
+        hex_str += h;
     }
-    LOG_INFO("SYS", "sceSystemServiceGetStatus called -> status 0");
+    LOG_INFO("SYS", std::string(name) + hex_str);
+}
+
+static std::atomic<bool> s_resume_dispatched{false};
+
+PS4_SYSV_ABI s32 sceSystemServiceGetStatus(void* status) {
+    #pragma pack(push, 1)
+    struct SceSystemServiceStatus {
+        u32 eventNum;
+        u16 systemStatus;
+        u16 reserved;
+    };
+    #pragma pack(pop)
+
+    if (status) {
+        auto* s = static_cast<SceSystemServiceStatus*>(status);
+        std::memset(s, 0, sizeof(SceSystemServiceStatus));
+        if (!s_resume_dispatched.load(std::memory_order_relaxed)) {
+            s->eventNum = 1;
+            LOG_INFO("SYS", "sceSystemServiceGetStatus: Signaling 1 pending event (SCE_SYSTEM_SERVICE_EVENT_ON_RESUME)");
+        } else {
+            s->eventNum = 0;
+        }
+        s->systemStatus = 0; // Active in-focus application
+    }
     return 0;
 }
 
 PS4_SYSV_ABI s32 sceSystemServiceReceiveEvent(void* event) {
+    #pragma pack(push, 1)
+    struct SceSystemServiceEvent {
+        u32 eventType;
+        u32 reserved;
+        u8 data[56];
+    };
+    #pragma pack(pop)
+
     if (event) {
-        std::memset(event, 0, 64);
-        *reinterpret_cast<s32*>(event) = 0;
+        auto* ev = static_cast<SceSystemServiceEvent*>(event);
+        std::memset(ev, 0, sizeof(SceSystemServiceEvent));
+        if (!s_resume_dispatched.exchange(true)) {
+            ev->eventType = 0x10000003; // SCE_SYSTEM_SERVICE_EVENT_ON_RESUME
+            LOG_INFO("SYS", "sceSystemServiceReceiveEvent: Dispatched SCE_SYSTEM_SERVICE_EVENT_ON_RESUME (0x10000003) -> App activated!");
+        } else {
+            ev->eventType = 0;
+        }
     }
-    LOG_INFO("SYS", "sceSystemServiceReceiveEvent called -> event 0");
     return 0;
 }
 

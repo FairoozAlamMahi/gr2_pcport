@@ -38,6 +38,9 @@ private:
 void Initialize();
 void Shutdown();
 
+void* GetRegisteredBuffer(size_t index);
+size_t GetRegisteredBufferCount();
+
 struct SceVideoOutBufferAttribute {
     u32 pixelFormat;
     u32 tilingMode;

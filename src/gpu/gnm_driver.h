@@ -36,22 +36,38 @@ void Shutdown();
 
 const GpuCapabilities& GetCapabilities();
 
+u64 GetSubmittedDcbCount();
+u64 GetSubmittedCcbCount();
+u64 GetTotalDrawCalls();
+u64 GetTotalDispatches();
+u64 GetTotalContextRegChanges();
+
 // Exported libSceGnmDriver functions
 extern "C" {
 
 PS4_SYSV_ABI s32 sceGnmSubmitCommandBuffers(u32 count, const void* dcb_gpu_addrs, const u32* dcb_sizes_in_bytes, const void* ccb_gpu_addrs, const u32* ccb_sizes_in_bytes);
 PS4_SYSV_ABI s32 sceGnmSubmitDone();
 PS4_SYSV_ABI s32 sceGnmDrawInitDefaultHardwareState(void* dcb, u32 num_dwords);
+PS4_SYSV_ABI s32 sceGnmDrawInitDefaultHardwareState350(void* dcb, u32 num_dwords);
+PS4_SYSV_ABI s32 sceGnmDispatchInitDefaultHardwareState(void* dcb, u32 num_dwords);
 PS4_SYSV_ABI s32 sceGnmInsertPushMarker(void* dcb, const char* name);
 PS4_SYSV_ABI s32 sceGnmInsertPopMarker(void* dcb);
 PS4_SYSV_ABI s32 sceGnmFlushGarlic();
 PS4_SYSV_ABI s32 sceGnmSetCsShader(void* dcb, const void* shader);
+PS4_SYSV_ABI s32 sceGnmSetCsShaderWithModifier(void* dcb, u32 num_dwords, const void* cs_regs, u32 modifier);
 PS4_SYSV_ABI s32 sceGnmSetPsShader(void* dcb, const void* shader);
+PS4_SYSV_ABI s32 sceGnmSetPsShader350(void* dcb, u32 num_dwords, const void* ps_regs);
+PS4_SYSV_ABI s32 sceGnmUpdatePsShader350(void* dcb, u32 num_dwords, const void* ps_regs);
 PS4_SYSV_ABI s32 sceGnmSetVsShader(void* dcb, const void* shader);
+PS4_SYSV_ABI s32 sceGnmSetEmbeddedVsShader(void* dcb, u32 num_dwords, u32 shader_id, u32 shader_modifier);
+PS4_SYSV_ABI s32 sceGnmDrawIndexAuto(void* dcb, u32 num_dwords, u32 index_count, u32 flags);
 PS4_SYSV_ABI s32 sceGnmDispatchDirect(void* dcb, u32 thread_group_x, u32 thread_group_y, u32 thread_group_z);
 PS4_SYSV_ABI s32 sceGnmSubmitAndFlipCommandBuffers(u32 count, const void* dcb_gpu_addrs, const u32* dcb_sizes_in_bytes, const void* ccb_gpu_addrs, const u32* ccb_sizes_in_bytes, u32 video_handle, u32 display_buffer_index, u32 flip_mode, s64 flip_arg);
 PS4_SYSV_ABI s32 sceGnmDingDong(u32 ring_id, u32 dword_offset);
 PS4_SYSV_ABI s32 sceGnmInsertWaitFlipDone(void* dcb, s32 video_handle, s32 display_buffer_index);
+PS4_SYSV_ABI s32 sceGnmMapComputeQueue(u32 pipe_id, u32 queue_id, const void* ring_base_addr, u32 ring_size_dw, void* read_ptr_addr);
+PS4_SYSV_ABI s32 sceGnmMapComputeQueueWithPriority(u32 pipe_id, u32 queue_id, const void* ring_base_addr, u32 ring_size_dw, void* read_ptr_addr, u32 priority);
+PS4_SYSV_ABI void* sceGnmGetTheTessellationFactorRingBufferBaseAddress();
 
 } // extern "C"
 

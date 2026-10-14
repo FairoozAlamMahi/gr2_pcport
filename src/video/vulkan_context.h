@@ -23,6 +23,10 @@ public:
     u32 GetWidth() const { return m_width; }
     u32 GetHeight() const { return m_height; }
     bool IsInitialized() const { return m_initialized; }
+    bool HasFocus() const { return m_has_focus; }
+    void SetFocus(bool focus) { m_has_focus = focus; }
+    VkSemaphore GetImageAvailableSemaphore() const { return m_image_available_semaphore; }
+    VkSemaphore GetRenderFinishedSemaphore() const { return m_render_finished_semaphore; }
 
 private:
     VulkanContext() = default;
@@ -60,6 +64,10 @@ private:
     std::vector<VkImageView> m_swapchain_image_views;
     u32 m_current_image_index{0};
 
+    bool m_has_focus{true};
+    VkSemaphore m_image_available_semaphore{VK_NULL_HANDLE};
+    VkSemaphore m_render_finished_semaphore{VK_NULL_HANDLE};
+
     // Dynamically loaded function pointers
     PFN_vkGetInstanceProcAddr fp_vkGetInstanceProcAddr{nullptr};
     PFN_vkCreateInstance fp_vkCreateInstance{nullptr};
@@ -71,6 +79,11 @@ private:
     PFN_vkDestroyDevice fp_vkDestroyDevice{nullptr};
     PFN_vkGetDeviceQueue fp_vkGetDeviceQueue{nullptr};
     PFN_vkDeviceWaitIdle fp_vkDeviceWaitIdle{nullptr};
+    PFN_vkQueueSubmit fp_vkQueueSubmit{nullptr};
+
+    // Semaphores
+    PFN_vkCreateSemaphore fp_vkCreateSemaphore{nullptr};
+    PFN_vkDestroySemaphore fp_vkDestroySemaphore{nullptr};
 
     // Surface & Win32 KHR
     PFN_vkCreateWin32SurfaceKHR fp_vkCreateWin32SurfaceKHR{nullptr};

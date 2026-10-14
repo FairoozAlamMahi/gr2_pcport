@@ -374,14 +374,14 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("0BzLGljcwBo", reinterpret_cast<uintptr_t>(&GPU::sceGnmDispatchDirect), "sceGnmDispatchDirect");
     m_names["Z43vKp5k7r0"] = "sceGnmDispatchIndirect";
     m_names["wED4ZXCFJT0"] = "sceGnmDispatchIndirectOnMec";
-    m_names["nF6bFRUBRAU"] = "sceGnmDispatchInitDefaultHardwareState";
+    RegisterSymbol("nF6bFRUBRAU", reinterpret_cast<uintptr_t>(&GPU::sceGnmDispatchInitDefaultHardwareState), "sceGnmDispatchInitDefaultHardwareState");
     m_names["HlTPoZ-oY7Y"] = "sceGnmDrawIndex";
-    m_names["GGsn7jMTxw4"] = "sceGnmDrawIndexAuto";
+    RegisterSymbol("GGsn7jMTxw4", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndexAuto), "sceGnmDrawIndexAuto");
     m_names["ED9-Fjr8Ta4"] = "sceGnmDrawIndexIndirect";
     m_names["jHdPvIzlpKc"] = "sceGnmDrawIndexMultiInstanced";
     m_names["oYM+YzfCm2Y"] = "sceGnmDrawIndexOffset";
     m_names["4v+otIIdjqg"] = "sceGnmDrawIndirect";
-    m_names["yb2cRhagD1I"] = "sceGnmDrawInitDefaultHardwareState350";
+    RegisterSymbol("yb2cRhagD1I", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawInitDefaultHardwareState350), "sceGnmDrawInitDefaultHardwareState350");
     m_names["stDSYW2SBVM"] = "sceGnmDrawOpaqueAuto";
     m_names["TLV4mswiZ4A"] = "sceGnmDriverCaptureInProgress";
     m_names["R6z1xM3pW-w"] = "sceGnmDriverTraceInProgress";
@@ -397,7 +397,7 @@ void NidTable::RegisterHostSubsystems() {
     m_names["fzJdEihTFV4"] = "sceGnmGetProtectionFaultTimeStamp";
     m_names["nEyFbYUloIM"] = "sceGnmGetShaderProgramBaseAddress";
     m_names["k7iGTvDQPLQ"] = "sceGnmGetShaderStatus";
-    m_names["ln33zjBrfjk"] = "sceGnmGetTheTessellationFactorRingBufferBaseAddress";
+    RegisterSymbol("ln33zjBrfjk", reinterpret_cast<uintptr_t>(&GPU::sceGnmGetTheTessellationFactorRingBufferBaseAddress), "sceGnmGetTheTessellationFactorRingBufferBaseAddress");
     RegisterSymbol("7qZVNgEu+SY", reinterpret_cast<uintptr_t>(&GPU::sceGnmInsertPopMarker), "sceGnmInsertPopMarker");
     m_names["aPIZJTXC+cU"] = "sceGnmInsertPushColorMarker";
     RegisterSymbol("W1Etj-jlW7Y", reinterpret_cast<uintptr_t>(&GPU::sceGnmInsertPushMarker), "sceGnmInsertPushMarker");
@@ -408,21 +408,21 @@ void NidTable::RegisterHostSubsystems() {
     m_names["jg33rEKLfVs"] = "sceGnmIsUserPaEnabled";
     m_names["26PM5Mzl8zc"] = "sceGnmLogicalCuIndexToPhysicalCuIndex";
     m_names["RU74kek-N0c"] = "sceGnmLogicalCuMaskToPhysicalCuMask";
-    m_names["29oKvKXzEZo"] = "sceGnmMapComputeQueue";
-    m_names["A+uGq+3KFtQ"] = "sceGnmMapComputeQueueWithPriority";
+    RegisterSymbol("29oKvKXzEZo", reinterpret_cast<uintptr_t>(&GPU::sceGnmMapComputeQueue), "sceGnmMapComputeQueue");
+    RegisterSymbol("A+uGq+3KFtQ", reinterpret_cast<uintptr_t>(&GPU::sceGnmMapComputeQueueWithPriority), "sceGnmMapComputeQueueWithPriority");
     m_names["gObODli-OH8"] = "sceGnmRequestFlipAndSubmitDone";
     m_names["6YRHhh5mHCs"] = "sceGnmRequestFlipAndSubmitDoneForWorkload";
     m_names["f85orjx7qts"] = "sceGnmRequestMipStatsReportAndReset";
     m_names["MYRtYhojKdA"] = "sceGnmResetVgtControl";
-    m_names["Kx-h-nWQJ8A"] = "sceGnmSetCsShaderWithModifier";
+    RegisterSymbol("Kx-h-nWQJ8A", reinterpret_cast<uintptr_t>(&GPU::sceGnmSetCsShaderWithModifier), "sceGnmSetCsShaderWithModifier");
     m_names["X9Omw9dwv5M"] = "sceGnmSetEmbeddedPsShader";
-    m_names["+AFvOEXrKJk"] = "sceGnmSetEmbeddedVsShader";
+    RegisterSymbol("+AFvOEXrKJk", reinterpret_cast<uintptr_t>(&GPU::sceGnmSetEmbeddedVsShader), "sceGnmSetEmbeddedVsShader");
     m_names["FUHG8sQ3R58"] = "sceGnmSetEsShader";
     m_names["jtkqXpAOY6w"] = "sceGnmSetGsRingSizes";
     m_names["UJwNuMBcUAk"] = "sceGnmSetGsShader";
     m_names["VJNjFtqiF5w"] = "sceGnmSetHsShader";
     m_names["vckdzbQ46SI"] = "sceGnmSetLsShader";
-    m_names["5uFKckiJYRM"] = "sceGnmSetPsShader350";
+    RegisterSymbol("5uFKckiJYRM", reinterpret_cast<uintptr_t>(&GPU::sceGnmSetPsShader350), "sceGnmSetPsShader350");
     m_names["cFCp0NX8wf0"] = "sceGnmSetVgtControl";
     RegisterSymbol("gAhCn6UiU4Y", reinterpret_cast<uintptr_t>(&GPU::sceGnmSetVsShader), "sceGnmSetVsShader");
     m_names["XiyzNZ9J4nQ"] = "sceGnmSetWaveLimitMultipliers";
@@ -435,7 +435,7 @@ void NidTable::RegisterHostSubsystems() {
     m_names["ArSg-TGinhk"] = "sceGnmUnmapComputeQueue";
     m_names["nLM2i2+65hA"] = "sceGnmUpdateGsShader";
     m_names["GNlx+y7xPdE"] = "sceGnmUpdateHsShader";
-    m_names["mLVL7N7BVBg"] = "sceGnmUpdatePsShader350";
+    RegisterSymbol("mLVL7N7BVBg", reinterpret_cast<uintptr_t>(&GPU::sceGnmUpdatePsShader350), "sceGnmUpdatePsShader350");
     m_names["V31V01UiScY"] = "sceGnmUpdateVsShader";
     m_names["hvG6GfBMXg8"] = "sceHttpAbortRequest";
     m_names["EY28T2bkN7k"] = "sceHttpAddRequestHeader";
@@ -831,10 +831,10 @@ void NidTable::RegisterHostSubsystems() {
 
     // ===== libScePad.sprx.json (6 symbols) =====
     RegisterSymbol("6ncge5+l5Qs", reinterpret_cast<uintptr_t>(&Pad::scePadClose), "scePadClose");
-    m_names["gjP9-KQzoUk"] = "scePadGetControllerInformation";
-    m_names["rIZnR6eSpvk"] = "scePadResetOrientation";
+    RegisterSymbol("gjP9-KQzoUk", reinterpret_cast<uintptr_t>(&Pad::scePadGetControllerInformation), "scePadGetControllerInformation");
+    RegisterSymbol("rIZnR6eSpvk", reinterpret_cast<uintptr_t>(&Pad::scePadResetOrientation), "scePadResetOrientation");
     RegisterSymbol("RR4novUEENY", reinterpret_cast<uintptr_t>(&Pad::scePadSetLightBar), "scePadSetLightBar");
-    m_names["vDLMoJLde8I"] = "scePadSetTiltCorrectionState";
+    RegisterSymbol("vDLMoJLde8I", reinterpret_cast<uintptr_t>(&Pad::scePadSetTiltCorrectionState), "scePadSetTiltCorrectionState");
     RegisterSymbol("yFVnOdGxvZY", reinterpret_cast<uintptr_t>(&Pad::scePadSetVibration), "scePadSetVibration");
 
     // ===== libSceMsgDialog.sprx.json (6 symbols) =====
@@ -1033,7 +1033,7 @@ void NidTable::RegisterHostSubsystems() {
     m_names["rPo6tV8D9bM"] = "sceSystemServiceGetStatus";
 
     // ===== libSceOrbisCompatForVideoService.sprx.json (1 symbols) =====
-    m_names["hv1luiJrqQM"] = "scePadInit";
+    RegisterSymbol("hv1luiJrqQM", reinterpret_cast<uintptr_t>(&Pad::scePadInit), "scePadInit");
 
     // ===== libSceHmd.sprx.json (1 symbols) =====
     m_names["6kPnj51T62Y"] = "sceVideoOutGetResolutionStatus";

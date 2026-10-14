@@ -1,10 +1,12 @@
 #include "gpu/gnm_driver.h"
 #include "video/video_out.h"
+#include "memory/vm.h"
 #include "common/logger.h"
 #include <mutex>
 #include <string>
 #include <algorithm>
 #include <vector>
+#include <cstdio>
 
 namespace GPU {
 
@@ -12,6 +14,10 @@ static GpuCapabilities s_caps{};
 static PVOID s_veh_handle = nullptr;
 static std::mutex s_gpu_mutex;
 static u64 s_submitted_dcbs = 0;
+static u64 s_submitted_ccbs = 0;
+static u64 s_stat_draw_calls = 0;
+static u64 s_stat_dispatches = 0;
+static u64 s_stat_context_regs = 0;
 
 static LONG WINAPI GpuMemoryExceptionHandler(PEXCEPTION_POINTERS pExceptionInfo) {
     if (pExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
@@ -151,12 +157,195 @@ const GpuCapabilities& GetCapabilities() {
     return s_caps;
 }
 
+u64 GetSubmittedDcbCount() { return s_submitted_dcbs; }
+u64 GetSubmittedCcbCount() { return s_submitted_ccbs; }
+u64 GetTotalDrawCalls() { return s_stat_draw_calls; }
+u64 GetTotalDispatches() { return s_stat_dispatches; }
+u64 GetTotalContextRegChanges() { return s_stat_context_regs; }
+
+static inline std::string ToHex(u64 val) {
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%llX", static_cast<unsigned long long>(val));
+    return std::string(buf);
+}
+
+// PM4 Packet Type-3 Opcodes for AMD Liverpool / Southern Islands / Sea Islands
+enum PM4Type3Opcode : u32 {
+    IT_NOP = 0x10,
+    IT_SET_BASE = 0x11,
+    IT_CLEAR_STATE = 0x12,
+    IT_INDEX_BUFFER_SIZE = 0x13,
+    IT_DISPATCH_DIRECT = 0x15,
+    IT_DISPATCH_INDIRECT = 0x16,
+    IT_SET_PREDICATION = 0x20,
+    IT_DRAW_INDEX_2 = 0x27,
+    IT_DRAW_INDEX_INDIRECT = 0x28,
+    IT_INDEX_TYPE = 0x2A,
+    IT_DRAW_INDEX_AUTO = 0x2D,
+    IT_DRAW_INDEX_OFFSET_2 = 0x35,
+    IT_WAIT_REG_MEM = 0x3C,
+    IT_INDIRECT_BUFFER = 0x3F,
+    IT_EVENT_WRITE = 0x46,
+    IT_EVENT_WRITE_EOP = 0x47,
+    IT_RELEASE_MEM = 0x49,
+    IT_ACQUIRE_MEM = 0x58,
+    IT_SET_CONFIG_REG = 0x68,
+    IT_SET_CONTEXT_REG = 0x69,
+    IT_SET_SH_REG = 0x76,
+    IT_SET_SH_REG_OFFSET = 0x77
+};
+
+static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, const char* buffer_type, u32 buffer_index) {
+    if (!buffer_ptr || size_in_bytes < 4) return;
+
+    const u8* raw_ptr = static_cast<const u8*>(buffer_ptr);
+    uintptr_t uaddr = reinterpret_cast<uintptr_t>(buffer_ptr);
+
+    // If guest virtual address, translate to host pointer
+    if (Memory::VirtualMemoryManager::Instance().IsGuestAddress(buffer_ptr)) {
+        raw_ptr = static_cast<const u8*>(Memory::VirtualMemoryManager::Instance().GuestToHost(uaddr));
+    } else if (uaddr < GUEST_ARENA_BASE) {
+        void* translated = Memory::VirtualMemoryManager::Instance().GuestToHost(uaddr);
+        if (translated) raw_ptr = static_cast<const u8*>(translated);
+    }
+
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (VirtualQuery(raw_ptr, &mbi, sizeof(mbi)) == 0 || mbi.State != MEM_COMMIT) {
+        return;
+    }
+
+    const u32* dwords = reinterpret_cast<const u32*>(raw_ptr);
+    u32 total_dwords = size_in_bytes / sizeof(u32);
+    u32 idx = 0;
+
+    u32 local_draws = 0;
+    u32 local_dispatches = 0;
+    u32 local_context_regs = 0;
+
+    while (idx < total_dwords) {
+        u32 header = dwords[idx];
+        u32 type = (header >> 30) & 0x3;
+
+        if (type == 3) {
+            u32 count = (header >> 16) & 0x3FFF;
+            u32 opcode = (header >> 8) & 0xFF;
+            u32 packet_len = count + 2;
+
+            if (idx + packet_len > total_dwords) {
+                break;
+            }
+
+            const u32* body = &dwords[idx + 1];
+
+            switch (opcode) {
+                case IT_SET_CONTEXT_REG: { // 0x69
+                    u32 reg_offset = (body[0] & 0xFFFF) + 0xA000;
+                    u32 num_regs = count;
+                    s_stat_context_regs += num_regs;
+                    local_context_regs += num_regs;
+                    LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                              "] IT_SET_CONTEXT_REG (0x69): Reg 0x" + ToHex(reg_offset) + 
+                              ", NumRegs: " + std::to_string(num_regs));
+                    break;
+                }
+                case IT_DRAW_INDEX_AUTO: { // 0x2D
+                    u32 index_count = (count >= 1) ? body[0] : 0;
+                    u32 draw_initiator = (count >= 2) ? body[1] : 0;
+                    s_stat_draw_calls++;
+                    local_draws++;
+                    LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                              "] IT_DRAW_INDEX_AUTO (0x2D): IndexCount: " + std::to_string(index_count) + 
+                              ", Initiator: 0x" + ToHex(draw_initiator));
+                    break;
+                }
+                case IT_DISPATCH_DIRECT: { // 0x15
+                    u32 gx = (count >= 1) ? body[0] : 0;
+                    u32 gy = (count >= 2) ? body[1] : 0;
+                    u32 gz = (count >= 3) ? body[2] : 0;
+                    s_stat_dispatches++;
+                    local_dispatches++;
+                    LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                              "] IT_DISPATCH_DIRECT (0x15): Groups (" + std::to_string(gx) + 
+                              ", " + std::to_string(gy) + ", " + std::to_string(gz) + ")");
+                    break;
+                }
+                case IT_DRAW_INDEX_2: { // 0x27
+                    u32 index_count = (count >= 5) ? body[4] : ((count >= 1) ? body[0] : 0);
+                    s_stat_draw_calls++;
+                    local_draws++;
+                    LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                              "] IT_DRAW_INDEX_2 (0x27): IndexCount: " + std::to_string(index_count));
+                    break;
+                }
+                case IT_INDEX_TYPE: { // 0x2A
+                    u32 index_type = body[0] & 0x3;
+                    LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                              "] IT_INDEX_TYPE (0x2A): " + (index_type ? "32-bit" : "16-bit"));
+                    break;
+                }
+                case IT_SET_SH_REG: { // 0x76
+                    u32 reg_offset = (body[0] & 0xFFFF) + 0x2C00;
+                    LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                              "] IT_SET_SH_REG (0x76): Reg 0x" + ToHex(reg_offset) + ", NumRegs: " + std::to_string(count));
+                    break;
+                }
+                case IT_SET_CONFIG_REG: { // 0x68
+                    u32 reg_offset = (body[0] & 0xFFFF) + 0x2000;
+                    LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                              "] IT_SET_CONFIG_REG (0x68): Reg 0x" + ToHex(reg_offset) + ", NumRegs: " + std::to_string(count));
+                    break;
+                }
+                case IT_INDIRECT_BUFFER: { // 0x3F
+                    LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                              "] IT_INDIRECT_BUFFER (0x3F)");
+                    break;
+                }
+                default:
+                    break;
+            }
+            idx += packet_len;
+        } else if (type == 2) {
+            idx += 1;
+        } else if (type == 0) {
+            u32 count = (header >> 16) & 0x3FFF;
+            idx += count + 2;
+        } else {
+            idx += 1;
+        }
+    }
+
+    if (local_draws > 0 || local_dispatches > 0) {
+        LOG_INFO("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                 "] Processed " + std::to_string(local_draws) + " draw calls, " + 
+                 std::to_string(local_dispatches) + " dispatches, " + 
+                 std::to_string(local_context_regs) + " context reg updates");
+    }
+}
+
+static void* s_tessellation_ring_buffer = nullptr;
+static u32 s_next_compute_vqid = 1;
+
 extern "C" {
 
 PS4_SYSV_ABI s32 sceGnmSubmitCommandBuffers(u32 count, const void* dcb_gpu_addrs, const u32* dcb_sizes_in_bytes, const void* ccb_gpu_addrs, const u32* ccb_sizes_in_bytes) {
     std::lock_guard<std::mutex> lock(s_gpu_mutex);
     s_submitted_dcbs += count;
-    (void)s_submitted_dcbs;
+
+    if (dcb_gpu_addrs && dcb_sizes_in_bytes) {
+        const uintptr_t* dcb_ptrs = reinterpret_cast<const uintptr_t*>(dcb_gpu_addrs);
+        for (u32 i = 0; i < count; ++i) {
+            DecodePM4CommandBuffer(reinterpret_cast<const void*>(dcb_ptrs[i]), dcb_sizes_in_bytes[i], "DCB", i);
+        }
+    }
+
+    if (ccb_gpu_addrs && ccb_sizes_in_bytes) {
+        const uintptr_t* ccb_ptrs = reinterpret_cast<const uintptr_t*>(ccb_gpu_addrs);
+        s_submitted_ccbs += count;
+        for (u32 i = 0; i < count; ++i) {
+            DecodePM4CommandBuffer(reinterpret_cast<const void*>(ccb_ptrs[i]), ccb_sizes_in_bytes[i], "CCB", i);
+        }
+    }
+
     return 0;
 }
 
@@ -165,14 +354,45 @@ PS4_SYSV_ABI s32 sceGnmSubmitDone() {
 }
 
 PS4_SYSV_ABI s32 sceGnmDrawInitDefaultHardwareState(void* dcb, u32 num_dwords) {
-    return 0;
+    if (dcb && num_dwords > 0) {
+        u32* cmdbuf = static_cast<u32*>(dcb);
+        static constexpr u32 s_clear_seq[] = {
+            0xc0012800u, 0x80000000u, 0x80000000u, 0xc0001200u, 0u, 0xc0055800u,
+            0x2ec47fc0u, 0xffffffffu, 0u,          0u,          0u, 10u
+        };
+        u32 copy_count = std::min(num_dwords, static_cast<u32>(sizeof(s_clear_seq) / sizeof(u32)));
+        std::memcpy(cmdbuf, s_clear_seq, copy_count * sizeof(u32));
+    }
+    return static_cast<s32>(num_dwords);
+}
+
+PS4_SYSV_ABI s32 sceGnmDrawInitDefaultHardwareState350(void* dcb, u32 num_dwords) {
+    return sceGnmDrawInitDefaultHardwareState(dcb, num_dwords);
+}
+
+PS4_SYSV_ABI s32 sceGnmDispatchInitDefaultHardwareState(void* dcb, u32 num_dwords) {
+    if (dcb && num_dwords >= 8) {
+        u32* cmdbuf = static_cast<u32*>(dcb);
+        cmdbuf[0] = (3U << 30) | (1U << 16) | (IT_SET_SH_REG << 8);
+        cmdbuf[1] = 0x216u; // COMPUTE_STATIC_THREAD_MGMT_SE0
+        cmdbuf[2] = 0xffffffffu;
+        cmdbuf[3] = (3U << 30) | (1U << 16) | (IT_SET_SH_REG << 8);
+        cmdbuf[4] = 0x217u; // COMPUTE_STATIC_THREAD_MGMT_SE1
+        cmdbuf[5] = 0xffffffffu;
+        cmdbuf[6] = (3U << 30) | (0U << 16) | (IT_NOP << 8);
+        cmdbuf[7] = 0;
+    }
+    return static_cast<s32>(num_dwords);
 }
 
 PS4_SYSV_ABI s32 sceGnmInsertPushMarker(void* dcb, const char* name) {
+    (void)dcb;
+    (void)name;
     return 0;
 }
 
 PS4_SYSV_ABI s32 sceGnmInsertPopMarker(void* dcb) {
+    (void)dcb;
     return 0;
 }
 
@@ -181,20 +401,95 @@ PS4_SYSV_ABI s32 sceGnmFlushGarlic() {
 }
 
 PS4_SYSV_ABI s32 sceGnmSetCsShader(void* dcb, const void* shader) {
-    // When translating GCN compute bytecode:
-    // If native_wave64 is false, inject OpControlBarrier (ScopeSubgroup)
+    (void)dcb;
+    (void)shader;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmSetCsShaderWithModifier(void* dcb, u32 num_dwords, const void* cs_regs, u32 modifier) {
+    if (dcb && num_dwords >= 8 && cs_regs) {
+        const u32* regs = static_cast<const u32*>(cs_regs);
+        u32* cmdbuf = static_cast<u32*>(dcb);
+        cmdbuf[0] = (3U << 30) | (2U << 16) | (IT_SET_SH_REG << 8);
+        cmdbuf[1] = 0x20cu; // COMPUTE_PGM_LO
+        cmdbuf[2] = regs[0];
+        cmdbuf[3] = 0;
+        u32 rsrc1 = (modifier == 0) ? regs[2] : ((regs[2] & 0xfffffc3fu) | modifier);
+        cmdbuf[4] = (3U << 30) | (2U << 16) | (IT_SET_SH_REG << 8);
+        cmdbuf[5] = 0x212u; // COMPUTE_PGM_RSRC1 / RSRC2
+        cmdbuf[6] = rsrc1;
+        cmdbuf[7] = regs[3];
+    }
     return 0;
 }
 
 PS4_SYSV_ABI s32 sceGnmSetPsShader(void* dcb, const void* shader) {
+    (void)dcb;
+    (void)shader;
     return 0;
 }
 
+PS4_SYSV_ABI s32 sceGnmSetPsShader350(void* dcb, u32 num_dwords, const void* ps_regs) {
+    if (dcb && num_dwords >= 8 && ps_regs) {
+        const u32* regs = static_cast<const u32*>(ps_regs);
+        u32* cmdbuf = static_cast<u32*>(dcb);
+        cmdbuf[0] = (3U << 30) | (2U << 16) | (IT_SET_SH_REG << 8);
+        cmdbuf[1] = 8u; // SPI_SHADER_PGM_LO_PS
+        cmdbuf[2] = regs[0];
+        cmdbuf[3] = 0;
+        cmdbuf[4] = (3U << 30) | (1U << 16) | (IT_SET_CONTEXT_REG << 8);
+        cmdbuf[5] = 0x203u - 0xA000; // DB_SHADER_CONTROL
+        cmdbuf[6] = (num_dwords >= 11) ? regs[10] : 0;
+        cmdbuf[7] = (3U << 30) | (0U << 16) | (IT_NOP << 8);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmUpdatePsShader350(void* dcb, u32 num_dwords, const void* ps_regs) {
+    return sceGnmSetPsShader350(dcb, num_dwords, ps_regs);
+}
+
 PS4_SYSV_ABI s32 sceGnmSetVsShader(void* dcb, const void* shader) {
+    (void)dcb;
+    (void)shader;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmSetEmbeddedVsShader(void* dcb, u32 num_dwords, u32 shader_id, u32 shader_modifier) {
+    LOG_DEBUG("GPU", "sceGnmSetEmbeddedVsShader called (shader_id=" + std::to_string(shader_id) + 
+                     ", modifier=" + std::to_string(shader_modifier) + ")");
+    if (dcb && num_dwords >= 8) {
+        u32* cmdbuf = static_cast<u32*>(dcb);
+        cmdbuf[0] = (3U << 30) | (2U << 16) | (IT_SET_SH_REG << 8);
+        cmdbuf[1] = 0x08u; // SPI_SHADER_PGM_LO_VS
+        cmdbuf[2] = 0xfe000f10u; // Embedded fullscreen quad shader base
+        cmdbuf[3] = 0;
+        cmdbuf[4] = (3U << 30) | (2U << 16) | (IT_SET_SH_REG << 8);
+        cmdbuf[5] = 0x0au; // SPI_SHADER_PGM_RSRC1_VS
+        cmdbuf[6] = 0x000c0000u;
+        cmdbuf[7] = 4u;
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmDrawIndexAuto(void* dcb, u32 num_dwords, u32 index_count, u32 flags) {
+    if (dcb && num_dwords >= 7) {
+        u32* cmdbuf = static_cast<u32*>(dcb);
+        cmdbuf[0] = (3U << 30) | (1U << 16) | (IT_DRAW_INDEX_AUTO << 8) | 2U;
+        cmdbuf[1] = index_count;
+        cmdbuf[2] = flags | 2U; // Draw initiator
+        for (u32 i = 3; i < num_dwords && i < 7; ++i) {
+            cmdbuf[i] = (3U << 30) | (0U << 16) | (IT_NOP << 8);
+        }
+    }
     return 0;
 }
 
 PS4_SYSV_ABI s32 sceGnmDispatchDirect(void* dcb, u32 thread_group_x, u32 thread_group_y, u32 thread_group_z) {
+    (void)dcb;
+    (void)thread_group_x;
+    (void)thread_group_y;
+    (void)thread_group_z;
     return 0;
 }
 
@@ -215,11 +510,46 @@ PS4_SYSV_ABI s32 sceGnmSubmitAndFlipCommandBuffers(
 }
 
 PS4_SYSV_ABI s32 sceGnmDingDong(u32 ring_id, u32 dword_offset) {
+    (void)ring_id;
+    (void)dword_offset;
     return 0;
 }
 
 PS4_SYSV_ABI s32 sceGnmInsertWaitFlipDone(void* dcb, s32 video_handle, s32 display_buffer_index) {
+    (void)dcb;
+    (void)video_handle;
+    (void)display_buffer_index;
     return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmMapComputeQueue(u32 pipe_id, u32 queue_id, const void* ring_base_addr, u32 ring_size_dw, void* read_ptr_addr) {
+    std::lock_guard<std::mutex> lock(s_gpu_mutex);
+    u32 vqid = s_next_compute_vqid++;
+    if (read_ptr_addr) {
+        *reinterpret_cast<u32*>(read_ptr_addr) = 0;
+    }
+    LOG_INFO("GPU", "sceGnmMapComputeQueue: ASC pipe " + std::to_string(pipe_id) + 
+                    " queue " + std::to_string(queue_id) + " mapped to vqueue " + std::to_string(vqid) +
+                    " (RingSizeDW=" + std::to_string(ring_size_dw) + ")");
+    return static_cast<s32>(vqid);
+}
+
+PS4_SYSV_ABI s32 sceGnmMapComputeQueueWithPriority(u32 pipe_id, u32 queue_id, const void* ring_base_addr, u32 ring_size_dw, void* read_ptr_addr, u32 priority) {
+    (void)priority;
+    return sceGnmMapComputeQueue(pipe_id, queue_id, ring_base_addr, ring_size_dw, read_ptr_addr);
+}
+
+PS4_SYSV_ABI void* sceGnmGetTheTessellationFactorRingBufferBaseAddress() {
+    if (!s_tessellation_ring_buffer) {
+        s_tessellation_ring_buffer = Memory::VirtualMemoryManager::Instance().AllocateFlexibleMemory(0x800000, 0);
+        if (!s_tessellation_ring_buffer) {
+            alignas(256) static u8 s_fallback_tess_ring[0x100000];
+            s_tessellation_ring_buffer = s_fallback_tess_ring;
+        }
+        LOG_INFO("GPU", "Tessellation Factor Ring Buffer initialized at: 0x" + 
+                 ToHex(reinterpret_cast<uintptr_t>(s_tessellation_ring_buffer)));
+    }
+    return s_tessellation_ring_buffer;
 }
 
 } // extern "C"

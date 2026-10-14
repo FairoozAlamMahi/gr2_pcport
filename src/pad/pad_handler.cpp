@@ -55,6 +55,11 @@ void UpdateInput() {
 
 extern "C" {
 
+PS4_SYSV_ABI s32 scePadInit() {
+    Initialize();
+    return 0;
+}
+
 PS4_SYSV_ABI s32 scePadOpen(s32 user_id, s32 type, s32 index, const void* param) {
     LOG_INFO("PAD", "scePadOpen called for user_id=" + std::to_string(user_id));
     return 1; // Return handle 1
@@ -69,6 +74,8 @@ PS4_SYSV_ABI s32 scePadReadState(s32 handle, ScePadData* data) {
     std::memset(data, 0, sizeof(ScePadData));
     data->connected = 1;
     data->connectedCount = 1;
+    auto now = std::chrono::steady_clock::now();
+    data->timestamp = static_cast<u64>(std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count());
 
     // 1. Read XInput Controller
     XINPUT_STATE xi_state{};
@@ -100,6 +107,8 @@ PS4_SYSV_ABI s32 scePadReadState(s32 handle, ScePadData* data) {
 
         if (wButtons & XINPUT_GAMEPAD_START) ps4_btn |= 0x0008; // Options
         if (wButtons & XINPUT_GAMEPAD_BACK)  ps4_btn |= 0x0001; // Touchpad Click
+        if (wButtons & XINPUT_GAMEPAD_LEFT_THUMB)  ps4_btn |= 0x0002; // L3
+        if (wButtons & XINPUT_GAMEPAD_RIGHT_THUMB) ps4_btn |= 0x0004; // R3
 
         data->buttons = ps4_btn;
 
@@ -154,6 +163,9 @@ PS4_SYSV_ABI s32 scePadReadState(s32 handle, ScePadData* data) {
         data->touchData.touchNum = 0;
     }
 
+    // Advance synthetic swipe frame & mouse state
+    UpdateInput();
+
     // 4. Default orientation unit quaternion
     data->orientation.w = 1.0f;
     data->orientation.x = 0.0f;
@@ -171,11 +183,46 @@ PS4_SYSV_ABI s32 scePadRead(s32 handle, ScePadData* data, s32 num) {
     return scePadReadState(handle, data);
 }
 
+PS4_SYSV_ABI s32 scePadGetControllerInformation(s32 handle, ScePadControllerInformation* info) {
+    (void)handle;
+    if (!info) return -1;
+    std::memset(info, 0, sizeof(ScePadControllerInformation));
+    info->touchPixelDensity = 40.0f;
+    info->touchResolutionX = 1920;
+    info->touchResolutionY = 940;
+    info->connected = 1;
+    info->connectionType = 0;
+    info->connectedCount = 1;
+    info->deviceClass = 0;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 scePadResetOrientation(s32 handle) {
+    (void)handle;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 scePadSetTiltCorrectionState(s32 handle, s32 state) {
+    (void)handle;
+    (void)state;
+    return 0;
+}
+
 PS4_SYSV_ABI s32 scePadSetLightBar(s32 handle, const void* color) {
+    (void)handle;
+    (void)color;
     return 0;
 }
 
 PS4_SYSV_ABI s32 scePadSetVibration(s32 handle, const void* param) {
+    (void)handle;
+    XINPUT_VIBRATION xv{};
+    if (param) {
+        const auto* vib = reinterpret_cast<const ScePadVibrationParam*>(param);
+        xv.wLeftMotorSpeed = static_cast<WORD>(vib->largeMotor * 257);
+        xv.wRightMotorSpeed = static_cast<WORD>(vib->smallMotor * 257);
+    }
+    XInputSetState(0, &xv);
     return 0;
 }
 

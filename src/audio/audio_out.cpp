@@ -3,6 +3,8 @@
 #include <chrono>
 #include <unordered_map>
 #include <mutex>
+#include <mmdeviceapi.h>
+#include <audioclient.h>
 
 namespace Audio {
 
@@ -18,12 +20,131 @@ static std::mutex s_audio_mutex;
 static std::unordered_map<s32, AudioPort> s_ports;
 static s32 s_next_handle = 1;
 
+// WASAPI Host Playback State
+static bool s_wasapi_initialized = false;
+static bool s_com_initialized = false;
+static IMMDeviceEnumerator* s_enumerator = nullptr;
+static IMMDevice* s_device = nullptr;
+static IAudioClient* s_audio_client = nullptr;
+static IAudioRenderClient* s_render_client = nullptr;
+static UINT32 s_buffer_frame_count = 0;
+
+static bool InitWasapi() {
+    if (s_wasapi_initialized) return true;
+
+    HRESULT hr = CoInitializeEx(nullptr, COINIT_MULTITHREADED);
+    if (SUCCEEDED(hr)) {
+        s_com_initialized = true;
+    }
+
+    hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL,
+                          __uuidof(IMMDeviceEnumerator), reinterpret_cast<void**>(&s_enumerator));
+    if (FAILED(hr) || !s_enumerator) {
+        LOG_WARN("AUDIO", "Failed to create IMMDeviceEnumerator: hr=0x" + std::to_string(hr));
+        return false;
+    }
+
+    hr = s_enumerator->GetDefaultAudioEndpoint(eRender, eConsole, &s_device);
+    if (FAILED(hr) || !s_device) {
+        LOG_WARN("AUDIO", "Failed to get default audio endpoint: hr=0x" + std::to_string(hr));
+        return false;
+    }
+
+    hr = s_device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr,
+                            reinterpret_cast<void**>(&s_audio_client));
+    if (FAILED(hr) || !s_audio_client) {
+        LOG_WARN("AUDIO", "Failed to activate IAudioClient: hr=0x" + std::to_string(hr));
+        return false;
+    }
+
+    WAVEFORMATEX wfx{};
+    wfx.wFormatTag = WAVE_FORMAT_PCM;
+    wfx.nChannels = 2;
+    wfx.nSamplesPerSec = 48000;
+    wfx.wBitsPerSample = 16;
+    wfx.nBlockAlign = wfx.nChannels * (wfx.wBitsPerSample / 8); // 4 bytes
+    wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign; // 192000
+    wfx.cbSize = 0;
+
+    REFERENCE_TIME buffer_duration = 1000000; // 100 ms in 100ns units
+
+    // Try AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM (0x80000000) | AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY (0x08000000)
+    DWORD stream_flags = 0x80000000 | 0x08000000;
+    hr = s_audio_client->Initialize(AUDCLNT_SHAREMODE_SHARED, stream_flags, buffer_duration, 0, &wfx, nullptr);
+    if (FAILED(hr)) {
+        // Fallback without autoconvert
+        hr = s_audio_client->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, buffer_duration, 0, &wfx, nullptr);
+    }
+
+    if (FAILED(hr)) {
+        LOG_WARN("AUDIO", "IAudioClient::Initialize failed: hr=0x" + std::to_string(hr));
+        return false;
+    }
+
+    hr = s_audio_client->GetBufferSize(&s_buffer_frame_count);
+    if (FAILED(hr)) {
+        LOG_WARN("AUDIO", "Failed to get audio buffer size: hr=0x" + std::to_string(hr));
+        return false;
+    }
+
+    hr = s_audio_client->GetService(__uuidof(IAudioRenderClient),
+                                    reinterpret_cast<void**>(&s_render_client));
+    if (FAILED(hr) || !s_render_client) {
+        LOG_WARN("AUDIO", "Failed to get IAudioRenderClient: hr=0x" + std::to_string(hr));
+        return false;
+    }
+
+    hr = s_audio_client->Start();
+    if (FAILED(hr)) {
+        LOG_WARN("AUDIO", "IAudioClient::Start failed: hr=0x" + std::to_string(hr));
+        return false;
+    }
+
+    s_wasapi_initialized = true;
+    LOG_INFO("AUDIO", "WASAPI host audio playback started (48000 Hz, 2 ch, 16-bit PCM, bufferFrames=" +
+             std::to_string(s_buffer_frame_count) + ").");
+    return true;
+}
+
+static void ShutdownWasapi() {
+    if (!s_wasapi_initialized) return;
+
+    if (s_audio_client) {
+        s_audio_client->Stop();
+    }
+    if (s_render_client) {
+        s_render_client->Release();
+        s_render_client = nullptr;
+    }
+    if (s_audio_client) {
+        s_audio_client->Release();
+        s_audio_client = nullptr;
+    }
+    if (s_device) {
+        s_device->Release();
+        s_device = nullptr;
+    }
+    if (s_enumerator) {
+        s_enumerator->Release();
+        s_enumerator = nullptr;
+    }
+    if (s_com_initialized) {
+        CoUninitialize();
+        s_com_initialized = false;
+    }
+    s_wasapi_initialized = false;
+    s_buffer_frame_count = 0;
+    LOG_INFO("AUDIO", "WASAPI host audio playback shut down.");
+}
+
 void Initialize() {
-    LOG_INFO("AUDIO", "libSceAudioOut subsystem initialized with Gravity Kick deduplication filter.");
+    InitWasapi();
+    LOG_INFO("AUDIO", "libSceAudioOut subsystem initialized with Gravity Kick deduplication filter and WASAPI playback.");
 }
 
 void Shutdown() {
     std::lock_guard<std::mutex> lock(s_audio_mutex);
+    ShutdownWasapi();
     s_ports.clear();
     LOG_INFO("AUDIO", "libSceAudioOut subsystem shut down.");
 }
@@ -86,6 +207,33 @@ PS4_SYSV_ABI s32 sceAudioOutOutput(s32 handle, const void* ptr) {
 
     port.last_hash = current_hash;
     port.last_submit = now;
+
+    // Route audio to host playback device via WASAPI when received from port 1
+    if (handle == 1 && s_wasapi_initialized && s_render_client && s_audio_client) {
+        UINT32 padding = 0;
+        HRESULT hr = s_audio_client->GetCurrentPadding(&padding);
+        if (SUCCEEDED(hr)) {
+            UINT32 available = (s_buffer_frame_count > padding) ? (s_buffer_frame_count - padding) : 0;
+            if (available < port.sample_len) {
+                // Buffer is temporarily full; wait briefly for host audio engine to consume frames
+                for (int retry = 0; retry < 5 && available < port.sample_len; ++retry) {
+                    Sleep(1);
+                    if (SUCCEEDED(s_audio_client->GetCurrentPadding(&padding))) {
+                        available = (s_buffer_frame_count > padding) ? (s_buffer_frame_count - padding) : 0;
+                    }
+                }
+            }
+
+            if (available >= port.sample_len) {
+                BYTE* pData = nullptr;
+                hr = s_render_client->GetBuffer(port.sample_len, &pData);
+                if (SUCCEEDED(hr) && pData) {
+                    std::memcpy(pData, ptr, byte_len);
+                    s_render_client->ReleaseBuffer(port.sample_len, 0);
+                }
+            }
+        }
+    }
 
     return 0;
 }

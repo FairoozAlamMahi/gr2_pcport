@@ -8,7 +8,33 @@ namespace Video {
 
 static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
+    case WM_PAINT: {
+        PAINTSTRUCT ps;
+        HDC hdc = BeginPaint(hwnd, &ps);
+        (void)hdc;
+        EndPaint(hwnd, &ps);
+        return 0;
+    }
+    case WM_ERASEBKGND:
+        return 1; // Prevent GDI flicker, Vulkan renders entire client rect
+    case WM_SETFOCUS:
+        VulkanContext::Instance().SetFocus(true);
+        return 0;
+    case WM_KILLFOCUS:
+        VulkanContext::Instance().SetFocus(false);
+        return 0;
+    case WM_ACTIVATE:
+        VulkanContext::Instance().SetFocus(LOWORD(wParam) != WA_INACTIVE);
+        return 0;
+    case WM_SYSCOMMAND:
+        if ((wParam & 0xFFF0) == SC_SCREENSAVE || (wParam & 0xFFF0) == SC_MONITORPOWER) {
+            return 0; // Prevent monitor sleep during gameplay
+        }
+        break;
     case WM_CLOSE:
+        PostQuitMessage(0);
+        return 0;
+    case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
     case WM_KEYDOWN:
@@ -79,6 +105,20 @@ bool VulkanContext::Initialize(u32 width, u32 height, bool fullscreen, bool head
         return false;
     }
 
+    if (m_vk_device && fp_vkCreateSemaphore) {
+        VkSemaphoreCreateInfo sci{};
+        sci.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+        if (fp_vkCreateSemaphore(m_vk_device, &sci, nullptr, &m_image_available_semaphore) != VK_SUCCESS) {
+            LOG_ERROR("VULKAN", "Failed to create image-available semaphore.");
+            return false;
+        }
+        if (fp_vkCreateSemaphore(m_vk_device, &sci, nullptr, &m_render_finished_semaphore) != VK_SUCCESS) {
+            LOG_ERROR("VULKAN", "Failed to create render-finished semaphore.");
+            return false;
+        }
+        LOG_INFO("VULKAN", "Vulkan presentation synchronization semaphores created successfully.");
+    }
+
     if (!m_headless && m_vk_surface) {
         if (!CreateSwapchain()) {
             LOG_ERROR("VULKAN", "Failed to create Vulkan presentation swapchain.");
@@ -96,6 +136,16 @@ void VulkanContext::Shutdown() {
 
     if (fp_vkDeviceWaitIdle && m_vk_device) {
         fp_vkDeviceWaitIdle(m_vk_device);
+    }
+
+    if (m_render_finished_semaphore && fp_vkDestroySemaphore) {
+        fp_vkDestroySemaphore(m_vk_device, m_render_finished_semaphore, nullptr);
+        m_render_finished_semaphore = VK_NULL_HANDLE;
+    }
+
+    if (m_image_available_semaphore && fp_vkDestroySemaphore) {
+        fp_vkDestroySemaphore(m_vk_device, m_image_available_semaphore, nullptr);
+        m_image_available_semaphore = VK_NULL_HANDLE;
     }
 
     for (auto iv : m_swapchain_image_views) {
@@ -333,7 +383,7 @@ bool VulkanContext::CreateLogicalDevice() {
     fp_vkGetDeviceQueue(m_vk_device, m_graphics_queue_family, 0, &m_graphics_queue);
     fp_vkGetDeviceQueue(m_vk_device, m_present_queue_family, 0, &m_present_queue);
 
-    // Load device-level swapchain functions
+    // Load device-level swapchain and synchronization functions
     #define LOAD_DEV(fn) fp_##fn = reinterpret_cast<PFN_##fn>(fp_vkGetInstanceProcAddr(m_vk_instance, #fn))
     LOAD_DEV(vkCreateSwapchainKHR);
     LOAD_DEV(vkDestroySwapchainKHR);
@@ -342,6 +392,9 @@ bool VulkanContext::CreateLogicalDevice() {
     LOAD_DEV(vkQueuePresentKHR);
     LOAD_DEV(vkCreateImageView);
     LOAD_DEV(vkDestroyImageView);
+    LOAD_DEV(vkQueueSubmit);
+    LOAD_DEV(vkCreateSemaphore);
+    LOAD_DEV(vkDestroySemaphore);
     #undef LOAD_DEV
 
     LOG_INFO("VULKAN", "Vulkan Logical Device and Queues created successfully.");
@@ -404,17 +457,59 @@ bool VulkanContext::CreateSwapchain() {
 }
 
 void VulkanContext::PresentFrame() {
-    if (!m_initialized || !m_vk_swapchain || !fp_vkQueuePresentKHR) return;
+    if (!m_initialized || !m_vk_swapchain || !fp_vkQueuePresentKHR || !m_vk_device) return;
 
-    VkPresentInfoKHR pi{};
-    pi.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    pi.swapchainCount = 1;
-    pi.pSwapchains = &m_vk_swapchain;
-    pi.pImageIndices = &m_current_image_index;
+    u32 image_index = 0;
+    if (fp_vkAcquireNextImageKHR && m_image_available_semaphore) {
+        VkResult res = fp_vkAcquireNextImageKHR(
+            m_vk_device,
+            m_vk_swapchain,
+            UINT64_MAX,
+            m_image_available_semaphore,
+            VK_NULL_HANDLE,
+            &image_index
+        );
+        if (res == VK_ERROR_OUT_OF_DATE_KHR) {
+            return;
+        } else if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR) {
+            return;
+        }
+        m_current_image_index = image_index;
+    }
 
-    fp_vkQueuePresentKHR(m_present_queue, &pi);
+    if (fp_vkQueueSubmit && m_render_finished_semaphore && m_image_available_semaphore) {
+        VkPipelineStageFlags wait_stages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        VkSubmitInfo si{};
+        si.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        si.waitSemaphoreCount = 1;
+        si.pWaitSemaphores = &m_image_available_semaphore;
+        si.pWaitDstStageMask = &wait_stages;
+        si.signalSemaphoreCount = 1;
+        si.pSignalSemaphores = &m_render_finished_semaphore;
+        fp_vkQueueSubmit(m_graphics_queue, 1, &si, VK_NULL_HANDLE);
 
-    m_current_image_index = (m_current_image_index + 1) % m_swapchain_images.size();
+        VkPresentInfoKHR pi{};
+        pi.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        pi.waitSemaphoreCount = 1;
+        pi.pWaitSemaphores = &m_render_finished_semaphore;
+        pi.swapchainCount = 1;
+        pi.pSwapchains = &m_vk_swapchain;
+        pi.pImageIndices = &m_current_image_index;
+
+        fp_vkQueuePresentKHR(m_present_queue, &pi);
+    } else {
+        VkPresentInfoKHR pi{};
+        pi.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        if (m_image_available_semaphore) {
+            pi.waitSemaphoreCount = 1;
+            pi.pWaitSemaphores = &m_image_available_semaphore;
+        }
+        pi.swapchainCount = 1;
+        pi.pSwapchains = &m_vk_swapchain;
+        pi.pImageIndices = &m_current_image_index;
+
+        fp_vkQueuePresentKHR(m_present_queue, &pi);
+    }
 }
 
 bool VulkanContext::ProcessWindowMessages() {

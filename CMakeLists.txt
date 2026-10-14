@@ -65,6 +65,7 @@ target_link_libraries(gr2_pc PRIVATE
     user32
     gdi32
     rpcrt4
+    ole32
 )
 
 set_target_properties(gr2_pc PROPERTIES

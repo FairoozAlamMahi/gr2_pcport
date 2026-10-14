@@ -3,6 +3,7 @@
 #include <chrono>
 #include <unordered_map>
 #include <mutex>
+#include <atomic>
 #include <mmdeviceapi.h>
 #include <audioclient.h>
 
@@ -273,6 +274,108 @@ PS4_SYSV_ABI s32 sceAudioOutGetPortTimestamp(s32 handle, u64* timestamp) {
     static auto start = std::chrono::steady_clock::now();
     auto now = std::chrono::steady_clock::now();
     *timestamp = std::chrono::duration_cast<std::chrono::microseconds>(now - start).count();
+    return 0;
+}
+
+// libSceAudioOut extensions
+PS4_SYSV_ABI s32 sceAudioOutInit() {
+    Initialize();
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceAudioOutSetMixLevelPadSpk(s32 handle, s32 level) {
+    (void)handle;
+    (void)level;
+    return 0;
+}
+
+// libSceAudio3d
+static std::atomic<s32> s_next_audio3d_port{1};
+
+PS4_SYSV_ABI s32 sceAudio3dInitialize(const void* params) {
+    (void)params;
+    LOG_INFO("AUDIO", "libSceAudio3d subsystem initialized.");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceAudio3dGetDefaultOpenParameters(void* params) {
+    if (params) {
+        std::memset(params, 0, 64);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceAudio3dPortOpen(s32 type, const void* params, s32* port_id) {
+    (void)params;
+    s32 port = s_next_audio3d_port++;
+    if (port_id) {
+        *port_id = port;
+    }
+    LOG_INFO("AUDIO", "sceAudio3dPortOpen (type=" + std::to_string(type) + ") -> port " + std::to_string(port));
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceAudio3dPortSetAttribute(s32 port, const void* attr) {
+    (void)port;
+    (void)attr;
+    return 0;
+}
+
+// libSceNgs2
+static u8 s_dummy_ngs2_sys[256]{};
+static u8 s_dummy_ngs2_rack[256]{};
+static std::atomic<u32> s_next_voice_handle{1};
+
+PS4_SYSV_ABI s32 sceNgs2SystemCreateWithAllocator(const void* desc, const void* alloc, void** handle) {
+    (void)desc;
+    (void)alloc;
+    if (handle) {
+        *handle = s_dummy_ngs2_sys;
+    }
+    LOG_INFO("AUDIO", "sceNgs2SystemCreateWithAllocator called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNgs2RackCreateWithAllocator(void* sys, const void* desc, const void* alloc, void** handle) {
+    (void)sys;
+    (void)desc;
+    (void)alloc;
+    if (handle) {
+        *handle = s_dummy_ngs2_rack;
+    }
+    LOG_INFO("AUDIO", "sceNgs2RackCreateWithAllocator called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNgs2RackGetVoiceHandle(void* rack, u32 voice_index, void** voice_handle) {
+    (void)rack;
+    (void)voice_index;
+    u32 v = (s_next_voice_handle.fetch_add(1) % 64) + 1;
+    if (voice_handle) {
+        *voice_handle = reinterpret_cast<void*>(static_cast<uintptr_t>(v));
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNgs2VoiceControl(void* voice, const void* params) {
+    (void)voice;
+    (void)params;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNgs2VoiceGetState(void* voice, void* state) {
+    (void)voice;
+    if (state) {
+        *reinterpret_cast<u32*>(state) = 1; // playing / idle
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNgs2RackQueryBufferSize(const void* desc, usize* buffer_size) {
+    (void)desc;
+    if (buffer_size) {
+        *buffer_size = 0x40000; // 256 KB safe buffer
+    }
     return 0;
 }
 

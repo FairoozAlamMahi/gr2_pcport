@@ -358,7 +358,7 @@ void NidTable::RegisterHostSubsystems() {
 
     // ===== custom_video_core.elf.json (154 symbols) =====
     RegisterSymbol("s1--uE9mBFw", reinterpret_cast<uintptr_t>(&Audio::sceAudioOutClose), "sceAudioOutClose");
-    m_names["JfEPXVxhFqA"] = "sceAudioOutInit";
+    RegisterSymbol("JfEPXVxhFqA", reinterpret_cast<uintptr_t>(&Audio::sceAudioOutInit), "sceAudioOutInit");
     RegisterSymbol("ekNvsT22rsY", reinterpret_cast<uintptr_t>(&Audio::sceAudioOutOpen), "sceAudioOutOpen");
     RegisterSymbol("QOQtbeDqsT4", reinterpret_cast<uintptr_t>(&Audio::sceAudioOutOutput), "sceAudioOutOutput");
     RegisterSymbol("w3PdaSTSwGE", reinterpret_cast<uintptr_t>(&Audio::sceAudioOutOutputs), "sceAudioOutOutputs");
@@ -499,14 +499,14 @@ void NidTable::RegisterHostSubsystems() {
     m_names["dgJBaeJnGpo"] = "sceNetPoolCreate";
     m_names["K7RlrTkI-mw"] = "sceNetPoolDestroy";
     m_names["cTGkc6-TBlI"] = "sceNetTerm";
-    m_names["U546k6orxQo"] = "sceNgs2RackCreateWithAllocator";
+    RegisterSymbol("U546k6orxQo", reinterpret_cast<uintptr_t>(&Audio::sceNgs2RackCreateWithAllocator), "sceNgs2RackCreateWithAllocator");
     m_names["lCqD7oycmIM"] = "sceNgs2RackDestroy";
-    m_names["MwmHz8pAdAo"] = "sceNgs2RackGetVoiceHandle";
-    m_names["mPYgU4oYpuY"] = "sceNgs2SystemCreateWithAllocator";
+    RegisterSymbol("MwmHz8pAdAo", reinterpret_cast<uintptr_t>(&Audio::sceNgs2RackGetVoiceHandle), "sceNgs2RackGetVoiceHandle");
+    RegisterSymbol("mPYgU4oYpuY", reinterpret_cast<uintptr_t>(&Audio::sceNgs2SystemCreateWithAllocator), "sceNgs2SystemCreateWithAllocator");
     m_names["u-WrYDaJA3k"] = "sceNgs2SystemDestroy";
     m_names["i0VnXM-C9fc"] = "sceNgs2SystemRender";
-    m_names["uu94irFOGpA"] = "sceNgs2VoiceControl";
-    m_names["-TOuuAQ-buE"] = "sceNgs2VoiceGetState";
+    RegisterSymbol("uu94irFOGpA", reinterpret_cast<uintptr_t>(&Audio::sceNgs2VoiceControl), "sceNgs2VoiceControl");
+    RegisterSymbol("-TOuuAQ-buE", reinterpret_cast<uintptr_t>(&Audio::sceNgs2VoiceGetState), "sceNgs2VoiceGetState");
     m_names["u9YKpRRHe-M"] = "sceRazorCaptureImmediate";
     m_names["f33OrruQYbM"] = "sceRazorIsLoaded";
     m_names["DOwXL+FQMEY"] = "sceSslGetSerialNumber";
@@ -749,17 +749,17 @@ void NidTable::RegisterHostSubsystems() {
     m_names["4zrm6VrgIAw"] = "_ZN3sce4Json5ValueaSERKS1_";
 
     // ===== libSceAudio3d.sprx.json (12 symbols) =====
-    m_names["Im+jOoa5WAI"] = "sceAudio3dGetDefaultOpenParameters";
-    m_names["UmCvjSmuZIw"] = "sceAudio3dInitialize";
+    RegisterSymbol("Im+jOoa5WAI", reinterpret_cast<uintptr_t>(&Audio::sceAudio3dGetDefaultOpenParameters), "sceAudio3dGetDefaultOpenParameters");
+    RegisterSymbol("UmCvjSmuZIw", reinterpret_cast<uintptr_t>(&Audio::sceAudio3dInitialize), "sceAudio3dInitialize");
     m_names["jO2tec4dJ2M"] = "sceAudio3dObjectReserve";
     m_names["4uyHN9q4ZeU"] = "sceAudio3dObjectSetAttributes";
     m_names["1HXxo-+1qCw"] = "sceAudio3dObjectUnreserve";
     m_names["lw0qrdSjZt8"] = "sceAudio3dPortAdvance";
     m_names["OyVqOeVNtSk"] = "sceAudio3dPortClose";
     m_names["YaaDbDwKpFM"] = "sceAudio3dPortGetQueueLevel";
-    m_names["XeDDK0xJWQA"] = "sceAudio3dPortOpen";
+    RegisterSymbol("XeDDK0xJWQA", reinterpret_cast<uintptr_t>(&Audio::sceAudio3dPortOpen), "sceAudio3dPortOpen");
     m_names["VEVhZ9qd4ZY"] = "sceAudio3dPortPush";
-    m_names["Yq9bfUQ0uJg"] = "sceAudio3dPortSetAttribute";
+    RegisterSymbol("Yq9bfUQ0uJg", reinterpret_cast<uintptr_t>(&Audio::sceAudio3dPortSetAttribute), "sceAudio3dPortSetAttribute");
     m_names["WW1TS2iz5yc"] = "sceAudio3dTerminate";
 
     // ===== libSceSaveData.sprx.json (9 symbols) =====
@@ -997,7 +997,7 @@ void NidTable::RegisterHostSubsystems() {
     // ===== libSceAudioOut.sprx.json (3 symbols) =====
     m_names["GrQ9s4IrNaQ"] = "sceAudioOutGetPortState";
     m_names["w3PdaSTSwGE"] = "sceAudioOutOutputs";
-    m_names["wVwPU50pS1c"] = "sceAudioOutSetMixLevelPadSpk";
+    RegisterSymbol("wVwPU50pS1c", reinterpret_cast<uintptr_t>(&Audio::sceAudioOutSetMixLevelPadSpk), "sceAudioOutSetMixLevelPadSpk");
 
     // ===== libSceNpAuth.sprx.json (3 symbols) =====
     m_names["6bwFkosYRQg"] = "sceNpAuthCreateRequest";
@@ -1035,7 +1035,7 @@ void NidTable::RegisterHostSubsystems() {
 
     // ===== libSceNgs2.sprx.json (2 symbols) =====
     m_names["cLV4aiT9JpA"] = "sceNgs2RackCreate";
-    m_names["0eFLVCfWVds"] = "sceNgs2RackQueryBufferSize";
+    RegisterSymbol("0eFLVCfWVds", reinterpret_cast<uintptr_t>(&Audio::sceNgs2RackQueryBufferSize), "sceNgs2RackQueryBufferSize");
 
     // ===== libmonosgen-2.0.sprx.json (2 symbols) =====
     m_names["HQOwnfMGipQ"] = "sceNetErrnoLoc";

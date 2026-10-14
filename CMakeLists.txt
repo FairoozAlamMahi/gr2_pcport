@@ -26,6 +26,7 @@ include_directories(
 
 set(SOURCES
     src/main.cpp
+    src/common/crash_handler.cpp
     src/memory/vm.cpp
     src/loader/elf_loader.cpp
     src/loader/prx_module.cpp
@@ -42,6 +43,7 @@ set(SOURCES
 set(HEADERS
     src/common/types.h
     src/common/logger.h
+    src/common/crash_handler.h
     src/memory/vm.h
     src/loader/elf_loader.h
     src/loader/prx_module.h
@@ -62,6 +64,7 @@ target_link_libraries(gr2_pc PRIVATE
     onecore
     user32
     gdi32
+    rpcrt4
 )
 
 set_target_properties(gr2_pc PROPERTIES

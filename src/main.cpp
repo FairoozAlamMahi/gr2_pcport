@@ -10,6 +10,7 @@
 #include "video/video_out.h"
 #include "audio/audio_out.h"
 #include "gpu/gnm_driver.h"
+#include "common/crash_handler.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -17,6 +18,34 @@
 #include <filesystem>
 
 namespace fs = std::filesystem;
+
+struct EntryParams {
+    int argc{1};
+    u32 pad{0};
+    const char* argv[33]{"eboot.bin", nullptr};
+    u64 entry_addr{0};
+};
+
+static PS4_SYSV_ABI void GuestExitHandler(int status) {
+    LOG_INFO("GUEST", "Guest code requested process exit with status: " + std::to_string(status));
+    ExitProcess(status);
+}
+
+static void LaunchGuest(void* entry_point, const EntryParams* params, void* exit_func) {
+    LOG_INFO("GUEST", "Jumping to Orbis guest entry point at 0x" + 
+             std::to_string(reinterpret_cast<uintptr_t>(entry_point)) + " (System V ABI)...");
+    asm volatile(
+        "movq %0, %%r11\n\t"
+        "movq %1, %%rdi\n\t"
+        "movq %2, %%rsi\n\t"
+        "andq $-16, %%rsp\n\t"
+        "subq $8, %%rsp\n\t"
+        "jmp *%%r11\n\t"
+        :
+        : "r"(entry_point), "r"(params), "r"(exit_func)
+        : "r11", "rdi", "rsi", "memory"
+    );
+}
 
 void PrintBanner() {
     std::cout << R"(
@@ -30,10 +59,26 @@ void PrintBanner() {
 int main(int argc, char* argv[]) {
     PrintBanner();
 
+    // Allocate guest TLS slot immediately so it receives slot < 64 (inside direct TEB->TlsSlots)
+    DWORD guest_tls_slot = TlsAlloc();
+    Loader::ElfLoader::Instance().SetGuestTlsSlot(guest_tls_slot);
+
+    // 0. Install Vectored Crash Diagnostic Handler
+    Common::CrashHandler::Install();
+
     std::string elf_path = "game/eboot.elf";
-    if (argc > 1) {
-        elf_path = argv[1];
-    } else if (!fs::exists(elf_path)) {
+    bool launch_guest = false;
+
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--launch" || arg == "-l") {
+            launch_guest = true;
+        } else if (arg.rfind("--", 0) != 0 && arg.rfind("-", 0) != 0) {
+            elf_path = arg;
+        }
+    }
+
+    if (!fs::exists(elf_path)) {
         // Fallback candidate search
         std::vector<std::string> candidates = {
             "../gr2_packages/patch_extracted/CUSA04943-patch/eboot.elf",
@@ -68,7 +113,7 @@ int main(int argc, char* argv[]) {
     GPU::Initialize();
     Loader::NidTable::Instance().Initialize();
 
-    // 2b. Load Decrypted Native Game PRX Modules into Guest Arena
+    // 2b. Phase 1: Load Decrypted Native Game PRX Modules & Register Exports
     std::vector<std::pair<std::string, uintptr_t>> prx_candidates = {
         {"../gr2_packages/merged_game/sce_module/libc.elf", 0x10080000000ULL},
         {"../gr2_packages/merged_game/sce_module/libSceFios2.elf", 0x10090000000ULL},
@@ -84,6 +129,12 @@ int main(int argc, char* argv[]) {
                 loaded_prxs.push_back(std::move(prx));
             }
         }
+    }
+
+    // 2c. Phase 2: Relocate and Link PRX PLT Jump Slots across all registered NIDs
+    LOG_INFO("INIT", "Performing dynamic two-pass linking across loaded PRX modules...");
+    for (auto& prx : loaded_prxs) {
+        prx->RelocateAndLink();
     }
 
     // 3. Load ELF into Guest Arena and link all symbols
@@ -112,10 +163,18 @@ int main(int argc, char* argv[]) {
 
     LOG_INFO("INIT", "Pre-execution initialization successfully completed.");
 
-    // Note: In interactive launch, execution jumps to entry_ptr:
-    // using GuestMain = void (PS4_SYSV_ABI *)();
-    // auto guest_main = reinterpret_cast<GuestMain>(entry_ptr);
-    // guest_main();
+    // 4b. Execute SceProcParam Priority 1 initializers (Master Allocators & Memory Management)
+    Loader::ElfLoader::Instance().ExecuteProcParamInitializers();
+
+    if (launch_guest) {
+        EntryParams params{};
+        params.argc = 1;
+        params.argv[0] = "eboot.bin";
+        params.entry_addr = reinterpret_cast<u64>(entry_ptr);
+        LaunchGuest(entry_ptr, &params, reinterpret_cast<void*>(&GuestExitHandler));
+    } else {
+        LOG_INFO("INIT", "Dry run / verification completed successfully. Pass '--launch' or '-l' to execute guest code.");
+    }
 
     return 0;
 }

@@ -49,6 +49,9 @@ PS4_SYSV_ABI s32 sceGnmSetCsShader(void* dcb, const void* shader);
 PS4_SYSV_ABI s32 sceGnmSetPsShader(void* dcb, const void* shader);
 PS4_SYSV_ABI s32 sceGnmSetVsShader(void* dcb, const void* shader);
 PS4_SYSV_ABI s32 sceGnmDispatchDirect(void* dcb, u32 thread_group_x, u32 thread_group_y, u32 thread_group_z);
+PS4_SYSV_ABI s32 sceGnmSubmitAndFlipCommandBuffers(u32 count, const void* dcb_gpu_addrs, const u32* dcb_sizes_in_bytes, const void* ccb_gpu_addrs, const u32* ccb_sizes_in_bytes, u32 video_handle, u32 display_buffer_index, u32 flip_mode, s64 flip_arg);
+PS4_SYSV_ABI s32 sceGnmDingDong(u32 ring_id, u32 dword_offset);
+PS4_SYSV_ABI s32 sceGnmInsertWaitFlipDone(void* dcb, s32 video_handle, s32 display_buffer_index);
 
 } // extern "C"
 

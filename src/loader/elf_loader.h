@@ -35,9 +35,14 @@ public:
     u64 GetBaseAddress() const { return m_base_address; }
     const TlsInfo& GetTlsInfo() const { return m_tls_info; }
     DWORD GetGuestTlsSlot() const { return m_tls_info.win_tls_slot; }
+    void SetGuestTlsSlot(DWORD slot) { m_tls_info.win_tls_slot = slot; }
 
     // Prepare Thread Control Block (TCB) for a new guest thread
     void* SetupThreadTCB();
+
+    // SceProcParam execution
+    u64 GetProcParamAddress() const { return m_base_address + m_proc_param_vaddr; }
+    bool ExecuteProcParamInitializers();
 
 private:
     ElfLoader() = default;
@@ -53,6 +58,7 @@ private:
     void* m_entry_point{nullptr};
     std::vector<ElfSegment> m_segments;
     TlsInfo m_tls_info;
+    u64 m_proc_param_vaddr{0};
 };
 
 } // namespace Loader

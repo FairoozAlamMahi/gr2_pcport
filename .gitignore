@@ -45,5 +45,7 @@ tools/llvm-mingw/
 tools/shadps4_extractor/
 tools/pkgextract/
 tools/test_dlc_out/
+tools/ps4libdoc/
 game/
+*.log
 

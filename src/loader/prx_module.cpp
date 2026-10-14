@@ -75,32 +75,29 @@ bool PrxModule::Load(const std::string& prx_path, uintptr_t base_address) {
 
     size_t size = file.tellg();
     file.seekg(0, std::ios::beg);
-    std::vector<u8> buffer(size);
-    if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
+    m_file_buffer.resize(size);
+    if (!file.read(reinterpret_cast<char*>(m_file_buffer.data()), size)) {
         LOG_ERROR("PRX", "Failed to read PRX contents: " + prx_path);
         return false;
     }
 
-    const u8* data = buffer.data();
+    const u8* data = m_file_buffer.data();
 
     if (!ParseAndMapSegments(data, size)) {
         LOG_ERROR("PRX", "ParseAndMapSegments failed for " + m_name);
         return false;
     }
-    LOG_INFO("PRX", "ParseAndMapSegments completed for " + m_name);
 
     RewriteTlsInstructions(data);
-    LOG_INFO("PRX", "RewriteTlsInstructions completed for " + m_name);
-
-    ApplyRelocations(data);
-    LOG_INFO("PRX", "ApplyRelocations completed for " + m_name);
-
     RegisterExports(data);
-    LOG_INFO("PRX", "RegisterExports completed for " + m_name);
 
-    LOG_INFO("PRX", "Successfully loaded " + m_name + " with " + 
-             std::to_string(m_exports_count) + " exported symbols.");
+    LOG_INFO("PRX", "Harvested " + std::to_string(m_exports_count) + " exported symbols from " + m_name);
     return true;
+}
+
+bool PrxModule::RelocateAndLink() {
+    if (m_file_buffer.empty()) return false;
+    return ApplyRelocations(m_file_buffer.data());
 }
 
 bool PrxModule::ParseAndMapSegments(const u8* data, size_t size) {
@@ -191,6 +188,8 @@ bool PrxModule::ApplyRelocations(const u8* data) {
 
     u64 rela_off = 0, relasz = 0;
     u64 jmprel_off = 0, pltrelsz = 0;
+    u64 symtab_off = 0, symtab_sz = 0;
+    u64 strtab_off = 0, strtab_sz = 0;
 
     const auto* dyn_tags = reinterpret_cast<const DynTag*>(data + dynamic_offset);
     for (size_t i = 0;; ++i) {
@@ -203,7 +202,15 @@ bool PrxModule::ApplyRelocations(const u8* data) {
         else if (tag == 0x61000031) relasz = val;   // DT_SCE_RELASZ
         else if (tag == 0x61000029) jmprel_off = val; // DT_SCE_JMPREL
         else if (tag == 0x6100002D) pltrelsz = val;  // DT_SCE_PLTRELSZ
+        else if (tag == 0x61000039) symtab_off = val; // DT_SCE_SYMTAB
+        else if (tag == 0x6100003F) symtab_sz = val;  // DT_SCE_SYMTABSZ
+        else if (tag == 0x61000035) strtab_off = val; // DT_SCE_STRTAB
+        else if (tag == 0x61000037) strtab_sz = val;  // DT_SCE_STRSZ
     }
+
+    const u8* strtab = (strtab_off != 0) ? (dynlib + strtab_off) : (dynlib + 0x18);
+    const auto* syms = (symtab_off != 0) ? reinterpret_cast<const Elf64_Sym*>(dynlib + symtab_off) : nullptr;
+    u32 sym_count = (symtab_sz != 0) ? static_cast<u32>(symtab_sz / sizeof(Elf64_Sym)) : 0;
 
     auto IsOffsetMapped = [&](u64 off) {
         for (const auto& s : m_segments) {
@@ -215,6 +222,7 @@ bool PrxModule::ApplyRelocations(const u8* data) {
     };
 
     u32 total_applied = 0;
+    u32 plt_resolved = 0;
     auto ProcessTable = [&](u64 table_off, u64 table_sz) {
         if (table_off == 0 || table_sz == 0) return;
         const auto* entries = reinterpret_cast<const Elf64_Rela*>(dynlib + table_off);
@@ -223,16 +231,47 @@ bool PrxModule::ApplyRelocations(const u8* data) {
         for (u32 i = 0; i < count; ++i) {
             const auto& r = entries[i];
             u32 type = static_cast<u32>(r.r_info & 0xFFFFFFFF);
+            u32 sym_idx = static_cast<u32>(r.r_info >> 32);
+
             if (!IsOffsetMapped(r.r_offset)) {
                 continue;
             }
             u64* target = reinterpret_cast<u64*>(m_base_address + r.r_offset);
 
+            uintptr_t sym_val = 0;
+            if (sym_idx != 0 && syms && sym_idx < sym_count) {
+                const auto& s = syms[sym_idx];
+                if (s.st_shndx != 0) {
+                    sym_val = m_base_address + s.st_value;
+                } else if (s.st_name != 0 && (strtab_sz == 0 || s.st_name < strtab_sz)) {
+                    const char* full_name = reinterpret_cast<const char*>(strtab + s.st_name);
+                    std::string sym_str(full_name);
+                    size_t hash_pos = sym_str.find('#');
+                    std::string nid_prefix = (hash_pos != std::string::npos) ? sym_str.substr(0, hash_pos) : sym_str;
+
+                    sym_val = NidTable::Instance().Resolve(nid_prefix, sym_str);
+                    if (NidTable::Instance().HasSymbol(nid_prefix)) {
+                        plt_resolved++;
+                    }
+                }
+            }
+
             if (type == 8) { // R_X86_64_RELATIVE
                 *target = m_base_address + r.r_addend;
                 total_applied++;
             } else if (type == 1 || type == 6) { // R_X86_64_64, R_X86_64_GLOB_DAT
-                *target = m_base_address + r.r_addend;
+                if (sym_idx != 0) {
+                    *target = sym_val + r.r_addend;
+                } else {
+                    *target = m_base_address + r.r_addend;
+                }
+                total_applied++;
+            } else if (type == 7) { // R_X86_64_JUMP_SLOT
+                *target = sym_val;
+                total_applied++;
+            } else if (type == 16) { // R_X86_64_TPOFF64
+                u64 val = (syms && sym_idx < sym_count) ? syms[sym_idx].st_value : 0;
+                *target = val + r.r_addend;
                 total_applied++;
             }
         }
@@ -241,6 +280,8 @@ bool PrxModule::ApplyRelocations(const u8* data) {
     ProcessTable(rela_off, relasz);
     ProcessTable(jmprel_off, pltrelsz);
 
+    LOG_INFO("PRX", "Relocated & Linked " + m_name + ": " + std::to_string(total_applied) + 
+             " relocations (" + std::to_string(plt_resolved) + " PLT jump slots bound).");
     return true;
 }
 
@@ -289,8 +330,10 @@ bool PrxModule::RegisterExports(const u8* data) {
             std::string nid_prefix = (hash_pos != std::string::npos) ? name_str.substr(0, hash_pos) : name_str;
 
             uintptr_t func_vaddr = m_base_address + s.st_value;
-            NidTable::Instance().RegisterSymbol(nid_prefix, func_vaddr, name_str);
-            m_exports_count++;
+            if (!NidTable::Instance().HasSymbol(nid_prefix)) {
+                NidTable::Instance().RegisterSymbol(nid_prefix, func_vaddr, name_str);
+                m_exports_count++;
+            }
         }
     }
 

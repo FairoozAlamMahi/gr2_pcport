@@ -133,12 +133,18 @@ bool ElfLoader::ParseHeaders(const u8* data, usize size) {
             m_tls_info.align  = ph.p_align;
             LOG_INFO("LOADER", "Found PT_TLS segment: filesz=0x" + 
                      std::to_string(ph.p_filesz) + ", memsz=0x" + std::to_string(ph.p_memsz));
+        } else if (ph.p_type == 0x61000001) { // PT_SCE_PROCPARAM
+            m_proc_param_vaddr = ph.p_vaddr;
+            LOG_INFO("LOADER", "Found PT_SCE_PROCPARAM segment at VA 0x" + 
+                     std::to_string(ph.p_vaddr));
         }
     }
 
-    // Allocate Windows TLS slot for guest TCB
-    m_tls_info.win_tls_slot = TlsAlloc();
-    LOG_INFO("LOADER", "Allocated Windows TLS slot for Guest TCB: " + 
+    // Use pre-allocated Windows TLS slot if available
+    if (m_tls_info.win_tls_slot == TLS_OUT_OF_INDEXES) {
+        m_tls_info.win_tls_slot = TlsAlloc();
+    }
+    LOG_INFO("LOADER", "Windows TLS slot for Guest TCB: " + 
              std::to_string(m_tls_info.win_tls_slot));
 
     m_entry_point = reinterpret_cast<void*>(m_base_address + ehdr->e_entry);
@@ -234,26 +240,33 @@ bool ElfLoader::PatchTlsInstructions() {
 }
 
 void* ElfLoader::SetupThreadTCB() {
-    // Allocate Thread Control Block (TCB) + TLS block for guest thread
-    usize alloc_size = m_tls_info.memsz + 0x1000;
-    u8* tcb_block = reinterpret_cast<u8*>(VirtualAlloc(
-        nullptr, alloc_size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
+    // In AMD64 ELF (System V / Orbis), thread-local variables are addressed
+    // via negative offsets from the Thread Control Block (fs:[0]).
+    // Allocate 64 KB block and place the TCB pointer at offset +0x8000 so that
+    // both negative offsets (-32 KB) and positive offsets (+32 KB) are valid.
+    constexpr usize TOTAL_ALLOC = 64 * 1024;
+    constexpr usize TCB_OFFSET  = 32 * 1024;
 
-    if (!tcb_block) return nullptr;
+    u8* raw_block = reinterpret_cast<u8*>(VirtualAlloc(
+        nullptr, TOTAL_ALLOC, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE));
+    if (!raw_block) return nullptr;
 
-    // Copy master TLS template if available
+    u8* tcb_ptr = raw_block + TCB_OFFSET;
+
+    // In ELF Variant II, static TLS template data sits before the TCB: [tcb_ptr - memsz .. tcb_ptr)
     if (m_tls_info.vaddr != 0 && m_tls_info.filesz > 0) {
         void* src_tls = reinterpret_cast<void*>(m_base_address + m_tls_info.vaddr);
-        std::memcpy(tcb_block, src_tls, m_tls_info.filesz);
+        usize copy_sz = (std::min)(static_cast<usize>(m_tls_info.filesz), static_cast<usize>(TCB_OFFSET));
+        std::memcpy(tcb_ptr - m_tls_info.memsz, src_tls, copy_sz);
     }
 
-    // Set self-pointer at tcb_block[0]
-    *reinterpret_cast<void**>(tcb_block) = tcb_block;
+    // Set self-pointer at tcb_ptr[0] (fs:[0])
+    *reinterpret_cast<void**>(tcb_ptr) = tcb_ptr;
 
     // Assign to host Windows TLS slot for this thread
-    TlsSetValue(m_tls_info.win_tls_slot, tcb_block);
+    TlsSetValue(m_tls_info.win_tls_slot, tcb_ptr);
 
-    return tcb_block;
+    return tcb_ptr;
 }
 
 bool ElfLoader::ApplyRelocations(const u8* data) {
@@ -279,6 +292,10 @@ bool ElfLoader::ApplyRelocations(const u8* data) {
     u64 relasz = 0;
     u64 jmprel_off = 0;
     u64 pltrelsz = 0;
+    u64 symtab_off = 0;
+    u64 symtab_sz = 0;
+    u64 strtab_off = 0;
+    u64 strtab_sz = 0;
 
     #pragma pack(push, 1)
     struct DynTag {
@@ -289,84 +306,6 @@ bool ElfLoader::ApplyRelocations(const u8* data) {
         u64 r_offset;
         u64 r_info;
         s64 r_addend;
-    };
-    #pragma pack(pop)
-
-    const auto* dyn_tags = reinterpret_cast<const DynTag*>(data + dynamic_offset);
-    for (size_t i = 0;; ++i) {
-        s64 tag = dyn_tags[i].d_tag;
-        u64 val = dyn_tags[i].d_val;
-        if (tag == 0) break;
-
-        if (tag == 0x6100002F) rela_off = val;       // DT_SCE_RELA
-        else if (tag == 0x61000031) relasz = val;   // DT_SCE_RELASZ
-        else if (tag == 0x61000029) jmprel_off = val; // DT_SCE_JMPREL
-        else if (tag == 0x6100002D) pltrelsz = val;  // DT_SCE_PLTRELSZ
-    }
-
-    auto IsOffsetMapped = [&](u64 off) {
-        for (const auto& s : m_segments) {
-            if ((s.type == 1 || s.type == 0x61000010) && off >= s.vaddr && off + 8 <= s.vaddr + s.memsz) {
-                return true;
-            }
-        }
-        return false;
-    };
-
-    u32 total_applied = 0;
-
-    auto ProcessRelas = [&](u64 table_off, u64 table_sz) {
-        if (table_off == 0 || table_sz == 0) return;
-        const auto* entries = reinterpret_cast<const Elf64_Rela*>(dynlib + table_off);
-        u32 count = static_cast<u32>(table_sz / sizeof(Elf64_Rela));
-
-        for (u32 i = 0; i < count; ++i) {
-            const auto& r = entries[i];
-            u32 type = static_cast<u32>(r.r_info & 0xFFFFFFFF);
-            if (!IsOffsetMapped(r.r_offset)) {
-                continue;
-            }
-            u64* target = reinterpret_cast<u64*>(m_base_address + r.r_offset);
-
-            if (type == 8) { // R_X86_64_RELATIVE
-                *target = m_base_address + r.r_addend;
-                total_applied++;
-            } else if (type == 1 || type == 6) { // R_X86_64_64 or R_X86_64_GLOB_DAT
-                *target = m_base_address + r.r_addend;
-                total_applied++;
-            }
-        }
-    };
-
-    ProcessRelas(rela_off, relasz);
-    ProcessRelas(jmprel_off, pltrelsz);
-
-    LOG_INFO("LOADER", "Successfully applied " + std::to_string(total_applied) + 
-             " AMD64 relocations (rebased to 0x" + std::to_string(m_base_address) + ").");
-    return true;
-}
-
-bool ElfLoader::ResolveImports(const u8* data) {
-    u64 dynlib_offset = 0;
-    u64 dynamic_offset = 0;
-
-    for (const auto& seg : m_segments) {
-        if (seg.type == 0x61000000) dynlib_offset = seg.offset;
-        else if (seg.type == 2) dynamic_offset = seg.offset;
-    }
-
-    if (dynlib_offset == 0 || dynamic_offset == 0) return true;
-
-    const u8* dynlib = data + dynlib_offset;
-
-    u64 symtab_off = 0;
-    u64 jmprel_off = 0;
-    u64 pltgot_vaddr = 0;
-
-    #pragma pack(push, 1)
-    struct DynTag {
-        s64 d_tag;
-        u64 d_val;
     };
     struct Elf64_Sym {
         u32 st_name;
@@ -384,47 +323,161 @@ bool ElfLoader::ResolveImports(const u8* data) {
         u64 val = dyn_tags[i].d_val;
         if (tag == 0) break;
 
-        if (tag == 0x61000039) symtab_off = val;
-        else if (tag == 0x61000029) jmprel_off = val;
-        else if (tag == 0x61000027) pltgot_vaddr = val;
+        if (tag == 0x6100002F) rela_off = val;       // DT_SCE_RELA
+        else if (tag == 0x61000031) relasz = val;   // DT_SCE_RELASZ
+        else if (tag == 0x61000029) jmprel_off = val; // DT_SCE_JMPREL
+        else if (tag == 0x6100002D) pltrelsz = val;  // DT_SCE_PLTRELSZ
+        else if (tag == 0x61000039) symtab_off = val; // DT_SCE_SYMTAB
+        else if (tag == 0x6100003F) symtab_sz = val;  // DT_SCE_SYMTABSZ
+        else if (tag == 0x61000035) strtab_off = val; // DT_SCE_STRTAB
+        else if (tag == 0x61000037) strtab_sz = val;  // DT_SCE_STRSZ
     }
 
-    if (symtab_off == 0 || jmprel_off == 0 || pltgot_vaddr == 0) {
-        LOG_WARN("LOADER", "Could not locate symtab, jmprel, or pltgot for import resolution.");
+    const u8* strtab = dynlib + ((strtab_off != 0) ? strtab_off : 0x18);
+    const auto* syms = (symtab_off != 0) ? reinterpret_cast<const Elf64_Sym*>(dynlib + symtab_off) : nullptr;
+    u32 sym_count = (symtab_sz != 0) ? static_cast<u32>(symtab_sz / sizeof(Elf64_Sym)) : 0;
+
+    auto IsOffsetMapped = [&](u64 off) {
+        for (const auto& s : m_segments) {
+            if ((s.type == 1 || s.type == 0x61000010) && off >= s.vaddr && off + 8 <= s.vaddr + s.memsz) {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    u32 total_applied = 0;
+    u32 plt_resolved = 0;
+    u32 stubbed_count = 0;
+
+    auto ProcessRelas = [&](u64 table_off, u64 table_sz) {
+        if (table_off == 0 || table_sz == 0) return;
+        const auto* entries = reinterpret_cast<const Elf64_Rela*>(dynlib + table_off);
+        u32 count = static_cast<u32>(table_sz / sizeof(Elf64_Rela));
+
+        for (u32 i = 0; i < count; ++i) {
+            const auto& r = entries[i];
+            u32 type = static_cast<u32>(r.r_info & 0xFFFFFFFF);
+            u32 sym_idx = static_cast<u32>(r.r_info >> 32);
+
+            if (!IsOffsetMapped(r.r_offset)) {
+                continue;
+            }
+            u64* target = reinterpret_cast<u64*>(m_base_address + r.r_offset);
+
+            uintptr_t sym_val = 0;
+            if (sym_idx != 0 && syms && sym_idx < sym_count) {
+                const auto& s = syms[sym_idx];
+                if (s.st_shndx != 0) {
+                    sym_val = m_base_address + s.st_value;
+                } else if (s.st_name != 0 && (strtab_sz == 0 || s.st_name < strtab_sz)) {
+                    const char* full_sym = reinterpret_cast<const char*>(strtab + s.st_name);
+                    std::string sym_str(full_sym);
+                    size_t hash_pos = sym_str.find('#');
+                    std::string nid_prefix = (hash_pos != std::string::npos) ? sym_str.substr(0, hash_pos) : sym_str;
+
+                    sym_val = NidTable::Instance().Resolve(nid_prefix, sym_str);
+                    if (NidTable::Instance().HasSymbol(nid_prefix)) {
+                        plt_resolved++;
+                    } else {
+                        stubbed_count++;
+                    }
+                }
+            }
+
+            if (type == 8) { // R_X86_64_RELATIVE
+                *target = m_base_address + r.r_addend;
+                total_applied++;
+            } else if (type == 1 || type == 6) { // R_X86_64_64 or R_X86_64_GLOB_DAT
+                if (sym_idx != 0) {
+                    *target = sym_val + r.r_addend;
+                } else {
+                    *target = m_base_address + r.r_addend;
+                }
+                total_applied++;
+            } else if (type == 7) { // R_X86_64_JUMP_SLOT
+                *target = sym_val;
+                total_applied++;
+            } else if (type == 16) { // R_X86_64_TPOFF64
+                u64 val = (syms && sym_idx < sym_count) ? syms[sym_idx].st_value : 0;
+                *target = val + r.r_addend;
+                total_applied++;
+            }
+        }
+    };
+
+    ProcessRelas(rela_off, relasz);
+    ProcessRelas(jmprel_off, pltrelsz);
+
+    LOG_INFO("LOADER", "Applied " + std::to_string(total_applied) + 
+             " AMD64 relocations (" + std::to_string(plt_resolved) + " direct NID imports bound, " +
+             std::to_string(stubbed_count) + " fallback stubs).");
+    return true;
+}
+
+bool ElfLoader::ResolveImports(const u8* data) {
+    // Relocations and imports are now fully resolved in ApplyRelocations via standard AMD64 ELF JMPREL/RELA
+    return true;
+}
+
+bool ElfLoader::ExecuteProcParamInitializers() {
+    if (m_proc_param_vaddr == 0) {
+        LOG_INFO("LOADER", "No PT_SCE_PROCPARAM segment found.");
         return true;
     }
 
-    const u8* strtab = dynlib + 0x18;
-    const auto* syms = reinterpret_cast<const Elf64_Sym*>(dynlib + symtab_off);
-    u32 total_syms = static_cast<u32>((jmprel_off - symtab_off) / sizeof(Elf64_Sym));
-
-    uintptr_t* got_table = reinterpret_cast<uintptr_t*>(m_base_address + pltgot_vaddr);
-
-    u32 resolved_count = 0;
-    u32 stubbed_count = 0;
-
-    // Symbols 2..total_syms map directly to GOT slots 0..(total_syms - 3)
-    for (u32 i = 2; i < total_syms; ++i) {
-        const auto& s = syms[i];
-        if (s.st_name != 0 && s.st_shndx == 0) {
-            const char* full_sym = reinterpret_cast<const char*>(strtab + s.st_name);
-            std::string sym_str(full_sym);
-
-            size_t hash_pos = sym_str.find('#');
-            std::string nid_prefix = (hash_pos != std::string::npos) ? sym_str.substr(0, hash_pos) : sym_str;
-
-            uintptr_t target_addr = NidTable::Instance().Resolve(nid_prefix, sym_str);
-            got_table[i - 2] = target_addr;
-            if (NidTable::Instance().HasSymbol(nid_prefix)) {
-                resolved_count++;
-            } else {
-                stubbed_count++;
-            }
+    auto ToHostPtr = [&](u64 addr) -> const u8* {
+        if (addr >= m_base_address) {
+            return reinterpret_cast<const u8*>(addr);
         }
+        return reinterpret_cast<const u8*>(m_base_address + addr);
+    };
+
+    const u8* proc_param_bytes = ToHostPtr(m_proc_param_vaddr);
+    // At m_proc_param_vaddr: offset +0x38 is pointer to sce_process_param (0x1660000)
+    u64 sce_proc_param_va = *reinterpret_cast<const u64*>(proc_param_bytes + 0x38);
+    if (sce_proc_param_va == 0) {
+        LOG_WARN("LOADER", "SceProcParam address is NULL in SceKernelProcParam.");
+        return true;
     }
 
-    LOG_INFO("LOADER", "Import Resolution Complete: " + std::to_string(resolved_count) + 
-             " symbols resolved directly into PLT/GOT table (" + std::to_string(stubbed_count) + " fallback stubs).");
+    // In sce_process_param at 0x1660000: offset +0x30 is init_array_va (0x1660098)
+    const u8* sce_proc_param_ptr = ToHostPtr(sce_proc_param_va);
+    u64 init_table_va = *reinterpret_cast<const u64*>(sce_proc_param_ptr + 0x30);
+    LOG_INFO("LOADER", "Executing SceProcParam priority initializers at VA 0x" + 
+             std::to_string(init_table_va) + "...");
+
+    using InitFunc = void (PS4_SYSV_ABI *)();
+
+    while (init_table_va != 0) {
+        const u8* table_ptr = ToHostPtr(init_table_va);
+        u64 total_size = *reinterpret_cast<const u64*>(table_ptr);
+        u64 priority = *reinterpret_cast<const u64*>(table_ptr + 8);
+        if (total_size == 0 || total_size < 16) break;
+        if (priority == 0 || priority > 10) break; // Reached end of valid priority tables
+
+        if (priority != 1) {
+            // Only Priority 1 runtime initializers are executed prior to entry point
+            init_table_va += total_size;
+            continue;
+        }
+
+        // For Priority 1 Heap API table:
+        // fn[0] is the master allocator initializer (malloc_init / 0x466ff0).
+        // Entries 1..count-1 are the heap API methods (finalize, malloc, free, etc.)
+        // which must NOT be called as initializers (calling fn[1] destroys mspace!).
+        u64 fn_va = *reinterpret_cast<const u64*>(table_ptr + 16);
+        if (fn_va != 0) {
+            LOG_INFO("LOADER", "Calling SceProcParam Priority " + std::to_string(priority) + 
+                     " Init [0] at 0x" + std::to_string(fn_va) + "...");
+            auto fn = reinterpret_cast<InitFunc>(const_cast<u8*>(ToHostPtr(fn_va)));
+            fn();
+        }
+
+        init_table_va += total_size;
+    }
+
+    LOG_INFO("LOADER", "All SceProcParam initializers executed successfully.");
     return true;
 }
 

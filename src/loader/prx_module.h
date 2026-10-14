@@ -21,6 +21,7 @@ public:
     ~PrxModule() = default;
 
     bool Load(const std::string& prx_path, uintptr_t base_address);
+    bool RelocateAndLink();
 
     const std::string& GetName() const { return m_name; }
     uintptr_t GetBaseAddress() const { return m_base_address; }
@@ -34,9 +35,9 @@ private:
 
     std::string m_name;
     uintptr_t m_base_address{0};
-    size_t m_total_size{0};
     size_t m_exports_count{0};
     std::vector<PrxSegment> m_segments;
+    std::vector<u8> m_file_buffer;
 };
 
 } // namespace Loader

@@ -1,0 +1,614 @@
+=== EBOOT SYMBOL ANALYSIS ===
+
+Total eboot imports: 861
+Resolved by PRX: 326
+Resolved by PS4LIBDOC: 535
+Unmatched: 0
+
+
+### eboot.bin.json (276 symbols)
+  RegisterSymbol("Cxwy7wHq4J0", reinterpret_cast<uintptr_t>(&_ZN3sce4Json11Initializer10initializeEPKNS0_13InitParameterE), "_ZN3sce4Json11Initializer10initializeEPKNS0_13InitParameterE"); // Cxwy7wHq4J0#f#f
+  RegisterSymbol("PR5k1penBLM", reinterpret_cast<uintptr_t>(&_ZN3sce4Json11Initializer9terminateEv), "_ZN3sce4Json11Initializer9terminateEv"); // PR5k1penBLM#f#f
+  RegisterSymbol("cK6bYHf-Q5E", reinterpret_cast<uintptr_t>(&_ZN3sce4Json11InitializerC1Ev), "_ZN3sce4Json11InitializerC1Ev"); // cK6bYHf-Q5E#f#f
+  RegisterSymbol("RujUxbr3haM", reinterpret_cast<uintptr_t>(&_ZN3sce4Json11InitializerD1Ev), "_ZN3sce4Json11InitializerD1Ev"); // RujUxbr3haM#f#f
+  RegisterSymbol("i-XwZjw0OOY", reinterpret_cast<uintptr_t>(&_ZN3sce4Json12MemAllocator11notifyErrorEimPv), "_ZN3sce4Json12MemAllocator11notifyErrorEimPv"); // i-XwZjw0OOY#f#f
+  RegisterSymbol("-hJRce8wn1U", reinterpret_cast<uintptr_t>(&_ZN3sce4Json12MemAllocatorC2Ev), "_ZN3sce4Json12MemAllocatorC2Ev"); // -hJRce8wn1U#f#f
+  RegisterSymbol("OcAgPxcq5Vk", reinterpret_cast<uintptr_t>(&_ZN3sce4Json12MemAllocatorD2Ev), "_ZN3sce4Json12MemAllocatorD2Ev"); // OcAgPxcq5Vk#f#f
+  RegisterSymbol("zQtLRTqceMY", reinterpret_cast<uintptr_t>(&_ZN3sce4Json5Array9push_backERKNS0_5ValueE), "_ZN3sce4Json5Array9push_backERKNS0_5ValueE"); // zQtLRTqceMY#f#f
+  RegisterSymbol("JP-PtKMiI1E", reinterpret_cast<uintptr_t>(&_ZN3sce4Json5ArrayC1Ev), "_ZN3sce4Json5ArrayC1Ev"); // JP-PtKMiI1E#f#f
+  RegisterSymbol("HJ8GpRT1aiw", reinterpret_cast<uintptr_t>(&_ZN3sce4Json5ArrayD1Ev), "_ZN3sce4Json5ArrayD1Ev"); // HJ8GpRT1aiw#f#f
+  RegisterSymbol("XL8+BUqjB1w", reinterpret_cast<uintptr_t>(&_ZN3sce4Json5Value3setERKS1_), "_ZN3sce4Json5Value3setERKS1_"); // XL8+BUqjB1w#f#f
+  RegisterSymbol("FIjXN2TkuTs", reinterpret_cast<uintptr_t>(&_ZN3sce4Json5Value5clearEv), "_ZN3sce4Json5Value5clearEv"); // FIjXN2TkuTs#f#f
+  RegisterSymbol("R7FDWtcN6f8", reinterpret_cast<uintptr_t>(&_ZN3sce4Json5Value9serializeERNS0_6StringE), "_ZN3sce4Json5Value9serializeERNS0_6StringE"); // R7FDWtcN6f8#f#f
+  RegisterSymbol("iZeYfOxtMRg", reinterpret_cast<uintptr_t>(&_ZN3sce4Json5ValueC1ERKNS0_5ArrayE), "_ZN3sce4Json5ValueC1ERKNS0_5ArrayE"); // iZeYfOxtMRg#f#f
+  RegisterSymbol("3xUXnmUkXfo", reinterpret_cast<uintptr_t>(&_ZN3sce4Json5ValueC1ERKNS0_6ObjectE), "_ZN3sce4Json5ValueC1ERKNS0_6ObjectE"); // 3xUXnmUkXfo#f#f
+  RegisterSymbol("sZIoMRGO+jk", reinterpret_cast<uintptr_t>(&_ZN3sce4Json5ValueC1ERKNS0_6StringE), "_ZN3sce4Json5ValueC1ERKNS0_6StringE"); // sZIoMRGO+jk#f#f
+  RegisterSymbol("sOmU4vnx3s0", reinterpret_cast<uintptr_t>(&_ZN3sce4Json5ValueC1Ed), "_ZN3sce4Json5ValueC1Ed"); // sOmU4vnx3s0#f#f
+  RegisterSymbol("0lLK8+kDqmE", reinterpret_cast<uintptr_t>(&_ZN3sce4Json5ValueC1El), "_ZN3sce4Json5ValueC1El"); // 0lLK8+kDqmE#f#f
+  RegisterSymbol("x4AUdbhpRB0", reinterpret_cast<uintptr_t>(&_ZN3sce4Json5ValueC1Em), "_ZN3sce4Json5ValueC1Em"); // x4AUdbhpRB0#f#f
+  RegisterSymbol("qBMjqyBn3OM", reinterpret_cast<uintptr_t>(&_ZN3sce4Json5ValueC1Ev), "_ZN3sce4Json5ValueC1Ev"); // qBMjqyBn3OM#f#f
+  RegisterSymbol("WTtYf+cNnXI", reinterpret_cast<uintptr_t>(&_ZN3sce4Json5ValueD1Ev), "_ZN3sce4Json5ValueD1Ev"); // WTtYf+cNnXI#f#f
+  RegisterSymbol("4zrm6VrgIAw", reinterpret_cast<uintptr_t>(&_ZN3sce4Json5ValueaSERKS1_), "_ZN3sce4Json5ValueaSERKS1_"); // 4zrm6VrgIAw#f#f
+  RegisterSymbol("a+W7HHlwpBs", reinterpret_cast<uintptr_t>(&_ZN3sce4Json6ObjectC1ERKS1_), "_ZN3sce4Json6ObjectC1ERKS1_"); // a+W7HHlwpBs#f#f
+  RegisterSymbol("OJPTonqdg0I", reinterpret_cast<uintptr_t>(&_ZN3sce4Json6ObjectC1Ev), "_ZN3sce4Json6ObjectC1Ev"); // OJPTonqdg0I#f#f
+  RegisterSymbol("5JmzZt8twAo", reinterpret_cast<uintptr_t>(&_ZN3sce4Json6ObjectD1Ev), "_ZN3sce4Json6ObjectD1Ev"); // 5JmzZt8twAo#f#f
+  RegisterSymbol("urOpESTBZmo", reinterpret_cast<uintptr_t>(&_ZN3sce4Json6ObjectaSERKS1_), "_ZN3sce4Json6ObjectaSERKS1_"); // urOpESTBZmo#f#f
+  RegisterSymbol("ERuf9y0DY84", reinterpret_cast<uintptr_t>(&_ZN3sce4Json6ObjectixERKNS0_6StringE), "_ZN3sce4Json6ObjectixERKNS0_6StringE"); // ERuf9y0DY84#f#f
+  RegisterSymbol("9KUZFjI1IxA", reinterpret_cast<uintptr_t>(&_ZN3sce4Json6StringC1EPKc), "_ZN3sce4Json6StringC1EPKc"); // 9KUZFjI1IxA#f#f
+  RegisterSymbol("qSmqLXXCPas", reinterpret_cast<uintptr_t>(&_ZN3sce4Json6StringC1Ev), "_ZN3sce4Json6StringC1Ev"); // qSmqLXXCPas#f#f
+  RegisterSymbol("cG1VE2HMl6c", reinterpret_cast<uintptr_t>(&_ZN3sce4Json6StringD1Ev), "_ZN3sce4Json6StringD1Ev"); // cG1VE2HMl6c#f#f
+  RegisterSymbol("rQGJeNjOuUk", reinterpret_cast<uintptr_t>(&_ZNK3sce4Json5Array4sizeEv), "_ZNK3sce4Json5Array4sizeEv"); // rQGJeNjOuUk#f#f
+  RegisterSymbol("L1KAkYWml-M", reinterpret_cast<uintptr_t>(&_ZNK3sce4Json6String5c_strEv), "_ZNK3sce4Json6String5c_strEv"); // L1KAkYWml-M#f#f
+  RegisterSymbol("9BcDykPmo1I", reinterpret_cast<uintptr_t>(&__error), "__error"); // 9BcDykPmo1I#A#B
+  RegisterSymbol("KuOmgKoqCdY", reinterpret_cast<uintptr_t>(&bind), "bind"); // KuOmgKoqCdY#P#B
+  RegisterSymbol("bY-PO6JhzhQ", reinterpret_cast<uintptr_t>(&close), "close"); // bY-PO6JhzhQ#P#B
+  RegisterSymbol("pxnCmagrtao", reinterpret_cast<uintptr_t>(&listen), "listen"); // pxnCmagrtao#P#B
+  RegisterSymbol("zHchY8ft5pk", reinterpret_cast<uintptr_t>(&pthread_attr_destroy), "pthread_attr_destroy"); // zHchY8ft5pk#P#B
+  RegisterSymbol("Jmi+9w9u0E4", reinterpret_cast<uintptr_t>(&pthread_create_name_np), "pthread_create_name_np"); // Jmi+9w9u0E4#P#B
+  RegisterSymbol("R9lA82OraNs", reinterpret_cast<uintptr_t>(&sceAppContentInitialize), "sceAppContentInitialize"); // R9lA82OraNs#C#D
+  RegisterSymbol("s1--uE9mBFw", reinterpret_cast<uintptr_t>(&sceAudioOutClose), "sceAudioOutClose"); // s1--uE9mBFw#O#P
+  RegisterSymbol("JfEPXVxhFqA", reinterpret_cast<uintptr_t>(&sceAudioOutInit), "sceAudioOutInit"); // JfEPXVxhFqA#O#P
+  RegisterSymbol("ekNvsT22rsY", reinterpret_cast<uintptr_t>(&sceAudioOutOpen), "sceAudioOutOpen"); // ekNvsT22rsY#O#P
+  RegisterSymbol("QOQtbeDqsT4", reinterpret_cast<uintptr_t>(&sceAudioOutOutput), "sceAudioOutOutput"); // QOQtbeDqsT4#O#P
+  RegisterSymbol("uoUpLGNkygk", reinterpret_cast<uintptr_t>(&sceCommonDialogInitialize), "sceCommonDialogInitialize"); // uoUpLGNkygk#0#Z
+  RegisterSymbol("t2FvHRXzgqk", reinterpret_cast<uintptr_t>(&sceErrorDialogGetStatus), "sceErrorDialogGetStatus"); // t2FvHRXzgqk#X#X
+  RegisterSymbol("I88KChlynSs", reinterpret_cast<uintptr_t>(&sceErrorDialogInitialize), "sceErrorDialogInitialize"); // I88KChlynSs#X#X
+  RegisterSymbol("M2ZF-ClLhgY", reinterpret_cast<uintptr_t>(&sceErrorDialogOpen), "sceErrorDialogOpen"); // M2ZF-ClLhgY#X#X
+  RegisterSymbol("9XAxK2PMwk8", reinterpret_cast<uintptr_t>(&sceErrorDialogTerminate), "sceErrorDialogTerminate"); // 9XAxK2PMwk8#X#X
+  RegisterSymbol("WWiGuh9XfgQ", reinterpret_cast<uintptr_t>(&sceErrorDialogUpdateStatus), "sceErrorDialogUpdateStatus"); // WWiGuh9XfgQ#X#X
+  RegisterSymbol("b0xyllnVY-I", reinterpret_cast<uintptr_t>(&sceGnmAddEqEvent), "sceGnmAddEqEvent"); // b0xyllnVY-I#N#O
+  RegisterSymbol("b08AgtPlHPg", reinterpret_cast<uintptr_t>(&sceGnmAreSubmitsAllowed), "sceGnmAreSubmitsAllowed"); // b08AgtPlHPg#N#O
+  RegisterSymbol("ihxrbsoSKWc", reinterpret_cast<uintptr_t>(&sceGnmBeginWorkload), "sceGnmBeginWorkload"); // ihxrbsoSKWc#N#O
+  RegisterSymbol("5udAm+6boVg", reinterpret_cast<uintptr_t>(&sceGnmCreateWorkloadStream), "sceGnmCreateWorkloadStream"); // 5udAm+6boVg#N#O
+  RegisterSymbol("qpGITzPE+Zc", reinterpret_cast<uintptr_t>(&sceGnmDebugHardwareStatus), "sceGnmDebugHardwareStatus"); // qpGITzPE+Zc#N#O
+  RegisterSymbol("PVT+fuoS9gU", reinterpret_cast<uintptr_t>(&sceGnmDeleteEqEvent), "sceGnmDeleteEqEvent"); // PVT+fuoS9gU#N#O
+  RegisterSymbol("UtObDRQiGbs", reinterpret_cast<uintptr_t>(&sceGnmDestroyWorkloadStream), "sceGnmDestroyWorkloadStream"); // UtObDRQiGbs#N#O
+  RegisterSymbol("bX5IbRvECXk", reinterpret_cast<uintptr_t>(&sceGnmDingDong), "sceGnmDingDong"); // bX5IbRvECXk#N#O
+  RegisterSymbol("byXlqupd8cE", reinterpret_cast<uintptr_t>(&sceGnmDingDongForWorkload), "sceGnmDingDongForWorkload"); // byXlqupd8cE#N#O
+  RegisterSymbol("HHo1BAljZO8", reinterpret_cast<uintptr_t>(&sceGnmDisableMipStatsReport), "sceGnmDisableMipStatsReport"); // HHo1BAljZO8#N#O
+  RegisterSymbol("0BzLGljcwBo", reinterpret_cast<uintptr_t>(&sceGnmDispatchDirect), "sceGnmDispatchDirect"); // 0BzLGljcwBo#N#O
+  RegisterSymbol("Z43vKp5k7r0", reinterpret_cast<uintptr_t>(&sceGnmDispatchIndirect), "sceGnmDispatchIndirect"); // Z43vKp5k7r0#N#O
+  RegisterSymbol("wED4ZXCFJT0", reinterpret_cast<uintptr_t>(&sceGnmDispatchIndirectOnMec), "sceGnmDispatchIndirectOnMec"); // wED4ZXCFJT0#N#O
+  RegisterSymbol("nF6bFRUBRAU", reinterpret_cast<uintptr_t>(&sceGnmDispatchInitDefaultHardwareState), "sceGnmDispatchInitDefaultHardwareState"); // nF6bFRUBRAU#N#O
+  RegisterSymbol("HlTPoZ-oY7Y", reinterpret_cast<uintptr_t>(&sceGnmDrawIndex), "sceGnmDrawIndex"); // HlTPoZ-oY7Y#N#O
+  RegisterSymbol("GGsn7jMTxw4", reinterpret_cast<uintptr_t>(&sceGnmDrawIndexAuto), "sceGnmDrawIndexAuto"); // GGsn7jMTxw4#N#O
+  RegisterSymbol("ED9-Fjr8Ta4", reinterpret_cast<uintptr_t>(&sceGnmDrawIndexIndirect), "sceGnmDrawIndexIndirect"); // ED9-Fjr8Ta4#N#O
+  RegisterSymbol("jHdPvIzlpKc", reinterpret_cast<uintptr_t>(&sceGnmDrawIndexMultiInstanced), "sceGnmDrawIndexMultiInstanced"); // jHdPvIzlpKc#N#O
+  RegisterSymbol("oYM+YzfCm2Y", reinterpret_cast<uintptr_t>(&sceGnmDrawIndexOffset), "sceGnmDrawIndexOffset"); // oYM+YzfCm2Y#N#O
+  RegisterSymbol("4v+otIIdjqg", reinterpret_cast<uintptr_t>(&sceGnmDrawIndirect), "sceGnmDrawIndirect"); // 4v+otIIdjqg#N#O
+  RegisterSymbol("yb2cRhagD1I", reinterpret_cast<uintptr_t>(&sceGnmDrawInitDefaultHardwareState350), "sceGnmDrawInitDefaultHardwareState350"); // yb2cRhagD1I#N#O
+  RegisterSymbol("stDSYW2SBVM", reinterpret_cast<uintptr_t>(&sceGnmDrawOpaqueAuto), "sceGnmDrawOpaqueAuto"); // stDSYW2SBVM#N#O
+  RegisterSymbol("TLV4mswiZ4A", reinterpret_cast<uintptr_t>(&sceGnmDriverCaptureInProgress), "sceGnmDriverCaptureInProgress"); // TLV4mswiZ4A#N#O
+  RegisterSymbol("R6z1xM3pW-w", reinterpret_cast<uintptr_t>(&sceGnmDriverTraceInProgress), "sceGnmDriverTraceInProgress"); // R6z1xM3pW-w#N#O
+  RegisterSymbol("d88anrgNoKY", reinterpret_cast<uintptr_t>(&sceGnmDriverTriggerCapture), "sceGnmDriverTriggerCapture"); // d88anrgNoKY#N#O
+  RegisterSymbol("Fa3x75OOLRA", reinterpret_cast<uintptr_t>(&sceGnmEndWorkload), "sceGnmEndWorkload"); // Fa3x75OOLRA#N#O
+  RegisterSymbol("iBt3Oe00Kvc", reinterpret_cast<uintptr_t>(&sceGnmFlushGarlic), "sceGnmFlushGarlic"); // iBt3Oe00Kvc#N#O
+  RegisterSymbol("UoYY0DWMC0U", reinterpret_cast<uintptr_t>(&sceGnmGetEqEventType), "sceGnmGetEqEventType"); // UoYY0DWMC0U#N#O
+  RegisterSymbol("H7-fgvEutM0", reinterpret_cast<uintptr_t>(&sceGnmGetEqTimeStamp), "sceGnmGetEqTimeStamp"); // H7-fgvEutM0#N#O
+  RegisterSymbol("oL4hGI1PMpw", reinterpret_cast<uintptr_t>(&sceGnmGetGpuBlockStatus), "sceGnmGetGpuBlockStatus"); // oL4hGI1PMpw#N#O
+  RegisterSymbol("tZCSL5ulnB4", reinterpret_cast<uintptr_t>(&sceGnmGetGpuInfoStatus), "sceGnmGetGpuInfoStatus"); // tZCSL5ulnB4#N#O
+  RegisterSymbol("iFirFzgYsvw", reinterpret_cast<uintptr_t>(&sceGnmGetLastWaitedAddress), "sceGnmGetLastWaitedAddress"); // iFirFzgYsvw#N#O
+  RegisterSymbol("KnldROUkWJY", reinterpret_cast<uintptr_t>(&sceGnmGetNumTcaUnits), "sceGnmGetNumTcaUnits"); // KnldROUkWJY#N#O
+  RegisterSymbol("fzJdEihTFV4", reinterpret_cast<uintptr_t>(&sceGnmGetProtectionFaultTimeStamp), "sceGnmGetProtectionFaultTimeStamp"); // fzJdEihTFV4#N#O
+  RegisterSymbol("nEyFbYUloIM", reinterpret_cast<uintptr_t>(&sceGnmGetShaderProgramBaseAddress), "sceGnmGetShaderProgramBaseAddress"); // nEyFbYUloIM#N#O
+  RegisterSymbol("k7iGTvDQPLQ", reinterpret_cast<uintptr_t>(&sceGnmGetShaderStatus), "sceGnmGetShaderStatus"); // k7iGTvDQPLQ#N#O
+  RegisterSymbol("ln33zjBrfjk", reinterpret_cast<uintptr_t>(&sceGnmGetTheTessellationFactorRingBufferBaseAddress), "sceGnmGetTheTessellationFactorRingBufferBaseAddress"); // ln33zjBrfjk#N#O
+  RegisterSymbol("7qZVNgEu+SY", reinterpret_cast<uintptr_t>(&sceGnmInsertPopMarker), "sceGnmInsertPopMarker"); // 7qZVNgEu+SY#N#O
+  RegisterSymbol("aPIZJTXC+cU", reinterpret_cast<uintptr_t>(&sceGnmInsertPushColorMarker), "sceGnmInsertPushColorMarker"); // aPIZJTXC+cU#N#O
+  RegisterSymbol("W1Etj-jlW7Y", reinterpret_cast<uintptr_t>(&sceGnmInsertPushMarker), "sceGnmInsertPushMarker"); // W1Etj-jlW7Y#N#O
+  RegisterSymbol("aj3L-iaFmyk", reinterpret_cast<uintptr_t>(&sceGnmInsertSetColorMarker), "sceGnmInsertSetColorMarker"); // aj3L-iaFmyk#N#O
+  RegisterSymbol("jiItzS6+22g", reinterpret_cast<uintptr_t>(&sceGnmInsertSetMarker), "sceGnmInsertSetMarker"); // jiItzS6+22g#N#O
+  RegisterSymbol("URDgJcXhQOs", reinterpret_cast<uintptr_t>(&sceGnmInsertThreadTraceMarker), "sceGnmInsertThreadTraceMarker"); // URDgJcXhQOs#N#O
+  RegisterSymbol("1qXLHIpROPE", reinterpret_cast<uintptr_t>(&sceGnmInsertWaitFlipDone), "sceGnmInsertWaitFlipDone"); // 1qXLHIpROPE#N#O
+  RegisterSymbol("jg33rEKLfVs", reinterpret_cast<uintptr_t>(&sceGnmIsUserPaEnabled), "sceGnmIsUserPaEnabled"); // jg33rEKLfVs#N#O
+  RegisterSymbol("26PM5Mzl8zc", reinterpret_cast<uintptr_t>(&sceGnmLogicalCuIndexToPhysicalCuIndex), "sceGnmLogicalCuIndexToPhysicalCuIndex"); // 26PM5Mzl8zc#N#O
+  RegisterSymbol("RU74kek-N0c", reinterpret_cast<uintptr_t>(&sceGnmLogicalCuMaskToPhysicalCuMask), "sceGnmLogicalCuMaskToPhysicalCuMask"); // RU74kek-N0c#N#O
+  RegisterSymbol("29oKvKXzEZo", reinterpret_cast<uintptr_t>(&sceGnmMapComputeQueue), "sceGnmMapComputeQueue"); // 29oKvKXzEZo#N#O
+  RegisterSymbol("A+uGq+3KFtQ", reinterpret_cast<uintptr_t>(&sceGnmMapComputeQueueWithPriority), "sceGnmMapComputeQueueWithPriority"); // A+uGq+3KFtQ#N#O
+  RegisterSymbol("gObODli-OH8", reinterpret_cast<uintptr_t>(&sceGnmRequestFlipAndSubmitDone), "sceGnmRequestFlipAndSubmitDone"); // gObODli-OH8#N#O
+  RegisterSymbol("6YRHhh5mHCs", reinterpret_cast<uintptr_t>(&sceGnmRequestFlipAndSubmitDoneForWorkload), "sceGnmRequestFlipAndSubmitDoneForWorkload"); // 6YRHhh5mHCs#N#O
+  RegisterSymbol("f85orjx7qts", reinterpret_cast<uintptr_t>(&sceGnmRequestMipStatsReportAndReset), "sceGnmRequestMipStatsReportAndReset"); // f85orjx7qts#N#O
+  RegisterSymbol("MYRtYhojKdA", reinterpret_cast<uintptr_t>(&sceGnmResetVgtControl), "sceGnmResetVgtControl"); // MYRtYhojKdA#N#O
+  RegisterSymbol("Kx-h-nWQJ8A", reinterpret_cast<uintptr_t>(&sceGnmSetCsShaderWithModifier), "sceGnmSetCsShaderWithModifier"); // Kx-h-nWQJ8A#N#O
+  RegisterSymbol("X9Omw9dwv5M", reinterpret_cast<uintptr_t>(&sceGnmSetEmbeddedPsShader), "sceGnmSetEmbeddedPsShader"); // X9Omw9dwv5M#N#O
+  RegisterSymbol("+AFvOEXrKJk", reinterpret_cast<uintptr_t>(&sceGnmSetEmbeddedVsShader), "sceGnmSetEmbeddedVsShader"); // +AFvOEXrKJk#N#O
+  RegisterSymbol("FUHG8sQ3R58", reinterpret_cast<uintptr_t>(&sceGnmSetEsShader), "sceGnmSetEsShader"); // FUHG8sQ3R58#N#O
+  RegisterSymbol("jtkqXpAOY6w", reinterpret_cast<uintptr_t>(&sceGnmSetGsRingSizes), "sceGnmSetGsRingSizes"); // jtkqXpAOY6w#N#O
+  RegisterSymbol("UJwNuMBcUAk", reinterpret_cast<uintptr_t>(&sceGnmSetGsShader), "sceGnmSetGsShader"); // UJwNuMBcUAk#N#O
+  RegisterSymbol("VJNjFtqiF5w", reinterpret_cast<uintptr_t>(&sceGnmSetHsShader), "sceGnmSetHsShader"); // VJNjFtqiF5w#N#O
+  RegisterSymbol("vckdzbQ46SI", reinterpret_cast<uintptr_t>(&sceGnmSetLsShader), "sceGnmSetLsShader"); // vckdzbQ46SI#N#O
+  RegisterSymbol("5uFKckiJYRM", reinterpret_cast<uintptr_t>(&sceGnmSetPsShader350), "sceGnmSetPsShader350"); // 5uFKckiJYRM#N#O
+  RegisterSymbol("cFCp0NX8wf0", reinterpret_cast<uintptr_t>(&sceGnmSetVgtControl), "sceGnmSetVgtControl"); // cFCp0NX8wf0#N#O
+  RegisterSymbol("gAhCn6UiU4Y", reinterpret_cast<uintptr_t>(&sceGnmSetVsShader), "sceGnmSetVsShader"); // gAhCn6UiU4Y#N#O
+  RegisterSymbol("XiyzNZ9J4nQ", reinterpret_cast<uintptr_t>(&sceGnmSetWaveLimitMultipliers), "sceGnmSetWaveLimitMultipliers"); // XiyzNZ9J4nQ#N#O
+  RegisterSymbol("+xuDhxlWRPg", reinterpret_cast<uintptr_t>(&sceGnmSetupMipStatsReport), "sceGnmSetupMipStatsReport"); // +xuDhxlWRPg#N#O
+  RegisterSymbol("xbxNatawohc", reinterpret_cast<uintptr_t>(&sceGnmSubmitAndFlipCommandBuffers), "sceGnmSubmitAndFlipCommandBuffers"); // xbxNatawohc#N#O
+  RegisterSymbol("Ga6r7H6Y0RI", reinterpret_cast<uintptr_t>(&sceGnmSubmitAndFlipCommandBuffersForWorkload), "sceGnmSubmitAndFlipCommandBuffersForWorkload"); // Ga6r7H6Y0RI#N#O
+  RegisterSymbol("zwY0YV91TTI", reinterpret_cast<uintptr_t>(&sceGnmSubmitCommandBuffers), "sceGnmSubmitCommandBuffers"); // zwY0YV91TTI#N#O
+  RegisterSymbol("jRcI8VcgTz4", reinterpret_cast<uintptr_t>(&sceGnmSubmitCommandBuffersForWorkload), "sceGnmSubmitCommandBuffersForWorkload"); // jRcI8VcgTz4#N#O
+  RegisterSymbol("yvZ73uQUqrk", reinterpret_cast<uintptr_t>(&sceGnmSubmitDone), "sceGnmSubmitDone"); // yvZ73uQUqrk#N#O
+  RegisterSymbol("ArSg-TGinhk", reinterpret_cast<uintptr_t>(&sceGnmUnmapComputeQueue), "sceGnmUnmapComputeQueue"); // ArSg-TGinhk#N#O
+  RegisterSymbol("nLM2i2+65hA", reinterpret_cast<uintptr_t>(&sceGnmUpdateGsShader), "sceGnmUpdateGsShader"); // nLM2i2+65hA#N#O
+  RegisterSymbol("GNlx+y7xPdE", reinterpret_cast<uintptr_t>(&sceGnmUpdateHsShader), "sceGnmUpdateHsShader"); // GNlx+y7xPdE#N#O
+  RegisterSymbol("mLVL7N7BVBg", reinterpret_cast<uintptr_t>(&sceGnmUpdatePsShader350), "sceGnmUpdatePsShader350"); // mLVL7N7BVBg#N#O
+  RegisterSymbol("V31V01UiScY", reinterpret_cast<uintptr_t>(&sceGnmUpdateVsShader), "sceGnmUpdateVsShader"); // V31V01UiScY#N#O
+  RegisterSymbol("EY28T2bkN7k", reinterpret_cast<uintptr_t>(&sceHttpAddRequestHeader), "sceHttpAddRequestHeader"); // EY28T2bkN7k#s#q
+  RegisterSymbol("qgxDBjorUxs", reinterpret_cast<uintptr_t>(&sceHttpCreateConnectionWithURL), "sceHttpCreateConnectionWithURL"); // qgxDBjorUxs#s#q
+  RegisterSymbol("Aeu5wVKkF9w", reinterpret_cast<uintptr_t>(&sceHttpCreateRequestWithURL), "sceHttpCreateRequestWithURL"); // Aeu5wVKkF9w#s#q
+  RegisterSymbol("0gYjPTR-6cY", reinterpret_cast<uintptr_t>(&sceHttpCreateTemplate), "sceHttpCreateTemplate"); // 0gYjPTR-6cY#s#q
+  RegisterSymbol("P6A3ytpsiYc", reinterpret_cast<uintptr_t>(&sceHttpDeleteConnection), "sceHttpDeleteConnection"); // P6A3ytpsiYc#s#q
+  RegisterSymbol("qe7oZ+v4PWA", reinterpret_cast<uintptr_t>(&sceHttpDeleteRequest), "sceHttpDeleteRequest"); // qe7oZ+v4PWA#s#q
+  RegisterSymbol("4I8vEpuEhZ8", reinterpret_cast<uintptr_t>(&sceHttpDeleteTemplate), "sceHttpDeleteTemplate"); // 4I8vEpuEhZ8#s#q
+  RegisterSymbol("aCYPMSUIaP8", reinterpret_cast<uintptr_t>(&sceHttpGetAllResponseHeaders), "sceHttpGetAllResponseHeaders"); // aCYPMSUIaP8#s#q
+  RegisterSymbol("0onIrKx9NIE", reinterpret_cast<uintptr_t>(&sceHttpGetLastErrno), "sceHttpGetLastErrno"); // 0onIrKx9NIE#s#q
+  RegisterSymbol("0a2TBNfE3BU", reinterpret_cast<uintptr_t>(&sceHttpGetStatusCode), "sceHttpGetStatusCode"); // 0a2TBNfE3BU#s#q
+  RegisterSymbol("A9cVMUtEp4Y", reinterpret_cast<uintptr_t>(&sceHttpInit), "sceHttpInit"); // A9cVMUtEp4Y#s#q
+  RegisterSymbol("hPTXo3bICzI", reinterpret_cast<uintptr_t>(&sceHttpParseResponseHeader), "sceHttpParseResponseHeader"); // hPTXo3bICzI#s#q
+  RegisterSymbol("P5pdoykPYTk", reinterpret_cast<uintptr_t>(&sceHttpReadData), "sceHttpReadData"); // P5pdoykPYTk#s#q
+  RegisterSymbol("1e2BNwI-XzE", reinterpret_cast<uintptr_t>(&sceHttpSendRequest), "sceHttpSendRequest"); // 1e2BNwI-XzE#s#q
+  RegisterSymbol("K1d1LqZRQHQ", reinterpret_cast<uintptr_t>(&sceHttpSetResolveRetry), "sceHttpSetResolveRetry"); // K1d1LqZRQHQ#s#q
+  RegisterSymbol("Tc-hAYDKtQc", reinterpret_cast<uintptr_t>(&sceHttpSetResolveTimeOut), "sceHttpSetResolveTimeOut"); // Tc-hAYDKtQc#s#q
+  RegisterSymbol("Ik-KpLTlf7Q", reinterpret_cast<uintptr_t>(&sceHttpTerm), "sceHttpTerm"); // Ik-KpLTlf7Q#s#q
+  RegisterSymbol("htyBOoWeS58", reinterpret_cast<uintptr_t>(&sceHttpsSetSslCallback), "sceHttpsSetSslCallback"); // htyBOoWeS58#s#q
+  RegisterSymbol("K+rocojkr-I", reinterpret_cast<uintptr_t>(&sceJpegEncCreate), "sceJpegEncCreate"); // K+rocojkr-I#c#c
+  RegisterSymbol("j1LyMdaM+C0", reinterpret_cast<uintptr_t>(&sceJpegEncDelete), "sceJpegEncDelete"); // j1LyMdaM+C0#c#c
+  RegisterSymbol("QbrU0cUghEM", reinterpret_cast<uintptr_t>(&sceJpegEncEncode), "sceJpegEncEncode"); // QbrU0cUghEM#c#c
+  RegisterSymbol("o6ZgXfFdWXQ", reinterpret_cast<uintptr_t>(&sceJpegEncQueryMemorySize), "sceJpegEncQueryMemorySize"); // o6ZgXfFdWXQ#c#c
+  RegisterSymbol("VHCS3rCd0PM", reinterpret_cast<uintptr_t>(&sceKernelAddReadEvent), "sceKernelAddReadEvent"); // VHCS3rCd0PM#A#B
+  RegisterSymbol("57ZK+ODEXWY", reinterpret_cast<uintptr_t>(&sceKernelAddTimerEvent), "sceKernelAddTimerEvent"); // 57ZK+ODEXWY#A#B
+  RegisterSymbol("7uhBFWRAS60", reinterpret_cast<uintptr_t>(&sceKernelClearEventFlag), "sceKernelClearEventFlag"); // 7uhBFWRAS60#A#B
+  RegisterSymbol("UK2Tl2DWUns", reinterpret_cast<uintptr_t>(&sceKernelClose), "sceKernelClose"); // UK2Tl2DWUns#A#B
+  RegisterSymbol("BpFoboUJoZU", reinterpret_cast<uintptr_t>(&sceKernelCreateEventFlag), "sceKernelCreateEventFlag"); // BpFoboUJoZU#A#B
+  RegisterSymbol("188x57JYp0g", reinterpret_cast<uintptr_t>(&sceKernelCreateSema), "sceKernelCreateSema"); // 188x57JYp0g#A#B
+  RegisterSymbol("8mql9OcQnd4", reinterpret_cast<uintptr_t>(&sceKernelDeleteEventFlag), "sceKernelDeleteEventFlag"); // 8mql9OcQnd4#A#B
+  RegisterSymbol("JxJ4tfgKlXA", reinterpret_cast<uintptr_t>(&sceKernelDeleteReadEvent), "sceKernelDeleteReadEvent"); // JxJ4tfgKlXA#A#B
+  RegisterSymbol("R1Jvn8bSCW8", reinterpret_cast<uintptr_t>(&sceKernelDeleteSema), "sceKernelDeleteSema"); // R1Jvn8bSCW8#A#B
+  RegisterSymbol("YWQFUyXIVdU", reinterpret_cast<uintptr_t>(&sceKernelDeleteTimerEvent), "sceKernelDeleteTimerEvent"); // YWQFUyXIVdU#A#B
+  RegisterSymbol("kBwCPsYX-m4", reinterpret_cast<uintptr_t>(&sceKernelFstat), "sceKernelFstat"); // kBwCPsYX-m4#A#B
+  RegisterSymbol("23CPPI1tyBY", reinterpret_cast<uintptr_t>(&sceKernelGetEventFilter), "sceKernelGetEventFilter"); // 23CPPI1tyBY#A#B
+  RegisterSymbol("4J2sUJmuHZQ", reinterpret_cast<uintptr_t>(&sceKernelGetProcessTime), "sceKernelGetProcessTime"); // 4J2sUJmuHZQ#A#B
+  RegisterSymbol("fgxnMeTNUtY", reinterpret_cast<uintptr_t>(&sceKernelGetProcessTimeCounter), "sceKernelGetProcessTimeCounter"); // fgxnMeTNUtY#A#B
+  RegisterSymbol("BNowx2l588E", reinterpret_cast<uintptr_t>(&sceKernelGetProcessTimeCounterFrequency), "sceKernelGetProcessTimeCounterFrequency"); // BNowx2l588E#A#B
+  RegisterSymbol("1j3S3n-tTW4", reinterpret_cast<uintptr_t>(&sceKernelGetTscFrequency), "sceKernelGetTscFrequency"); // 1j3S3n-tTW4#A#B
+  RegisterSymbol("j2AIqSqJP0w", reinterpret_cast<uintptr_t>(&sceKernelGetdents), "sceKernelGetdents"); // j2AIqSqJP0w#A#B
+  RegisterSymbol("WslcK1FQcGI", reinterpret_cast<uintptr_t>(&sceKernelIsNeoMode), "sceKernelIsNeoMode"); // WslcK1FQcGI#A#B
+  RegisterSymbol("1G3lF1Gg1k8", reinterpret_cast<uintptr_t>(&sceKernelOpen), "sceKernelOpen"); // 1G3lF1Gg1k8#A#B
+  RegisterSymbol("12wOHk8ywb0", reinterpret_cast<uintptr_t>(&sceKernelPollSema), "sceKernelPollSema"); // 12wOHk8ywb0#A#B
+  RegisterSymbol("Cg4srZ6TKbU", reinterpret_cast<uintptr_t>(&sceKernelRead), "sceKernelRead"); // Cg4srZ6TKbU#A#B
+  RegisterSymbol("-2IRUCO--PM", reinterpret_cast<uintptr_t>(&sceKernelReadTsc), "sceKernelReadTsc"); // -2IRUCO--PM#A#B
+  RegisterSymbol("IOnSvHzqu6A", reinterpret_cast<uintptr_t>(&sceKernelSetEventFlag), "sceKernelSetEventFlag"); // IOnSvHzqu6A#A#B
+  RegisterSymbol("-ZR+hG7aDHw", reinterpret_cast<uintptr_t>(&sceKernelSleep), "sceKernelSleep"); // -ZR+hG7aDHw#A#B
+  RegisterSymbol("AUXVxWeJU-A", reinterpret_cast<uintptr_t>(&sceKernelUnlink), "sceKernelUnlink"); // AUXVxWeJU-A#A#B
+  RegisterSymbol("1jfXLRVzisc", reinterpret_cast<uintptr_t>(&sceKernelUsleep), "sceKernelUsleep"); // 1jfXLRVzisc#A#B
+  RegisterSymbol("JTvBflhYazQ", reinterpret_cast<uintptr_t>(&sceKernelWaitEventFlag), "sceKernelWaitEventFlag"); // JTvBflhYazQ#A#B
+  RegisterSymbol("w21YgGGNtBk", reinterpret_cast<uintptr_t>(&sceNetEpollAbort), "sceNetEpollAbort"); // w21YgGGNtBk#BZ#N
+  RegisterSymbol("iWQWrwiSt8A", reinterpret_cast<uintptr_t>(&sceNetHtons), "sceNetHtons"); // iWQWrwiSt8A#BZ#N
+  RegisterSymbol("Nlev7Lg8k3A", reinterpret_cast<uintptr_t>(&sceNetInit), "sceNetInit"); // Nlev7Lg8k3A#BZ#N
+  RegisterSymbol("Rbvt+5Y2iEw", reinterpret_cast<uintptr_t>(&sceNetNtohs), "sceNetNtohs"); // Rbvt+5Y2iEw#BZ#N
+  RegisterSymbol("dgJBaeJnGpo", reinterpret_cast<uintptr_t>(&sceNetPoolCreate), "sceNetPoolCreate"); // dgJBaeJnGpo#BZ#N
+  RegisterSymbol("K7RlrTkI-mw", reinterpret_cast<uintptr_t>(&sceNetPoolDestroy), "sceNetPoolDestroy"); // K7RlrTkI-mw#BZ#N
+  RegisterSymbol("9wO9XrMsNhc", reinterpret_cast<uintptr_t>(&sceNetRecv), "sceNetRecv"); // 9wO9XrMsNhc#BZ#N
+  RegisterSymbol("beRjXBn-z+o", reinterpret_cast<uintptr_t>(&sceNetSend), "sceNetSend"); // beRjXBn-z+o#BZ#N
+  RegisterSymbol("cTGkc6-TBlI", reinterpret_cast<uintptr_t>(&sceNetTerm), "sceNetTerm"); // cTGkc6-TBlI#BZ#N
+  RegisterSymbol("OzKvTvg3ZYU", reinterpret_cast<uintptr_t>(&sceNpAbortRequest), "sceNpAbortRequest"); // OzKvTvg3ZYU#v#S
+  RegisterSymbol("dj+O5aD2a0Q", reinterpret_cast<uintptr_t>(&sceNpCmpOnlineId), "sceNpCmpOnlineId"); // dj+O5aD2a0Q#u#R
+  RegisterSymbol("GpLQDNKICac", reinterpret_cast<uintptr_t>(&sceNpCreateRequest), "sceNpCreateRequest"); // GpLQDNKICac#v#S
+  RegisterSymbol("S7QTn72PrDw", reinterpret_cast<uintptr_t>(&sceNpDeleteRequest), "sceNpDeleteRequest"); // S7QTn72PrDw#v#S
+  RegisterSymbol("Ghz9iWDUtC4", reinterpret_cast<uintptr_t>(&sceNpGetAccountCountry), "sceNpGetAccountCountry"); // Ghz9iWDUtC4#v#S
+  RegisterSymbol("KZ1Mj9yEGYc", reinterpret_cast<uintptr_t>(&sceNpGetAccountLanguage), "sceNpGetAccountLanguage"); // KZ1Mj9yEGYc#v#S
+  RegisterSymbol("p-o74CnoNzY", reinterpret_cast<uintptr_t>(&sceNpGetNpId), "sceNpGetNpId"); // p-o74CnoNzY#v#S
+  RegisterSymbol("XDncXQIJUSk", reinterpret_cast<uintptr_t>(&sceNpGetOnlineId), "sceNpGetOnlineId"); // XDncXQIJUSk#v#S
+  RegisterSymbol("ilwLM4zOmu4", reinterpret_cast<uintptr_t>(&sceNpGetParentalControlInfo), "sceNpGetParentalControlInfo"); // ilwLM4zOmu4#v#S
+  RegisterSymbol("eQH7nWPcAgc", reinterpret_cast<uintptr_t>(&sceNpGetState), "sceNpGetState"); // eQH7nWPcAgc#v#S
+  RegisterSymbol("6ncge5+l5Qs", reinterpret_cast<uintptr_t>(&scePadClose), "scePadClose"); // 6ncge5+l5Qs#K#L
+  RegisterSymbol("gjP9-KQzoUk", reinterpret_cast<uintptr_t>(&scePadGetControllerInformation), "scePadGetControllerInformation"); // gjP9-KQzoUk#K#L
+  RegisterSymbol("hv1luiJrqQM", reinterpret_cast<uintptr_t>(&scePadInit), "scePadInit"); // hv1luiJrqQM#K#L
+  RegisterSymbol("xk0AcarP3V4", reinterpret_cast<uintptr_t>(&scePadOpen), "scePadOpen"); // xk0AcarP3V4#K#L
+  RegisterSymbol("YndgXqQVV7c", reinterpret_cast<uintptr_t>(&scePadReadState), "scePadReadState"); // YndgXqQVV7c#K#L
+  RegisterSymbol("rIZnR6eSpvk", reinterpret_cast<uintptr_t>(&scePadResetOrientation), "scePadResetOrientation"); // rIZnR6eSpvk#K#L
+  RegisterSymbol("RR4novUEENY", reinterpret_cast<uintptr_t>(&scePadSetLightBar), "scePadSetLightBar"); // RR4novUEENY#K#L
+  RegisterSymbol("vDLMoJLde8I", reinterpret_cast<uintptr_t>(&scePadSetTiltCorrectionState), "scePadSetTiltCorrectionState"); // vDLMoJLde8I#K#L
+  RegisterSymbol("yFVnOdGxvZY", reinterpret_cast<uintptr_t>(&scePadSetVibration), "scePadSetVibration"); // yFVnOdGxvZY#K#L
+  RegisterSymbol("Uco1I0dlDi8", reinterpret_cast<uintptr_t>(&scePlayGoClose), "scePlayGoClose"); // Uco1I0dlDi8#I#J
+  RegisterSymbol("uWIYLFkkwqk", reinterpret_cast<uintptr_t>(&scePlayGoGetLocus), "scePlayGoGetLocus"); // uWIYLFkkwqk#I#J
+  RegisterSymbol("-RJWNMK3fC8", reinterpret_cast<uintptr_t>(&scePlayGoGetProgress), "scePlayGoGetProgress"); // -RJWNMK3fC8#I#J
+  RegisterSymbol("ts6GlZOKRrE", reinterpret_cast<uintptr_t>(&scePlayGoInitialize), "scePlayGoInitialize"); // ts6GlZOKRrE#I#J
+  RegisterSymbol("M1Gma1ocrGE", reinterpret_cast<uintptr_t>(&scePlayGoOpen), "scePlayGoOpen"); // M1Gma1ocrGE#I#J
+  RegisterSymbol("MPe0EeBGM-E", reinterpret_cast<uintptr_t>(&scePlayGoTerminate), "scePlayGoTerminate"); // MPe0EeBGM-E#I#J
+  RegisterSymbol("62KCwEMmzcM", reinterpret_cast<uintptr_t>(&scePthreadAttrDestroy), "scePthreadAttrDestroy"); // 62KCwEMmzcM#A#B
+  RegisterSymbol("nsYoNRywwNg", reinterpret_cast<uintptr_t>(&scePthreadAttrInit), "scePthreadAttrInit"); // nsYoNRywwNg#A#B
+  RegisterSymbol("3qxgM4ezETA", reinterpret_cast<uintptr_t>(&scePthreadAttrSetaffinity), "scePthreadAttrSetaffinity"); // 3qxgM4ezETA#A#B
+  RegisterSymbol("eXbUSpEaTsA", reinterpret_cast<uintptr_t>(&scePthreadAttrSetinheritsched), "scePthreadAttrSetinheritsched"); // eXbUSpEaTsA#A#B
+  RegisterSymbol("DzES9hQF4f4", reinterpret_cast<uintptr_t>(&scePthreadAttrSetschedparam), "scePthreadAttrSetschedparam"); // DzES9hQF4f4#A#B
+  RegisterSymbol("4+h9EzwKF4I", reinterpret_cast<uintptr_t>(&scePthreadAttrSetschedpolicy), "scePthreadAttrSetschedpolicy"); // 4+h9EzwKF4I#A#B
+  RegisterSymbol("UTXzJbWhhTE", reinterpret_cast<uintptr_t>(&scePthreadAttrSetstacksize), "scePthreadAttrSetstacksize"); // UTXzJbWhhTE#A#B
+  RegisterSymbol("JGgj7Uvrl+A", reinterpret_cast<uintptr_t>(&scePthreadCondBroadcast), "scePthreadCondBroadcast"); // JGgj7Uvrl+A#A#B
+  RegisterSymbol("g+PZd2hiacg", reinterpret_cast<uintptr_t>(&scePthreadCondDestroy), "scePthreadCondDestroy"); // g+PZd2hiacg#A#B
+  RegisterSymbol("2Tb92quprl0", reinterpret_cast<uintptr_t>(&scePthreadCondInit), "scePthreadCondInit"); // 2Tb92quprl0#A#B
+  RegisterSymbol("kDh-NfxgMtE", reinterpret_cast<uintptr_t>(&scePthreadCondSignal), "scePthreadCondSignal"); // kDh-NfxgMtE#A#B
+  RegisterSymbol("BmMjYxmew1w", reinterpret_cast<uintptr_t>(&scePthreadCondTimedwait), "scePthreadCondTimedwait"); // BmMjYxmew1w#A#B
+  RegisterSymbol("WKAXJ4XBPQ4", reinterpret_cast<uintptr_t>(&scePthreadCondWait), "scePthreadCondWait"); // WKAXJ4XBPQ4#A#B
+  RegisterSymbol("waPcxYiR3WA", reinterpret_cast<uintptr_t>(&scePthreadCondattrDestroy), "scePthreadCondattrDestroy"); // waPcxYiR3WA#A#B
+  RegisterSymbol("m5-2bsNfv7s", reinterpret_cast<uintptr_t>(&scePthreadCondattrInit), "scePthreadCondattrInit"); // m5-2bsNfv7s#A#B
+  RegisterSymbol("6UgtwV+0zb4", reinterpret_cast<uintptr_t>(&scePthreadCreate), "scePthreadCreate"); // 6UgtwV+0zb4#A#B
+  RegisterSymbol("3kg7rT0NQIs", reinterpret_cast<uintptr_t>(&scePthreadExit), "scePthreadExit"); // 3kg7rT0NQIs#A#B
+  RegisterSymbol("EI-5-jlq2dE", reinterpret_cast<uintptr_t>(&scePthreadGetthreadid), "scePthreadGetthreadid"); // EI-5-jlq2dE#A#B
+  RegisterSymbol("onNY9Byn-W8", reinterpret_cast<uintptr_t>(&scePthreadJoin), "scePthreadJoin"); // onNY9Byn-W8#A#B
+  RegisterSymbol("2Of0f+3mhhE", reinterpret_cast<uintptr_t>(&scePthreadMutexDestroy), "scePthreadMutexDestroy"); // 2Of0f+3mhhE#A#B
+  RegisterSymbol("cmo1RIYva9o", reinterpret_cast<uintptr_t>(&scePthreadMutexInit), "scePthreadMutexInit"); // cmo1RIYva9o#A#B
+  RegisterSymbol("9UK1vLZQft4", reinterpret_cast<uintptr_t>(&scePthreadMutexLock), "scePthreadMutexLock"); // 9UK1vLZQft4#A#B
+  RegisterSymbol("upoVrzMHFeE", reinterpret_cast<uintptr_t>(&scePthreadMutexTrylock), "scePthreadMutexTrylock"); // upoVrzMHFeE#A#B
+  RegisterSymbol("tn3VlD0hG60", reinterpret_cast<uintptr_t>(&scePthreadMutexUnlock), "scePthreadMutexUnlock"); // tn3VlD0hG60#A#B
+  RegisterSymbol("smWEktiyyG0", reinterpret_cast<uintptr_t>(&scePthreadMutexattrDestroy), "scePthreadMutexattrDestroy"); // smWEktiyyG0#A#B
+  RegisterSymbol("F8bUHwAG284", reinterpret_cast<uintptr_t>(&scePthreadMutexattrInit), "scePthreadMutexattrInit"); // F8bUHwAG284#A#B
+  RegisterSymbol("1FGvU0i9saQ", reinterpret_cast<uintptr_t>(&scePthreadMutexattrSetprotocol), "scePthreadMutexattrSetprotocol"); // 1FGvU0i9saQ#A#B
+  RegisterSymbol("iMp8QpE+XO4", reinterpret_cast<uintptr_t>(&scePthreadMutexattrSettype), "scePthreadMutexattrSettype"); // iMp8QpE+XO4#A#B
+  RegisterSymbol("XD3mDeybCnk", reinterpret_cast<uintptr_t>(&scePthreadRwlockTryrdlock), "scePthreadRwlockTryrdlock"); // XD3mDeybCnk#A#B
+  RegisterSymbol("W0Hpm2X0uPE", reinterpret_cast<uintptr_t>(&scePthreadSetprio), "scePthreadSetprio"); // W0Hpm2X0uPE#A#B
+  RegisterSymbol("u9YKpRRHe-M", reinterpret_cast<uintptr_t>(&sceRazorCaptureImmediate), "sceRazorCaptureImmediate"); // u9YKpRRHe-M#N#O
+  RegisterSymbol("f33OrruQYbM", reinterpret_cast<uintptr_t>(&sceRazorIsLoaded), "sceRazorIsLoaded"); // f33OrruQYbM#N#O
+  RegisterSymbol("8Yr143yEnRo", reinterpret_cast<uintptr_t>(&sceRtcConvertLocalTimeToUtc), "sceRtcConvertLocalTimeToUtc"); // 8Yr143yEnRo#n#n
+  RegisterSymbol("M1TvFst-jrM", reinterpret_cast<uintptr_t>(&sceRtcConvertUtcToLocalTime), "sceRtcConvertUtcToLocalTime"); // M1TvFst-jrM#n#n
+  RegisterSymbol("eiuobaF-hK4", reinterpret_cast<uintptr_t>(&sceRtcFormatRFC2822), "sceRtcFormatRFC2822"); // eiuobaF-hK4#n#n
+  RegisterSymbol("AxHBk3eat04", reinterpret_cast<uintptr_t>(&sceRtcFormatRFC2822LocalTime), "sceRtcFormatRFC2822LocalTime"); // AxHBk3eat04#n#n
+  RegisterSymbol("WJ3rqFwymew", reinterpret_cast<uintptr_t>(&sceRtcFormatRFC3339), "sceRtcFormatRFC3339"); // WJ3rqFwymew#n#n
+  RegisterSymbol("zO9UL3qIINQ", reinterpret_cast<uintptr_t>(&sceRtcGetCurrentNetworkTick), "sceRtcGetCurrentNetworkTick"); // zO9UL3qIINQ#n#n
+  RegisterSymbol("18B2NS1y9UU", reinterpret_cast<uintptr_t>(&sceRtcGetCurrentTick), "sceRtcGetCurrentTick"); // 18B2NS1y9UU#n#n
+  RegisterSymbol("8w-H19ip48I", reinterpret_cast<uintptr_t>(&sceRtcGetTick), "sceRtcGetTick"); // 8w-H19ip48I#n#n
+  RegisterSymbol("jMNwqYr4R-k", reinterpret_cast<uintptr_t>(&sceRtcGetTickResolution), "sceRtcGetTickResolution"); // jMNwqYr4R-k#n#n
+  RegisterSymbol("ueega6v3GUw", reinterpret_cast<uintptr_t>(&sceRtcSetTick), "sceRtcSetTick"); // ueega6v3GUw#n#n
+  RegisterSymbol("07O525HgICs", reinterpret_cast<uintptr_t>(&sceRtcTickAddSeconds), "sceRtcTickAddSeconds"); // 07O525HgICs#n#n
+  RegisterSymbol("-5y2uJ62qS8", reinterpret_cast<uintptr_t>(&sceRtcTickAddYears), "sceRtcTickAddYears"); // -5y2uJ62qS8#n#n
+  RegisterSymbol("S1GkePI17zQ", reinterpret_cast<uintptr_t>(&sceSaveDataDelete), "sceSaveDataDelete"); // S1GkePI17zQ#b#b
+  RegisterSymbol("TywrFKCoLGY", reinterpret_cast<uintptr_t>(&sceSaveDataInitialize3), "sceSaveDataInitialize3"); // TywrFKCoLGY#b#b
+  RegisterSymbol("yKDy8S5yLA0", reinterpret_cast<uintptr_t>(&sceSaveDataTerminate), "sceSaveDataTerminate"); // yKDy8S5yLA0#b#b
+  RegisterSymbol("DOwXL+FQMEY", reinterpret_cast<uintptr_t>(&sceSslGetSerialNumber), "sceSslGetSerialNumber"); // DOwXL+FQMEY#t#r
+  RegisterSymbol("hdpVEUDFW3s", reinterpret_cast<uintptr_t>(&sceSslInit), "sceSslInit"); // hdpVEUDFW3s#t#r
+  RegisterSymbol("0K1yQ6Lv-Yc", reinterpret_cast<uintptr_t>(&sceSslTerm), "sceSslTerm"); // 0K1yQ6Lv-Yc#t#r
+  RegisterSymbol("g8cM39EUZ6o", reinterpret_cast<uintptr_t>(&sceSysmoduleLoadModule), "sceSysmoduleLoadModule"); // g8cM39EUZ6o#G#H
+  RegisterSymbol("eR2bZFAAU0Q", reinterpret_cast<uintptr_t>(&sceSysmoduleUnloadModule), "sceSysmoduleUnloadModule"); // eR2bZFAAU0Q#G#H
+  RegisterSymbol("rPo6tV8D9bM", reinterpret_cast<uintptr_t>(&sceSystemServiceGetStatus), "sceSystemServiceGetStatus"); // rPo6tV8D9bM#p#G
+  RegisterSymbol("Vo5V8KAwCmk", reinterpret_cast<uintptr_t>(&sceSystemServiceHideSplashScreen), "sceSystemServiceHideSplashScreen"); // Vo5V8KAwCmk#p#G
+  RegisterSymbol("fZo48un7LK4", reinterpret_cast<uintptr_t>(&sceSystemServiceParamGetInt), "sceSystemServiceParamGetInt"); // fZo48un7LK4#p#G
+  RegisterSymbol("656LMQSrg6U", reinterpret_cast<uintptr_t>(&sceSystemServiceReceiveEvent), "sceSystemServiceReceiveEvent"); // 656LMQSrg6U#p#G
+  RegisterSymbol("yH17Q6NWtVg", reinterpret_cast<uintptr_t>(&sceUserServiceGetEvent), "sceUserServiceGetEvent"); // yH17Q6NWtVg#Q#Q
+  RegisterSymbol("CdWp0oHWGr0", reinterpret_cast<uintptr_t>(&sceUserServiceGetInitialUser), "sceUserServiceGetInitialUser"); // CdWp0oHWGr0#Q#Q
+  RegisterSymbol("fPhymKNvK-A", reinterpret_cast<uintptr_t>(&sceUserServiceGetLoginUserIdList), "sceUserServiceGetLoginUserIdList"); // fPhymKNvK-A#Q#Q
+  RegisterSymbol("1xxcMiGu2fo", reinterpret_cast<uintptr_t>(&sceUserServiceGetUserName), "sceUserServiceGetUserName"); // 1xxcMiGu2fo#Q#Q
+  RegisterSymbol("j3YMu1MVNNo", reinterpret_cast<uintptr_t>(&sceUserServiceInitialize), "sceUserServiceInitialize"); // j3YMu1MVNNo#Q#Q
+  RegisterSymbol("bwFjS+bX9mA", reinterpret_cast<uintptr_t>(&sceUserServiceTerminate), "sceUserServiceTerminate"); // bwFjS+bX9mA#Q#Q
+  RegisterSymbol("HXzjK9yI30k", reinterpret_cast<uintptr_t>(&sceVideoOutAddFlipEvent), "sceVideoOutAddFlipEvent"); // HXzjK9yI30k#T#T
+  RegisterSymbol("Up36PTk687E", reinterpret_cast<uintptr_t>(&sceVideoOutOpen), "sceVideoOutOpen"); // Up36PTk687E#T#T
+  RegisterSymbol("i6-sR91Wt-4", reinterpret_cast<uintptr_t>(&sceVideoOutSetBufferAttribute), "sceVideoOutSetBufferAttribute"); // i6-sR91Wt-4#T#T
+  RegisterSymbol("CBiu4mCE1DA", reinterpret_cast<uintptr_t>(&sceVideoOutSetFlipRate), "sceVideoOutSetFlipRate"); // CBiu4mCE1DA#T#T
+  RegisterSymbol("TUuiYS2kE8s", reinterpret_cast<uintptr_t>(&shutdown), "shutdown"); // TUuiYS2kE8s#P#B
+  RegisterSymbol("TU-d9PfIHPM", reinterpret_cast<uintptr_t>(&socket), "socket"); // TU-d9PfIHPM#P#B
+
+### avbaseminiappforneo.self.json (56 symbols)
+  RegisterSymbol("NN01qLRhiqU", reinterpret_cast<uintptr_t>(&rename), "rename"); // NN01qLRhiqU#P#B
+  RegisterSymbol("3OdRkSjOcog", reinterpret_cast<uintptr_t>(&sceFontBindRenderer), "sceFontBindRenderer"); // 3OdRkSjOcog#U#U
+  RegisterSymbol("vzHs3C8lWJk", reinterpret_cast<uintptr_t>(&sceFontCloseFont), "sceFontCloseFont"); // vzHs3C8lWJk#U#U
+  RegisterSymbol("n590hj5Oe-k", reinterpret_cast<uintptr_t>(&sceFontCreateLibraryWithEdition), "sceFontCreateLibraryWithEdition"); // n590hj5Oe-k#U#U
+  RegisterSymbol("WaSFJoRWXaI", reinterpret_cast<uintptr_t>(&sceFontCreateRendererWithEdition), "sceFontCreateRendererWithEdition"); // WaSFJoRWXaI#U#U
+  RegisterSymbol("FXP359ygujs", reinterpret_cast<uintptr_t>(&sceFontDestroyLibrary), "sceFontDestroyLibrary"); // FXP359ygujs#U#U
+  RegisterSymbol("exAxkyVLt0s", reinterpret_cast<uintptr_t>(&sceFontDestroyRenderer), "sceFontDestroyRenderer"); // exAxkyVLt0s#U#U
+  RegisterSymbol("imxVx8lm+KM", reinterpret_cast<uintptr_t>(&sceFontGetHorizontalLayout), "sceFontGetHorizontalLayout"); // imxVx8lm+KM#U#U
+  RegisterSymbol("whrS4oksXc4", reinterpret_cast<uintptr_t>(&sceFontMemoryInit), "sceFontMemoryInit"); // whrS4oksXc4#U#U
+  RegisterSymbol("h6hIgxXEiEc", reinterpret_cast<uintptr_t>(&sceFontMemoryTerm), "sceFontMemoryTerm"); // h6hIgxXEiEc#U#U
+  RegisterSymbol("KXUpebrFk1U", reinterpret_cast<uintptr_t>(&sceFontOpenFontMemory), "sceFontOpenFontMemory"); // KXUpebrFk1U#U#U
+  RegisterSymbol("gdUCnU0gHdI", reinterpret_cast<uintptr_t>(&sceFontRenderSurfaceInit), "sceFontRenderSurfaceInit"); // gdUCnU0gHdI#U#U
+  RegisterSymbol("oM+XCzVG3oM", reinterpret_cast<uintptr_t>(&sceFontSelectLibraryFt), "sceFontSelectLibraryFt"); // oM+XCzVG3oM#V#V
+  RegisterSymbol("Xx974EW-QFY", reinterpret_cast<uintptr_t>(&sceFontSelectRendererFt), "sceFontSelectRendererFt"); // Xx974EW-QFY#V#V
+  RegisterSymbol("N1EBMeGhf7E", reinterpret_cast<uintptr_t>(&sceFontSetScalePixel), "sceFontSetScalePixel"); // N1EBMeGhf7E#U#U
+  RegisterSymbol("6vGCkkQJOcI", reinterpret_cast<uintptr_t>(&sceFontSetupRenderScalePixel), "sceFontSetupRenderScalePixel"); // 6vGCkkQJOcI#U#U
+  RegisterSymbol("mz2iTY0MK4A", reinterpret_cast<uintptr_t>(&sceFontSupportExternalFonts), "sceFontSupportExternalFonts"); // mz2iTY0MK4A#U#U
+  RegisterSymbol("1QjhKxrsOB8", reinterpret_cast<uintptr_t>(&sceFontUnbindRenderer), "sceFontUnbindRenderer"); // 1QjhKxrsOB8#U#U
+  RegisterSymbol("hvG6GfBMXg8", reinterpret_cast<uintptr_t>(&sceHttpAbortRequest), "sceHttpAbortRequest"); // hvG6GfBMXg8#s#q
+  RegisterSymbol("yuO2H2Uvnos", reinterpret_cast<uintptr_t>(&sceHttpGetResponseContentLength), "sceHttpGetResponseContentLength"); // yuO2H2Uvnos#s#q
+  RegisterSymbol("T-mGo9f3Pu4", reinterpret_cast<uintptr_t>(&sceHttpSetAutoRedirect), "sceHttpSetAutoRedirect"); // T-mGo9f3Pu4#s#q
+  RegisterSymbol("0S9tTH0uqTU", reinterpret_cast<uintptr_t>(&sceHttpSetConnectTimeOut), "sceHttpSetConnectTimeOut"); // 0S9tTH0uqTU#s#q
+  RegisterSymbol("yigr4V0-HTM", reinterpret_cast<uintptr_t>(&sceHttpSetRecvTimeOut), "sceHttpSetRecvTimeOut"); // yigr4V0-HTM#s#q
+  RegisterSymbol("xegFfZKBVlw", reinterpret_cast<uintptr_t>(&sceHttpSetSendTimeOut), "sceHttpSetSendTimeOut"); // xegFfZKBVlw#s#q
+  RegisterSymbol("mSQCxzWTwVI", reinterpret_cast<uintptr_t>(&sceHttpsDisableOption), "sceHttpsDisableOption"); // mSQCxzWTwVI#s#q
+  RegisterSymbol("D0OdFMjp46I", reinterpret_cast<uintptr_t>(&sceKernelCreateEqueue), "sceKernelCreateEqueue"); // D0OdFMjp46I#A#B
+  RegisterSymbol("jpFjmgAC5AE", reinterpret_cast<uintptr_t>(&sceKernelDeleteEqueue), "sceKernelDeleteEqueue"); // jpFjmgAC5AE#A#B
+  RegisterSymbol("pO96TwzOm5E", reinterpret_cast<uintptr_t>(&sceKernelGetDirectMemorySize), "sceKernelGetDirectMemorySize"); // pO96TwzOm5E#A#B
+  RegisterSymbol("wzvqT4UqKX8", reinterpret_cast<uintptr_t>(&sceKernelLoadStartModule), "sceKernelLoadStartModule"); // wzvqT4UqKX8#A#B
+  RegisterSymbol("1-LFLmRFxxM", reinterpret_cast<uintptr_t>(&sceKernelMkdir), "sceKernelMkdir"); // 1-LFLmRFxxM#A#B
+  RegisterSymbol("MBuItvba6z8", reinterpret_cast<uintptr_t>(&sceKernelReleaseDirectMemory), "sceKernelReleaseDirectMemory"); // MBuItvba6z8#A#B
+  RegisterSymbol("teiItL2boFw", reinterpret_cast<uintptr_t>(&sceKernelReleaseFlexibleMemory), "sceKernelReleaseFlexibleMemory"); // teiItL2boFw#A#B
+  RegisterSymbol("4czppHBiriw", reinterpret_cast<uintptr_t>(&sceKernelSignalSema), "sceKernelSignalSema"); // 4czppHBiriw#A#B
+  RegisterSymbol("eV9wAD2riIA", reinterpret_cast<uintptr_t>(&sceKernelStat), "sceKernelStat"); // eV9wAD2riIA#A#B
+  RegisterSymbol("QKd0qM58Qes", reinterpret_cast<uintptr_t>(&sceKernelStopUnloadModule), "sceKernelStopUnloadModule"); // QKd0qM58Qes#A#B
+  RegisterSymbol("fzyMKs9kim0", reinterpret_cast<uintptr_t>(&sceKernelWaitEqueue), "sceKernelWaitEqueue"); // fzyMKs9kim0#A#B
+  RegisterSymbol("Zxa0VhQVTsk", reinterpret_cast<uintptr_t>(&sceKernelWaitSema), "sceKernelWaitSema"); // Zxa0VhQVTsk#A#B
+  RegisterSymbol("4wSze92BhLI", reinterpret_cast<uintptr_t>(&sceKernelWrite), "sceKernelWrite"); // 4wSze92BhLI#A#B
+  RegisterSymbol("9vA2aW+CHuA", reinterpret_cast<uintptr_t>(&sceNetInetNtop), "sceNetInetNtop"); // 9vA2aW+CHuA#BZ#N
+  RegisterSymbol("AzqoBha7js4", reinterpret_cast<uintptr_t>(&sceNetResolverAbort), "sceNetResolverAbort"); // AzqoBha7js4#BZ#N
+  RegisterSymbol("C4UgDHHPvdw", reinterpret_cast<uintptr_t>(&sceNetResolverCreate), "sceNetResolverCreate"); // C4UgDHHPvdw#BZ#N
+  RegisterSymbol("J5i3hiLJMPk", reinterpret_cast<uintptr_t>(&sceNetResolverGetError), "sceNetResolverGetError"); // J5i3hiLJMPk#BZ#N
+  RegisterSymbol("m0uW+8pFyaw", reinterpret_cast<uintptr_t>(&scePngDecCreate), "scePngDecCreate"); // m0uW+8pFyaw#e#e
+  RegisterSymbol("WC216DD3El4", reinterpret_cast<uintptr_t>(&scePngDecDecode), "scePngDecDecode"); // WC216DD3El4#e#e
+  RegisterSymbol("QbD+eENEwo8", reinterpret_cast<uintptr_t>(&scePngDecDelete), "scePngDecDelete"); // QbD+eENEwo8#e#e
+  RegisterSymbol("U6h4e5JRPaQ", reinterpret_cast<uintptr_t>(&scePngDecParseHeader), "scePngDecParseHeader"); // U6h4e5JRPaQ#e#e
+  RegisterSymbol("-6srIGbLTIU", reinterpret_cast<uintptr_t>(&scePngDecQueryMemorySize), "scePngDecQueryMemorySize"); // -6srIGbLTIU#e#e
+  RegisterSymbol("-Wreprtu0Qs", reinterpret_cast<uintptr_t>(&scePthreadAttrSetdetachstate), "scePthreadAttrSetdetachstate"); // -Wreprtu0Qs#A#B
+  RegisterSymbol("3PtV6p3QNX4", reinterpret_cast<uintptr_t>(&scePthreadEqual), "scePthreadEqual"); // 3PtV6p3QNX4#A#B
+  RegisterSymbol("1tKyG7RlMJo", reinterpret_cast<uintptr_t>(&scePthreadGetprio), "scePthreadGetprio"); // 1tKyG7RlMJo#A#B
+  RegisterSymbol("aI+OeCz8xrQ", reinterpret_cast<uintptr_t>(&scePthreadSelf), "scePthreadSelf"); // aI+OeCz8xrQ#A#B
+  RegisterSymbol("T72hz6ffq08", reinterpret_cast<uintptr_t>(&scePthreadYield), "scePthreadYield"); // T72hz6ffq08#A#B
+  RegisterSymbol("mn-tf4QiFzk", reinterpret_cast<uintptr_t>(&sceRtcTickAddMinutes), "sceRtcTickAddMinutes"); // mn-tf4QiFzk#n#n
+  RegisterSymbol("6kPnj51T62Y", reinterpret_cast<uintptr_t>(&sceVideoOutGetResolutionStatus), "sceVideoOutGetResolutionStatus"); // 6kPnj51T62Y#T#T
+  RegisterSymbol("w3BY+tAEiQY", reinterpret_cast<uintptr_t>(&sceVideoOutRegisterBuffers), "sceVideoOutRegisterBuffers"); // w3BY+tAEiQY#T#T
+  RegisterSymbol("T8fER+tIGgk", reinterpret_cast<uintptr_t>(&select), "select"); // T8fER+tIGgk#P#B
+
+### gaikai-player.sprx.json (30 symbols)
+  RegisterSymbol("vNe1w4diLCs", reinterpret_cast<uintptr_t>(&__tls_get_addr), "__tls_get_addr"); // vNe1w4diLCs#A#B
+  RegisterSymbol("3e+4Iv7IJ8U", reinterpret_cast<uintptr_t>(&accept), "accept"); // 3e+4Iv7IJ8U#P#B
+  RegisterSymbol("ltCfaGr2JGE", reinterpret_cast<uintptr_t>(&pthread_mutex_destroy), "pthread_mutex_destroy"); // ltCfaGr2JGE#P#B
+  RegisterSymbol("ttHNfU+qDBU", reinterpret_cast<uintptr_t>(&pthread_mutex_init), "pthread_mutex_init"); // ttHNfU+qDBU#P#B
+  RegisterSymbol("7H0iTOciTLo", reinterpret_cast<uintptr_t>(&pthread_mutex_lock), "pthread_mutex_lock"); // 7H0iTOciTLo#P#B
+  RegisterSymbol("K-jXhbt2gn4", reinterpret_cast<uintptr_t>(&pthread_mutex_trylock), "pthread_mutex_trylock"); // K-jXhbt2gn4#P#B
+  RegisterSymbol("2Z+PpY6CaJg", reinterpret_cast<uintptr_t>(&pthread_mutex_unlock), "pthread_mutex_unlock"); // 2Z+PpY6CaJg#P#B
+  RegisterSymbol("HF7lK46xzjY", reinterpret_cast<uintptr_t>(&pthread_mutexattr_destroy), "pthread_mutexattr_destroy"); // HF7lK46xzjY#P#B
+  RegisterSymbol("dQHWEsJtoE4", reinterpret_cast<uintptr_t>(&pthread_mutexattr_init), "pthread_mutexattr_init"); // dQHWEsJtoE4#P#B
+  RegisterSymbol("mDmgMOGVUqg", reinterpret_cast<uintptr_t>(&pthread_mutexattr_settype), "pthread_mutexattr_settype"); // mDmgMOGVUqg#P#B
+  RegisterSymbol("Ez8xjo9UF4E", reinterpret_cast<uintptr_t>(&recv), "recv"); // Ez8xjo9UF4E#P#B
+  RegisterSymbol("YuOW3dDAKYc", reinterpret_cast<uintptr_t>(&sceHttpUriEscape), "sceHttpUriEscape"); // YuOW3dDAKYc#s#q
+  RegisterSymbol("rTXw65xmLIA", reinterpret_cast<uintptr_t>(&sceKernelAllocateDirectMemory), "sceKernelAllocateDirectMemory"); // rTXw65xmLIA#A#B
+  RegisterSymbol("L-Q3LEjIbgA", reinterpret_cast<uintptr_t>(&sceKernelMapDirectMemory), "sceKernelMapDirectMemory"); // L-Q3LEjIbgA#A#B
+  RegisterSymbol("IWIBBdTHit4", reinterpret_cast<uintptr_t>(&sceKernelMapFlexibleMemory), "sceKernelMapFlexibleMemory"); // IWIBBdTHit4#A#B
+  RegisterSymbol("bErx49PgxyY", reinterpret_cast<uintptr_t>(&sceNetBind), "sceNetBind"); // bErx49PgxyY#BZ#N
+  RegisterSymbol("OXXX4mUk3uk", reinterpret_cast<uintptr_t>(&sceNetConnect), "sceNetConnect"); // OXXX4mUk3uk#BZ#N
+  RegisterSymbol("ZVw46bsasAk", reinterpret_cast<uintptr_t>(&sceNetEpollControl), "sceNetEpollControl"); // ZVw46bsasAk#BZ#N
+  RegisterSymbol("SF47kB2MNTo", reinterpret_cast<uintptr_t>(&sceNetEpollCreate), "sceNetEpollCreate"); // SF47kB2MNTo#BZ#N
+  RegisterSymbol("Inp1lfL+Jdw", reinterpret_cast<uintptr_t>(&sceNetEpollDestroy), "sceNetEpollDestroy"); // Inp1lfL+Jdw#BZ#N
+  RegisterSymbol("drjIbDbA7UQ", reinterpret_cast<uintptr_t>(&sceNetEpollWait), "sceNetEpollWait"); // drjIbDbA7UQ#BZ#N
+  RegisterSymbol("HQOwnfMGipQ", reinterpret_cast<uintptr_t>(&sceNetErrnoLoc), "sceNetErrnoLoc"); // HQOwnfMGipQ#BZ#N
+  RegisterSymbol("6Oc0bLsIYe0", reinterpret_cast<uintptr_t>(&sceNetGetMacAddress), "sceNetGetMacAddress"); // 6Oc0bLsIYe0#BZ#N
+  RegisterSymbol("8Kcp5d-q1Uo", reinterpret_cast<uintptr_t>(&sceNetInetPton), "sceNetInetPton"); // 8Kcp5d-q1Uo#BZ#N
+  RegisterSymbol("kOj1HiAGE54", reinterpret_cast<uintptr_t>(&sceNetListen), "sceNetListen"); // kOj1HiAGE54#BZ#N
+  RegisterSymbol("2mKX2Spso7I", reinterpret_cast<uintptr_t>(&sceNetSetsockopt), "sceNetSetsockopt"); // 2mKX2Spso7I#BZ#N
+  RegisterSymbol("TSM6whtekok", reinterpret_cast<uintptr_t>(&sceNetShutdown), "sceNetShutdown"); // TSM6whtekok#BZ#N
+  RegisterSymbol("Q4qBuN-c0ZM", reinterpret_cast<uintptr_t>(&sceNetSocket), "sceNetSocket"); // Q4qBuN-c0ZM#BZ#N
+  RegisterSymbol("45ggEzakPJQ", reinterpret_cast<uintptr_t>(&sceNetSocketClose), "sceNetSocketClose"); // 45ggEzakPJQ#BZ#N
+  RegisterSymbol("fZOeZIOEmLw", reinterpret_cast<uintptr_t>(&send), "send"); // fZOeZIOEmLw#P#B
+
+### becore.elf.json (19 symbols)
+  RegisterSymbol("JBN6N-EY+3M", reinterpret_cast<uintptr_t>(&sceHttpsGetSslError), "sceHttpsGetSslError"); // JBN6N-EY+3M#s#q
+  RegisterSymbol("hMYgMP-Vuno", reinterpret_cast<uintptr_t>(&sceLibSecureCryptographyDecrypt), "sceLibSecureCryptographyDecrypt"); // hMYgMP-Vuno#7#1
+  RegisterSymbol("RsiCFJMIGHw", reinterpret_cast<uintptr_t>(&sceLibSecureCryptographyDeleteContext), "sceLibSecureCryptographyDeleteContext"); // RsiCFJMIGHw#7#1
+  RegisterSymbol("aEoi0u2FOiQ", reinterpret_cast<uintptr_t>(&sceLibSecureCryptographyEncrypt), "sceLibSecureCryptographyEncrypt"); // aEoi0u2FOiQ#7#1
+  RegisterSymbol("pT4ViD0o-bM", reinterpret_cast<uintptr_t>(&sceLibSecureCryptographyGetContextSize), "sceLibSecureCryptographyGetContextSize"); // pT4ViD0o-bM#7#1
+  RegisterSymbol("XKDzFiGAvhU", reinterpret_cast<uintptr_t>(&sceLibSecureCryptographyMessagePadding), "sceLibSecureCryptographyMessagePadding"); // XKDzFiGAvhU#7#1
+  RegisterSymbol("NpcegFLFQpg", reinterpret_cast<uintptr_t>(&sceLibSecureCryptographyMessagePaddingSize), "sceLibSecureCryptographyMessagePaddingSize"); // NpcegFLFQpg#7#1
+  RegisterSymbol("hyfPWjJB8pI", reinterpret_cast<uintptr_t>(&sceLibSecureCryptographySetContext), "sceLibSecureCryptographySetContext"); // hyfPWjJB8pI#7#1
+  RegisterSymbol("t4lnn4rB+U0", reinterpret_cast<uintptr_t>(&sceLibSecureDestroy), "sceLibSecureDestroy"); // t4lnn4rB+U0#7#1
+  RegisterSymbol("fIqNvkKIUPQ", reinterpret_cast<uintptr_t>(&sceLibSecureInit), "sceLibSecureInit"); // fIqNvkKIUPQ#7#1
+  RegisterSymbol("U546k6orxQo", reinterpret_cast<uintptr_t>(&sceNgs2RackCreateWithAllocator), "sceNgs2RackCreateWithAllocator"); // U546k6orxQo#L#M
+  RegisterSymbol("lCqD7oycmIM", reinterpret_cast<uintptr_t>(&sceNgs2RackDestroy), "sceNgs2RackDestroy"); // lCqD7oycmIM#L#M
+  RegisterSymbol("MwmHz8pAdAo", reinterpret_cast<uintptr_t>(&sceNgs2RackGetVoiceHandle), "sceNgs2RackGetVoiceHandle"); // MwmHz8pAdAo#L#M
+  RegisterSymbol("mPYgU4oYpuY", reinterpret_cast<uintptr_t>(&sceNgs2SystemCreateWithAllocator), "sceNgs2SystemCreateWithAllocator"); // mPYgU4oYpuY#L#M
+  RegisterSymbol("u-WrYDaJA3k", reinterpret_cast<uintptr_t>(&sceNgs2SystemDestroy), "sceNgs2SystemDestroy"); // u-WrYDaJA3k#L#M
+  RegisterSymbol("i0VnXM-C9fc", reinterpret_cast<uintptr_t>(&sceNgs2SystemRender), "sceNgs2SystemRender"); // i0VnXM-C9fc#L#M
+  RegisterSymbol("uu94irFOGpA", reinterpret_cast<uintptr_t>(&sceNgs2VoiceControl), "sceNgs2VoiceControl"); // uu94irFOGpA#L#M
+  RegisterSymbol("-TOuuAQ-buE", reinterpret_cast<uintptr_t>(&sceNgs2VoiceGetState), "sceNgs2VoiceGetState"); // -TOuuAQ-buE#L#M
+  RegisterSymbol("4qGrR6eoP9Y", reinterpret_cast<uintptr_t>(&scePthreadDetach), "scePthreadDetach"); // 4qGrR6eoP9Y#A#B
+
+### libSceAvPlayer.sprx.json (14 symbols)
+  RegisterSymbol("KMcEa+rHsIo", reinterpret_cast<uintptr_t>(&sceAvPlayerAddSource), "sceAvPlayerAddSource"); // KMcEa+rHsIo#W#W
+  RegisterSymbol("NkJwDzKmIlw", reinterpret_cast<uintptr_t>(&sceAvPlayerClose), "sceAvPlayerClose"); // NkJwDzKmIlw#W#W
+  RegisterSymbol("ODJK2sn9w4A", reinterpret_cast<uintptr_t>(&sceAvPlayerEnableStream), "sceAvPlayerEnableStream"); // ODJK2sn9w4A#W#W
+  RegisterSymbol("d8FcbzfAdQw", reinterpret_cast<uintptr_t>(&sceAvPlayerGetStreamInfo), "sceAvPlayerGetStreamInfo"); // d8FcbzfAdQw#W#W
+  RegisterSymbol("JdksQu8pNdQ", reinterpret_cast<uintptr_t>(&sceAvPlayerGetVideoDataEx), "sceAvPlayerGetVideoDataEx"); // JdksQu8pNdQ#W#W
+  RegisterSymbol("aS66RI0gGgo", reinterpret_cast<uintptr_t>(&sceAvPlayerInit), "sceAvPlayerInit"); // aS66RI0gGgo#W#W
+  RegisterSymbol("UbQoYawOsfY", reinterpret_cast<uintptr_t>(&sceAvPlayerIsActive), "sceAvPlayerIsActive"); // UbQoYawOsfY#W#W
+  RegisterSymbol("9y5v+fGN4Wk", reinterpret_cast<uintptr_t>(&sceAvPlayerPause), "sceAvPlayerPause"); // 9y5v+fGN4Wk#W#W
+  RegisterSymbol("HD1YKVU26-M", reinterpret_cast<uintptr_t>(&sceAvPlayerPostInit), "sceAvPlayerPostInit"); // HD1YKVU26-M#W#W
+  RegisterSymbol("w5moABNwnRY", reinterpret_cast<uintptr_t>(&sceAvPlayerResume), "sceAvPlayerResume"); // w5moABNwnRY#W#W
+  RegisterSymbol("OVths0xGfho", reinterpret_cast<uintptr_t>(&sceAvPlayerSetLooping), "sceAvPlayerSetLooping"); // OVths0xGfho#W#W
+  RegisterSymbol("ET4Gr-Uu07s", reinterpret_cast<uintptr_t>(&sceAvPlayerStart), "sceAvPlayerStart"); // ET4Gr-Uu07s#W#W
+  RegisterSymbol("ZC17w3vB5Lo", reinterpret_cast<uintptr_t>(&sceAvPlayerStop), "sceAvPlayerStop"); // ZC17w3vB5Lo#W#W
+  RegisterSymbol("hdTyRzCXQeQ", reinterpret_cast<uintptr_t>(&sceAvPlayerStreamCount), "sceAvPlayerStreamCount"); // hdTyRzCXQeQ#W#W
+
+### libSceAudio3d.sprx.json (12 symbols)
+  RegisterSymbol("Im+jOoa5WAI", reinterpret_cast<uintptr_t>(&sceAudio3dGetDefaultOpenParameters), "sceAudio3dGetDefaultOpenParameters"); // Im+jOoa5WAI#BA#2
+  RegisterSymbol("UmCvjSmuZIw", reinterpret_cast<uintptr_t>(&sceAudio3dInitialize), "sceAudio3dInitialize"); // UmCvjSmuZIw#BA#2
+  RegisterSymbol("jO2tec4dJ2M", reinterpret_cast<uintptr_t>(&sceAudio3dObjectReserve), "sceAudio3dObjectReserve"); // jO2tec4dJ2M#BA#2
+  RegisterSymbol("4uyHN9q4ZeU", reinterpret_cast<uintptr_t>(&sceAudio3dObjectSetAttributes), "sceAudio3dObjectSetAttributes"); // 4uyHN9q4ZeU#BA#2
+  RegisterSymbol("1HXxo-+1qCw", reinterpret_cast<uintptr_t>(&sceAudio3dObjectUnreserve), "sceAudio3dObjectUnreserve"); // 1HXxo-+1qCw#BA#2
+  RegisterSymbol("lw0qrdSjZt8", reinterpret_cast<uintptr_t>(&sceAudio3dPortAdvance), "sceAudio3dPortAdvance"); // lw0qrdSjZt8#BA#2
+  RegisterSymbol("OyVqOeVNtSk", reinterpret_cast<uintptr_t>(&sceAudio3dPortClose), "sceAudio3dPortClose"); // OyVqOeVNtSk#BA#2
+  RegisterSymbol("YaaDbDwKpFM", reinterpret_cast<uintptr_t>(&sceAudio3dPortGetQueueLevel), "sceAudio3dPortGetQueueLevel"); // YaaDbDwKpFM#BA#2
+  RegisterSymbol("XeDDK0xJWQA", reinterpret_cast<uintptr_t>(&sceAudio3dPortOpen), "sceAudio3dPortOpen"); // XeDDK0xJWQA#BA#2
+  RegisterSymbol("VEVhZ9qd4ZY", reinterpret_cast<uintptr_t>(&sceAudio3dPortPush), "sceAudio3dPortPush"); // VEVhZ9qd4ZY#BA#2
+  RegisterSymbol("Yq9bfUQ0uJg", reinterpret_cast<uintptr_t>(&sceAudio3dPortSetAttribute), "sceAudio3dPortSetAttribute"); // Yq9bfUQ0uJg#BA#2
+  RegisterSymbol("WW1TS2iz5yc", reinterpret_cast<uintptr_t>(&sceAudio3dTerminate), "sceAudio3dTerminate"); // WW1TS2iz5yc#BA#2
+
+### JavaJitCompiler.elf.json (12 symbols)
+  RegisterSymbol("ejekcaNQNq0", reinterpret_cast<uintptr_t>(&sceKernelGettimeofday), "sceKernelGettimeofday"); // ejekcaNQNq0#A#B
+  RegisterSymbol("PIWqhn9oSxc", reinterpret_cast<uintptr_t>(&sceNetAccept), "sceNetAccept"); // PIWqhn9oSxc#BZ#N
+  RegisterSymbol("TCkRD0DWNLg", reinterpret_cast<uintptr_t>(&sceNetGetpeername), "sceNetGetpeername"); // TCkRD0DWNLg#BZ#N
+  RegisterSymbol("hoOAofhhRvE", reinterpret_cast<uintptr_t>(&sceNetGetsockname), "sceNetGetsockname"); // hoOAofhhRvE#BZ#N
+  RegisterSymbol("x1X76arYMxU", reinterpret_cast<uintptr_t>(&scePthreadAttrGet), "scePthreadAttrGet"); // x1X76arYMxU#A#B
+  RegisterSymbol("-fA+7ZlGDQs", reinterpret_cast<uintptr_t>(&scePthreadAttrGetstacksize), "scePthreadAttrGetstacksize"); // -fA+7ZlGDQs#A#B
+  RegisterSymbol("El+cQ20DynU", reinterpret_cast<uintptr_t>(&scePthreadAttrSetguardsize), "scePthreadAttrSetguardsize"); // El+cQ20DynU#A#B
+  RegisterSymbol("BB+kb08Tl9A", reinterpret_cast<uintptr_t>(&scePthreadRwlockDestroy), "scePthreadRwlockDestroy"); // BB+kb08Tl9A#A#B
+  RegisterSymbol("6ULAa0fq4jA", reinterpret_cast<uintptr_t>(&scePthreadRwlockInit), "scePthreadRwlockInit"); // 6ULAa0fq4jA#A#B
+  RegisterSymbol("Ox9i0c7L5w0", reinterpret_cast<uintptr_t>(&scePthreadRwlockRdlock), "scePthreadRwlockRdlock"); // Ox9i0c7L5w0#A#B
+  RegisterSymbol("bIHoZCTomsI", reinterpret_cast<uintptr_t>(&scePthreadRwlockTrywrlock), "scePthreadRwlockTrywrlock"); // bIHoZCTomsI#A#B
+  RegisterSymbol("+L98PIbGttk", reinterpret_cast<uintptr_t>(&scePthreadRwlockUnlock), "scePthreadRwlockUnlock"); // +L98PIbGttk#A#B
+
+### libSceNpManager.sprx.json (10 symbols)
+  RegisterSymbol("2rsFmlGWleQ", reinterpret_cast<uintptr_t>(&sceNpCheckNpAvailability), "sceNpCheckNpAvailability"); // 2rsFmlGWleQ#v#S
+  RegisterSymbol("eiqMCt9UshI", reinterpret_cast<uintptr_t>(&sceNpCreateAsyncRequest), "sceNpCreateAsyncRequest"); // eiqMCt9UshI#v#S
+  RegisterSymbol("a8R9-75u4iM", reinterpret_cast<uintptr_t>(&sceNpGetAccountId), "sceNpGetAccountId"); // a8R9-75u4iM#v#S
+  RegisterSymbol("F6E4ycq9Dbg", reinterpret_cast<uintptr_t>(&sceNpGetUserIdByOnlineId), "sceNpGetUserIdByOnlineId"); // F6E4ycq9Dbg#v#S
+  RegisterSymbol("uqcPJLWL08M", reinterpret_cast<uintptr_t>(&sceNpPollAsync), "sceNpPollAsync"); // uqcPJLWL08M#v#S
+  RegisterSymbol("hw5KNqAAels", reinterpret_cast<uintptr_t>(&sceNpRegisterNpReachabilityStateCallback), "sceNpRegisterNpReachabilityStateCallback"); // hw5KNqAAels#v#S
+  RegisterSymbol("A2CQ3kgSopQ", reinterpret_cast<uintptr_t>(&sceNpSetContentRestriction), "sceNpSetContentRestriction"); // A2CQ3kgSopQ#v#S
+  RegisterSymbol("cRILAEvn+9M", reinterpret_cast<uintptr_t>(&sceNpUnregisterNpReachabilityStateCallback), "sceNpUnregisterNpReachabilityStateCallback"); // cRILAEvn+9M#v#S
+  RegisterSymbol("xViqJdDgKl0", reinterpret_cast<uintptr_t>(&sceNpUnregisterPlusEventCallback), "sceNpUnregisterPlusEventCallback"); // xViqJdDgKl0#v#S
+  RegisterSymbol("jyi5p9XWUSs", reinterpret_cast<uintptr_t>(&sceNpWaitAsync), "sceNpWaitAsync"); // jyi5p9XWUSs#v#S
+
+### bdj.elf.json (9 symbols)
+  RegisterSymbol("EotR8a3ASf4", reinterpret_cast<uintptr_t>(&pthread_self), "pthread_self"); // EotR8a3ASf4#P#B
+  RegisterSymbol("5q95ravnueg", reinterpret_cast<uintptr_t>(&sceGnmDrawIndexIndirectMulti), "sceGnmDrawIndexIndirectMulti"); // 5q95ravnueg#N#O
+  RegisterSymbol("f5QQLp9rzGk", reinterpret_cast<uintptr_t>(&sceGnmDrawIndirectMulti), "sceGnmDrawIndirectMulti"); // f5QQLp9rzGk#N#O
+  RegisterSymbol("8lH54sfjfmU", reinterpret_cast<uintptr_t>(&sceGnmDrawInitToDefaultContextState), "sceGnmDrawInitToDefaultContextState"); // 8lH54sfjfmU#N#O
+  RegisterSymbol("JPh3Zgg0Zwc", reinterpret_cast<uintptr_t>(&sceJpegDecCreate), "sceJpegDecCreate"); // JPh3Zgg0Zwc#d#d
+  RegisterSymbol("1kzQRoWEgSA", reinterpret_cast<uintptr_t>(&sceJpegDecDecode), "sceJpegDecDecode"); // 1kzQRoWEgSA#d#d
+  RegisterSymbol("Hwh11+m5KoI", reinterpret_cast<uintptr_t>(&sceJpegDecDelete), "sceJpegDecDelete"); // Hwh11+m5KoI#d#d
+  RegisterSymbol("LSinoSQH790", reinterpret_cast<uintptr_t>(&sceJpegDecParseHeader), "sceJpegDecParseHeader"); // LSinoSQH790#d#d
+  RegisterSymbol("uNAUmANZMEw", reinterpret_cast<uintptr_t>(&sceJpegDecQueryMemorySize), "sceJpegDecQueryMemorySize"); // uNAUmANZMEw#d#d
+
+### SceShellCore.elf.json (9 symbols)
+  RegisterSymbol("qFg2SuyTJJY", reinterpret_cast<uintptr_t>(&sceHttpSetAuthEnabled), "sceHttpSetAuthEnabled"); // qFg2SuyTJJY#s#q
+  RegisterSymbol("Xjoosiw+XPI", reinterpret_cast<uintptr_t>(&sceKernelUuidCreate), "sceKernelUuidCreate"); // Xjoosiw+XPI#A#B
+  RegisterSymbol("NR1J0N7L2xY", reinterpret_cast<uintptr_t>(&sceRtcTickAddDays), "sceRtcTickAddDays"); // NR1J0N7L2xY#n#n
+  RegisterSymbol("RwXD8grHZHM", reinterpret_cast<uintptr_t>(&sceSslFreeSslCertName), "sceSslFreeSslCertName"); // RwXD8grHZHM#t#r
+  RegisterSymbol("7whYpYfHP74", reinterpret_cast<uintptr_t>(&sceSslGetIssuerName), "sceSslGetIssuerName"); // 7whYpYfHP74#t#r
+  RegisterSymbol("-PoIzr3PEk0", reinterpret_cast<uintptr_t>(&sceSslGetMemoryPoolStats), "sceSslGetMemoryPoolStats"); // -PoIzr3PEk0#t#r
+  RegisterSymbol("R1ePzopYPYM", reinterpret_cast<uintptr_t>(&sceSslGetNameEntryCount), "sceSslGetNameEntryCount"); // R1ePzopYPYM#t#r
+  RegisterSymbol("7RBSTKGrmDA", reinterpret_cast<uintptr_t>(&sceSslGetNameEntryInfo), "sceSslGetNameEntryInfo"); // 7RBSTKGrmDA#t#r
+  RegisterSymbol("dQReuBX9sD8", reinterpret_cast<uintptr_t>(&sceSslGetSubjectName), "sceSslGetSubjectName"); // dQReuBX9sD8#t#r
+
+### libSceContentSearch.sprx.json (8 symbols)
+  RegisterSymbol("-YbpaF0XS-I", reinterpret_cast<uintptr_t>(&sceContentSearchCloseMetadata), "sceContentSearchCloseMetadata"); // -YbpaF0XS-I#5#z
+  RegisterSymbol("ruNe-FgCzO8", reinterpret_cast<uintptr_t>(&sceContentSearchGetMetadataValue), "sceContentSearchGetMetadataValue"); // ruNe-FgCzO8#5#z
+  RegisterSymbol("FRT4EYtZU1Y", reinterpret_cast<uintptr_t>(&sceContentSearchGetMyApplicationIndex), "sceContentSearchGetMyApplicationIndex"); // FRT4EYtZU1Y#5#z
+  RegisterSymbol("o-RBPV0qr8c", reinterpret_cast<uintptr_t>(&sceContentSearchGetNumOfContent), "sceContentSearchGetNumOfContent"); // o-RBPV0qr8c#5#z
+  RegisterSymbol("dPj4ZtRcIWk", reinterpret_cast<uintptr_t>(&sceContentSearchInit), "sceContentSearchInit"); // dPj4ZtRcIWk#5#z
+  RegisterSymbol("bjAlYWwRTJA", reinterpret_cast<uintptr_t>(&sceContentSearchOpenMetadataByContentId), "sceContentSearchOpenMetadataByContentId"); // bjAlYWwRTJA#5#z
+  RegisterSymbol("TEW3IKxYfXc", reinterpret_cast<uintptr_t>(&sceContentSearchSearchContent), "sceContentSearchSearchContent"); // TEW3IKxYfXc#5#z
+  RegisterSymbol("1xSZodB2geA", reinterpret_cast<uintptr_t>(&sceContentSearchTerm), "sceContentSearchTerm"); // 1xSZodB2geA#5#z
+
+### libSceSaveDataDialog.sprx.json (8 symbols)
+  RegisterSymbol("fH46Lag88XY", reinterpret_cast<uintptr_t>(&sceSaveDataDialogClose), "sceSaveDataDialogClose"); // fH46Lag88XY#a#a
+  RegisterSymbol("yEiJ-qqr6Cg", reinterpret_cast<uintptr_t>(&sceSaveDataDialogGetResult), "sceSaveDataDialogGetResult"); // yEiJ-qqr6Cg#a#a
+  RegisterSymbol("ERKzksauAJA", reinterpret_cast<uintptr_t>(&sceSaveDataDialogGetStatus), "sceSaveDataDialogGetStatus"); // ERKzksauAJA#a#a
+  RegisterSymbol("s9e3+YpRnzw", reinterpret_cast<uintptr_t>(&sceSaveDataDialogInitialize), "sceSaveDataDialogInitialize"); // s9e3+YpRnzw#a#a
+  RegisterSymbol("4tPhsP6FpDI", reinterpret_cast<uintptr_t>(&sceSaveDataDialogOpen), "sceSaveDataDialogOpen"); // 4tPhsP6FpDI#a#a
+  RegisterSymbol("hay1CfTmLyA", reinterpret_cast<uintptr_t>(&sceSaveDataDialogProgressBarSetValue), "sceSaveDataDialogProgressBarSetValue"); // hay1CfTmLyA#a#a
+  RegisterSymbol("YuH2FA7azqQ", reinterpret_cast<uintptr_t>(&sceSaveDataDialogTerminate), "sceSaveDataDialogTerminate"); // YuH2FA7azqQ#a#a
+  RegisterSymbol("KK3Bdg1RWK0", reinterpret_cast<uintptr_t>(&sceSaveDataDialogUpdateStatus), "sceSaveDataDialogUpdateStatus"); // KK3Bdg1RWK0#a#a
+
+### libSceContentExport.sprx.json (6 symbols)
+  RegisterSymbol("tb3cZTCl8Ps", reinterpret_cast<uintptr_t>(&sceContentExportFinish), "sceContentExportFinish"); // tb3cZTCl8Ps#4#y
+  RegisterSymbol("AOWqIYsgVHs", reinterpret_cast<uintptr_t>(&sceContentExportFromData), "sceContentExportFromData"); // AOWqIYsgVHs#4#y
+  RegisterSymbol("uZTQHI50WpY", reinterpret_cast<uintptr_t>(&sceContentExportFromDataWithThumbnail), "sceContentExportFromDataWithThumbnail"); // uZTQHI50WpY#4#y
+  RegisterSymbol("FzEWeYnAFlI", reinterpret_cast<uintptr_t>(&sceContentExportInit), "sceContentExportInit"); // FzEWeYnAFlI#4#y
+  RegisterSymbol("FCygF4Ec4so", reinterpret_cast<uintptr_t>(&sceContentExportStart), "sceContentExportStart"); // FCygF4Ec4so#4#y
+  RegisterSymbol("+KDWny9Y-6k", reinterpret_cast<uintptr_t>(&sceContentExportTerm), "sceContentExportTerm"); // +KDWny9Y-6k#4#y
+
+### libSceMsgDialog.sprx.json (6 symbols)
+  RegisterSymbol("Lr8ovHH9l6A", reinterpret_cast<uintptr_t>(&sceMsgDialogGetResult), "sceMsgDialogGetResult"); // Lr8ovHH9l6A#Y#Y
+  RegisterSymbol("CWVW78Qc3fI", reinterpret_cast<uintptr_t>(&sceMsgDialogGetStatus), "sceMsgDialogGetStatus"); // CWVW78Qc3fI#Y#Y
+  RegisterSymbol("lDqxaY1UbEo", reinterpret_cast<uintptr_t>(&sceMsgDialogInitialize), "sceMsgDialogInitialize"); // lDqxaY1UbEo#Y#Y
+  RegisterSymbol("b06Hh0DPEaE", reinterpret_cast<uintptr_t>(&sceMsgDialogOpen), "sceMsgDialogOpen"); // b06Hh0DPEaE#Y#Y
+  RegisterSymbol("ePw-kqZmelo", reinterpret_cast<uintptr_t>(&sceMsgDialogTerminate), "sceMsgDialogTerminate"); // ePw-kqZmelo#Y#Y
+  RegisterSymbol("6fIC3XKt2k0", reinterpret_cast<uintptr_t>(&sceMsgDialogUpdateStatus), "sceMsgDialogUpdateStatus"); // 6fIC3XKt2k0#Y#Y
+
+### libSceSaveData.sprx.json (6 symbols)
+  RegisterSymbol("dyIhnXq-0SM", reinterpret_cast<uintptr_t>(&sceSaveDataDirNameSearch), "sceSaveDataDirNameSearch"); // dyIhnXq-0SM#b#b
+  RegisterSymbol("0z45PIH+SNI", reinterpret_cast<uintptr_t>(&sceSaveDataMount2), "sceSaveDataMount2"); // 0z45PIH+SNI#b#b
+  RegisterSymbol("c88Yy54Mx0w", reinterpret_cast<uintptr_t>(&sceSaveDataSaveIcon), "sceSaveDataSaveIcon"); // c88Yy54Mx0w#b#b
+  RegisterSymbol("85zul--eGXs", reinterpret_cast<uintptr_t>(&sceSaveDataSetParam), "sceSaveDataSetParam"); // 85zul--eGXs#b#b
+  RegisterSymbol("WAzWTZm1H+I", reinterpret_cast<uintptr_t>(&sceSaveDataTransferringMount), "sceSaveDataTransferringMount"); // WAzWTZm1H+I#b#b
+  RegisterSymbol("BMR4F-Uek3E", reinterpret_cast<uintptr_t>(&sceSaveDataUmount), "sceSaveDataUmount"); // BMR4F-Uek3E#b#b
+
+### libSceAppContent.sprx.json (5 symbols)
+  RegisterSymbol("99b82IKXpH4", reinterpret_cast<uintptr_t>(&sceAppContentAppParamGetInt), "sceAppContentAppParamGetInt"); // 99b82IKXpH4#C#D
+  RegisterSymbol("xnd8BJzAxmk", reinterpret_cast<uintptr_t>(&sceAppContentGetAddcontInfoList), "sceAppContentGetAddcontInfoList"); // xnd8BJzAxmk#C#D
+  RegisterSymbol("XTWR0UXvcgs", reinterpret_cast<uintptr_t>(&sceAppContentGetEntitlementKey), "sceAppContentGetEntitlementKey"); // XTWR0UXvcgs#C#D
+  RegisterSymbol("buYbeLOGWmA", reinterpret_cast<uintptr_t>(&sceAppContentTemporaryDataMount2), "sceAppContentTemporaryDataMount2"); // buYbeLOGWmA#C#D
+  RegisterSymbol("bcolXMmp6qQ", reinterpret_cast<uintptr_t>(&sceAppContentTemporaryDataUnmount), "sceAppContentTemporaryDataUnmount"); // bcolXMmp6qQ#C#D
+
+### libScePlayGoDialog.sprx.json (5 symbols)
+  RegisterSymbol("fbigNQiZpm0", reinterpret_cast<uintptr_t>(&scePlayGoDialogClose), "scePlayGoDialogClose"); // fbigNQiZpm0#J#K
+  RegisterSymbol("fECamTJKpsM", reinterpret_cast<uintptr_t>(&scePlayGoDialogInitialize), "scePlayGoDialogInitialize"); // fECamTJKpsM#J#K
+  RegisterSymbol("kHd72ukqbxw", reinterpret_cast<uintptr_t>(&scePlayGoDialogOpen), "scePlayGoDialogOpen"); // kHd72ukqbxw#J#K
+  RegisterSymbol("okgIGdr5Iz0", reinterpret_cast<uintptr_t>(&scePlayGoDialogTerminate), "scePlayGoDialogTerminate"); // okgIGdr5Iz0#J#K
+  RegisterSymbol("Yb60K7BST48", reinterpret_cast<uintptr_t>(&scePlayGoDialogUpdateStatus), "scePlayGoDialogUpdateStatus"); // Yb60K7BST48#J#K
+
+### libSceUlt.sprx.json (4 symbols)
+  RegisterSymbol("JeNX5F-NzQU", reinterpret_cast<uintptr_t>(&sceFiberFinalize), "sceFiberFinalize"); // JeNX5F-NzQU#E#F
+  RegisterSymbol("B0ZX2hx9DMw", reinterpret_cast<uintptr_t>(&sceFiberReturnToThread), "sceFiberReturnToThread"); // B0ZX2hx9DMw#E#F
+  RegisterSymbol("a0LLrZWac0M", reinterpret_cast<uintptr_t>(&sceFiberRun), "sceFiberRun"); // a0LLrZWac0M#E#F
+  RegisterSymbol("PFT2S-tJ7Uk", reinterpret_cast<uintptr_t>(&sceFiberSwitch), "sceFiberSwitch"); // PFT2S-tJ7Uk#E#F
+
+### libSceFont.sprx.json (4 symbols)
+  RegisterSymbol("L97d+3OgMlE", reinterpret_cast<uintptr_t>(&sceFontGetCharGlyphMetrics), "sceFontGetCharGlyphMetrics"); // L97d+3OgMlE#U#U
+  RegisterSymbol("BozJej5T6fs", reinterpret_cast<uintptr_t>(&sceFontGetPixelResolution), "sceFontGetPixelResolution"); // BozJej5T6fs#U#U
+  RegisterSymbol("ryPlnDDI3rU", reinterpret_cast<uintptr_t>(&sceFontGetRenderScaledKerning), "sceFontGetRenderScaledKerning"); // ryPlnDDI3rU#U#U
+  RegisterSymbol("kAenWy1Zw5o", reinterpret_cast<uintptr_t>(&sceFontRenderCharGlyphImageHorizontal), "sceFontRenderCharGlyphImageHorizontal"); // kAenWy1Zw5o#U#U
+
+### BdmvPlayerCore.elf.json (4 symbols)
+  RegisterSymbol("wtkt-teR1so", reinterpret_cast<uintptr_t>(&pthread_attr_init), "pthread_attr_init"); // wtkt-teR1so#P#B
+  RegisterSymbol("E+tyo3lp5Lw", reinterpret_cast<uintptr_t>(&pthread_attr_setdetachstate), "pthread_attr_setdetachstate"); // E+tyo3lp5Lw#P#B
+  RegisterSymbol("2Q0z6rnBrTE", reinterpret_cast<uintptr_t>(&pthread_attr_setstacksize), "pthread_attr_setstacksize"); // 2Q0z6rnBrTE#P#B
+  RegisterSymbol("h9CcP3J0oVM", reinterpret_cast<uintptr_t>(&pthread_join), "pthread_join"); // h9CcP3J0oVM#P#B
+
+### libkernel_web.sprx.json (4 symbols)
+  RegisterSymbol("R-tyYMpYaxY", reinterpret_cast<uintptr_t>(&sceKernelAddWriteEvent), "sceKernelAddWriteEvent"); // R-tyYMpYaxY#A#B
+  RegisterSymbol("cBGTk8S92XM", reinterpret_cast<uintptr_t>(&sceKernelDeleteWriteEvent), "sceKernelDeleteWriteEvent"); // cBGTk8S92XM#A#B
+  RegisterSymbol("yDBwVAolDgg", reinterpret_cast<uintptr_t>(&sceKernelIsStack), "sceKernelIsStack"); // yDBwVAolDgg#A#B
+  RegisterSymbol("ca7v6Cxulzs", reinterpret_cast<uintptr_t>(&sceKernelSetGPO), "sceKernelSetGPO"); // ca7v6Cxulzs#A#B
+
+### libCss.sprx.json (4 symbols)
+  RegisterSymbol("4R6-OvI2cEA", reinterpret_cast<uintptr_t>(&sceKernelAddUserEvent), "sceKernelAddUserEvent"); // 4R6-OvI2cEA#A#B
+  RegisterSymbol("LJDwdSNTnDg", reinterpret_cast<uintptr_t>(&sceKernelDeleteUserEvent), "sceKernelDeleteUserEvent"); // LJDwdSNTnDg#A#B
+  RegisterSymbol("mJ7aghmgvfc", reinterpret_cast<uintptr_t>(&sceKernelGetEventId), "sceKernelGetEventId"); // mJ7aghmgvfc#A#B
+  RegisterSymbol("F6e0kwo4cnk", reinterpret_cast<uintptr_t>(&sceKernelTriggerUserEvent), "sceKernelTriggerUserEvent"); // F6e0kwo4cnk#A#B
+
+### libSceContentDelete.sprx.json (3 symbols)
+  RegisterSymbol("pXJh3aVk8Ks", reinterpret_cast<uintptr_t>(&sceContentDeleteById), "sceContentDeleteById"); // pXJh3aVk8Ks#6#0
+  RegisterSymbol("zoxb0wEChEM", reinterpret_cast<uintptr_t>(&sceContentDeleteInitialize), "sceContentDeleteInitialize"); // zoxb0wEChEM#6#0
+  RegisterSymbol("5XLSih32qHA", reinterpret_cast<uintptr_t>(&sceContentDeleteTerminate), "sceContentDeleteTerminate"); // 5XLSih32qHA#6#0
+
+### libSceShareUtility.sprx.json (3 symbols)
+  RegisterSymbol("Jlv-lYxEnvM", reinterpret_cast<uintptr_t>(&sceShareUtilityInitialize), "sceShareUtilityInitialize"); // Jlv-lYxEnvM#3#x
+  RegisterSymbol("Lqp4EDIRXSo", reinterpret_cast<uintptr_t>(&sceShareUtilityOpenShareMenu), "sceShareUtilityOpenShareMenu"); // Lqp4EDIRXSo#3#x
+  RegisterSymbol("DUWhxkyVPj4", reinterpret_cast<uintptr_t>(&sceShareUtilityTerminate), "sceShareUtilityTerminate"); // DUWhxkyVPj4#3#x
+
+### libSceVoice.sprx.json (2 symbols)
+  RegisterSymbol("GrQ9s4IrNaQ", reinterpret_cast<uintptr_t>(&sceAudioOutGetPortState), "sceAudioOutGetPortState"); // GrQ9s4IrNaQ#O#P
+  RegisterSymbol("w3PdaSTSwGE", reinterpret_cast<uintptr_t>(&sceAudioOutOutputs), "sceAudioOutOutputs"); // w3PdaSTSwGE#O#P
+
+### libSceNgs2.sprx.json (2 symbols)
+  RegisterSymbol("cLV4aiT9JpA", reinterpret_cast<uintptr_t>(&sceNgs2RackCreate), "sceNgs2RackCreate"); // cLV4aiT9JpA#L#M
+  RegisterSymbol("0eFLVCfWVds", reinterpret_cast<uintptr_t>(&sceNgs2RackQueryBufferSize), "sceNgs2RackQueryBufferSize"); // 0eFLVCfWVds#L#M
+
+### libSceRtc.sprx.json (2 symbols)
+  RegisterSymbol("MDc5cd8HfCA", reinterpret_cast<uintptr_t>(&sceRtcTickAddHours), "sceRtcTickAddHours"); // MDc5cd8HfCA#n#n
+  RegisterSymbol("CL6y9q-XbuQ", reinterpret_cast<uintptr_t>(&sceRtcTickAddMonths), "sceRtcTickAddMonths"); // CL6y9q-XbuQ#n#n
+
+### libSceSsl.sprx.json (2 symbols)
+  RegisterSymbol("xHpt6+2pGYk", reinterpret_cast<uintptr_t>(&sceSslGetNotAfter), "sceSslGetNotAfter"); // xHpt6+2pGYk#t#r
+  RegisterSymbol("Eo0S65Jy28Q", reinterpret_cast<uintptr_t>(&sceSslGetNotBefore), "sceSslGetNotBefore"); // Eo0S65Jy28Q#t#r
+
+### orbis_audiod.elf.json (2 symbols)
+  RegisterSymbol("rcrVFJsQWRY", reinterpret_cast<uintptr_t>(&scePthreadGetaffinity), "scePthreadGetaffinity"); // rcrVFJsQWRY#A#B
+  RegisterSymbol("bt3CTBKmGyI", reinterpret_cast<uintptr_t>(&scePthreadSetaffinity), "scePthreadSetaffinity"); // bt3CTBKmGyI#A#B
+
+### ClassLibrary1.dll.sprx.json (2 symbols)
+  RegisterSymbol("Ou3iL1abvng", reinterpret_cast<uintptr_t>(&__stack_chk_fail), "__stack_chk_fail"); // Ou3iL1abvng#A#B
+  RegisterSymbol("f7uOxY9mM1U", reinterpret_cast<uintptr_t>(&__stack_chk_guard), "__stack_chk_guard"); // f7uOxY9mM1U#A#B
+
+### libSceAudioOut.sprx.json (1 symbols)
+  RegisterSymbol("wVwPU50pS1c", reinterpret_cast<uintptr_t>(&sceAudioOutSetMixLevelPadSpk), "sceAudioOutSetMixLevelPadSpk"); // wVwPU50pS1c#O#P
+
+### libSceFiber.sprx.json (1 symbols)
+  RegisterSymbol("hVYD7Ou2pCQ", reinterpret_cast<uintptr_t>(&_sceFiberInitializeImpl), "_sceFiberInitializeImpl"); // hVYD7Ou2pCQ#E#F
+
+### libSceNet.sprx.json (1 symbols)
+  RegisterSymbol("RCCY01Xd+58", reinterpret_cast<uintptr_t>(&sceNetResolverStartNtoaMultipleRecords), "sceNetResolverStartNtoaMultipleRecords"); // RCCY01Xd+58#BZ#N
+
+### WebAppBundle.sprx.json (1 symbols)
+  RegisterSymbol("8hZ2EEl2Tto", reinterpret_cast<uintptr_t>(&sceShareUtilityOpenShareMenuDefault), "sceShareUtilityOpenShareMenuDefault"); // 8hZ2EEl2Tto#3#x
+
+### libScePigletv2VSH.sprx.json (1 symbols)
+  RegisterSymbol("aNz11fnnzi4", reinterpret_cast<uintptr_t>(&sceKernelAvailableFlexibleMemorySize), "sceKernelAvailableFlexibleMemorySize"); // aNz11fnnzi4#A#B
+
+### libSceVdecShevc.sprx.json (1 symbols)
+  RegisterSymbol("8+s5BzZjxSg", reinterpret_cast<uintptr_t>(&scePthreadAttrGetaffinity), "scePthreadAttrGetaffinity"); // 8+s5BzZjxSg#A#B

@@ -90,6 +90,32 @@ PS4_SYSV_ABI s32 sceAudioOutOutput(s32 handle, const void* ptr) {
     return 0;
 }
 
+PS4_SYSV_ABI s32 sceAudioOutOutputs(SceAudioOutOutputParam* params, u32 num_params) {
+    if (!params || num_params == 0) return 0;
+    for (u32 i = 0; i < num_params; ++i) {
+        sceAudioOutOutput(params[i].handle, params[i].ptr);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceAudioOutGetPortState(s32 handle, void* state) {
+    if (state) {
+        auto* s = reinterpret_cast<u32*>(state);
+        s[0] = 0; // ready / idle
+        s[1] = 0;
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceAudio3dPortGetQueueLevel(s32 port, u32* level) {
+    if (level) *level = 0;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNgs2SystemRender(void* sys, void* buf, u32 size) {
+    return 0;
+}
+
 PS4_SYSV_ABI s32 sceAudioOutSetVolume(s32 handle, s32 flag, s32* vol) {
     return 0;
 }

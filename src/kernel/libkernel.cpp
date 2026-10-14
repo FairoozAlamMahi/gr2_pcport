@@ -1443,6 +1443,141 @@ PS4_SYSV_ABI s32 sceUserServiceGetEvent(void* event) {
     return static_cast<s32>(0x80960002); // SCE_USER_SERVICE_ERROR_NO_EVENT
 }
 
+PS4_SYSV_ABI s32 sceUserServiceInitialize(const void* param) {
+    (void)param;
+    LOG_INFO("USER", "sceUserServiceInitialize called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceUserServiceTerminate() {
+    LOG_INFO("USER", "sceUserServiceTerminate called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceUserServiceGetInitialUser(s32* user_id) {
+    if (user_id) *user_id = 1; // Primary user ID
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceUserServiceGetLoginUserIdList(s32* user_ids) {
+    if (user_ids) {
+        user_ids[0] = 1;
+        user_ids[1] = -1;
+        user_ids[2] = -1;
+        user_ids[3] = -1;
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceUserServiceGetUserName(s32 user_id, char* name, usize size) {
+    (void)user_id;
+    if (name && size > 0) {
+        strncpy_s(name, size, "Player", _TRUNCATE);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceRtcGetCurrentNetworkTick(void* tick_out) {
+    if (tick_out) {
+        u64 us = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+        *reinterpret_cast<u64*>(tick_out) = us;
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceRtcGetTick(const void* time, void* tick_out) {
+    (void)time;
+    if (tick_out) {
+        u64 us = std::chrono::duration_cast<std::chrono::microseconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count();
+        *reinterpret_cast<u64*>(tick_out) = us;
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 scePlayGoInitialize(const void* param) {
+    (void)param;
+    LOG_INFO("PLAYGO", "scePlayGoInitialize called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 scePlayGoOpen(s32* handle, const void* param) {
+    (void)param;
+    if (handle) *handle = 1;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 scePlayGoGetLocus(s32 handle, const u32* chunk_ids, u32 num_chunks, void* locus_array) {
+    (void)handle;
+    (void)chunk_ids;
+    if (locus_array && num_chunks > 0) {
+        u8* loci = static_cast<u8*>(locus_array);
+        for (u32 i = 0; i < num_chunks; ++i) {
+            loci[i] = 3; // SCE_PLAYGO_LOCUS_LOCAL
+        }
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 scePlayGoGetProgress(s32 handle, const u32* chunk_ids, u32 num_chunks, void* progress_array) {
+    (void)handle;
+    (void)chunk_ids;
+    if (progress_array && num_chunks > 0) {
+        #pragma pack(push, 1)
+        struct ScePlayGoProgressEntry {
+            u64 total_size;
+            u64 installed_size;
+        };
+        #pragma pack(pop)
+        auto* entries = static_cast<ScePlayGoProgressEntry*>(progress_array);
+        for (u32 i = 0; i < num_chunks; ++i) {
+            entries[i].total_size = 10000000000ULL;
+            entries[i].installed_size = 10000000000ULL;
+        }
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceSaveDataInitialize3(const void* param) {
+    (void)param;
+    LOG_INFO("SAVE", "sceSaveDataInitialize3 called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceCommonDialogInitialize(const void* param) {
+    (void)param;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceSystemServiceHideSplashScreen() {
+    return 0;
+}
+
+PS4_SYSV_ABI s32 scePlayGoClose(s32 handle) {
+    (void)handle;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 scePlayGoTerminate() {
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceAppContentInitialize(const void* param) {
+    (void)param;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceShareUtilityInitialize(const void* param) {
+    (void)param;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpSetContentRestriction(const void* param) {
+    (void)param;
+    return 0;
+}
+
 } // extern "C"
 
 } // namespace Kernel

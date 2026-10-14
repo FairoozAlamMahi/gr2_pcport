@@ -272,6 +272,31 @@ PS4_SYSV_ABI s32 sceSystemServiceReceiveEvent(void* event);
 PS4_SYSV_ABI s32 sceAppContentAppParamGetInt(s32 param_id, s32* out_val);
 PS4_SYSV_ABI s32 sceAppContentGetAddcontInfoList(s32 a, s32 b, s32 c, u32* out_count);
 PS4_SYSV_ABI s32 sceUserServiceGetEvent(void* event);
+PS4_SYSV_ABI s32 sceUserServiceInitialize(const void* param);
+PS4_SYSV_ABI s32 sceUserServiceTerminate();
+PS4_SYSV_ABI s32 sceUserServiceGetInitialUser(s32* user_id);
+PS4_SYSV_ABI s32 sceUserServiceGetLoginUserIdList(s32* user_ids);
+PS4_SYSV_ABI s32 sceUserServiceGetUserName(s32 user_id, char* name, usize size);
+
+// RTC (Real Time Clock)
+PS4_SYSV_ABI s32 sceRtcGetCurrentNetworkTick(void* tick_out);
+PS4_SYSV_ABI s32 sceRtcGetTick(const void* time, void* tick_out);
+
+// PlayGo Background Streaming
+PS4_SYSV_ABI s32 scePlayGoInitialize(const void* param);
+PS4_SYSV_ABI s32 scePlayGoOpen(s32* handle, const void* param);
+PS4_SYSV_ABI s32 scePlayGoClose(s32 handle);
+PS4_SYSV_ABI s32 scePlayGoTerminate();
+PS4_SYSV_ABI s32 scePlayGoGetLocus(s32 handle, const u32* chunk_ids, u32 num_chunks, void* locus_array);
+PS4_SYSV_ABI s32 scePlayGoGetProgress(s32 handle, const u32* chunk_ids, u32 num_chunks, void* progress_array);
+
+// Save Data & Dialogs
+PS4_SYSV_ABI s32 sceSaveDataInitialize3(const void* param);
+PS4_SYSV_ABI s32 sceCommonDialogInitialize(const void* param);
+PS4_SYSV_ABI s32 sceSystemServiceHideSplashScreen();
+PS4_SYSV_ABI s32 sceAppContentInitialize(const void* param);
+PS4_SYSV_ABI s32 sceShareUtilityInitialize(const void* param);
+PS4_SYSV_ABI s32 sceNpSetContentRestriction(const void* param);
 
 } // extern "C"
 

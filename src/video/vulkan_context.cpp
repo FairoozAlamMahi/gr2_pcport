@@ -77,7 +77,8 @@ bool VulkanContext::Initialize(u32 width, u32 height, bool fullscreen, bool head
     if (!m_headless) {
         m_window_ready_event = CreateEventW(nullptr, TRUE, FALSE, nullptr);
         m_window_running.store(true, std::memory_order_relaxed);
-        m_window_thread = std::thread(&VulkanContext::WindowThreadLoop, this);
+        std::thread window_thread(&VulkanContext::WindowThreadLoop, this);
+        window_thread.detach();
         WaitForSingleObject(m_window_ready_event, INFINITE);
         CloseHandle(m_window_ready_event);
         m_window_ready_event = NULL;
@@ -209,9 +210,6 @@ void VulkanContext::Shutdown() {
         m_window_running.store(false, std::memory_order_relaxed);
         if (m_hwnd) {
             PostMessageW(m_hwnd, WM_CLOSE, 0, 0);
-        }
-        if (m_window_thread.joinable()) {
-            m_window_thread.join();
         }
     }
 

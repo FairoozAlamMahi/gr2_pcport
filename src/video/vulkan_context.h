@@ -49,7 +49,6 @@ private:
     u32 m_height{1080};
     bool m_fullscreen{false};
 
-    std::thread m_window_thread;
     std::atomic<bool> m_window_running{false};
     HANDLE m_window_ready_event{NULL};
 

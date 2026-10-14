@@ -84,6 +84,41 @@ PS4_SYSV_ABI s32 sceGnmDrawIndexIndirectMulti(void* dcb, u32 num_dwords, const v
 PS4_SYSV_ABI s32 sceGnmDrawIndirectMulti(void* dcb, u32 num_dwords, const void* arg2, u32 count, u32 stride);
 PS4_SYSV_ABI s32 sceGnmDrawInitToDefaultContextState(void* dcb, u32 num_dwords);
 
+PS4_SYSV_ABI s32 sceGnmSetEmbeddedPsShader(void* dcb, u32 num_dwords, u32 shader_id, u32 shader_modifier);
+PS4_SYSV_ABI s32 sceGnmUpdateVsShader(void* dcb, const void* vs_regs, u32 shader_modifier);
+PS4_SYSV_ABI s32 sceGnmSetEsShader(void* dcb, const void* shader);
+PS4_SYSV_ABI s32 sceGnmSetGsShader(void* dcb, const void* shader);
+PS4_SYSV_ABI s32 sceGnmSetHsShader(void* dcb, const void* shader);
+PS4_SYSV_ABI s32 sceGnmSetLsShader(void* dcb, const void* shader);
+PS4_SYSV_ABI s32 sceGnmDrawOpaqueAuto(void* dcb, u32 num_dwords);
+PS4_SYSV_ABI s32 sceGnmDispatchIndirect(void* dcb, u32 num_dwords, u64 data_offset);
+PS4_SYSV_ABI s32 sceGnmDispatchIndirectOnMec(void* dcb, u32 num_dwords, u64 data_offset);
+PS4_SYSV_ABI void* sceGnmGetShaderProgramBaseAddress(u32 type);
+PS4_SYSV_ABI s32 sceGnmGetGpuInfoStatus(void* status, u32 size);
+PS4_SYSV_ABI s32 sceGnmGetShaderStatus(void* status);
+PS4_SYSV_ABI s32 sceGnmInsertPushColorMarker(void* dcb, const char* name, u32 color);
+PS4_SYSV_ABI s32 sceGnmInsertSetColorMarker(void* dcb, const char* name, u32 color);
+PS4_SYSV_ABI s32 sceGnmInsertSetMarker(void* dcb, const char* name);
+PS4_SYSV_ABI s32 sceGnmInsertThreadTraceMarker(void* dcb, u32 marker);
+PS4_SYSV_ABI s32 sceGnmSetVgtControl(void* dcb, u32 vgt_control);
+PS4_SYSV_ABI s32 sceGnmResetVgtControl(void* dcb);
+PS4_SYSV_ABI s32 sceGnmSetWaveLimitMultipliers(void* dcb, u32 multipliers);
+PS4_SYSV_ABI s32 sceGnmUnmapComputeQueue(u32 vqid);
+PS4_SYSV_ABI s32 sceGnmRequestFlipAndSubmitDone(u32 video_handle, u32 display_buffer_index, u32 flip_mode, s64 flip_arg);
+PS4_SYSV_ABI s32 sceGnmCreateWorkloadStream(void* stream, u32 size);
+PS4_SYSV_ABI s32 sceGnmDestroyWorkloadStream(void* stream);
+PS4_SYSV_ABI s32 sceGnmGetNumTcaUnits();
+PS4_SYSV_ABI s32 sceGnmIsUserPaEnabled();
+PS4_SYSV_ABI u32 sceGnmLogicalCuIndexToPhysicalCuIndex(u32 cu);
+PS4_SYSV_ABI u32 sceGnmLogicalCuMaskToPhysicalCuMask(u32 mask);
+PS4_SYSV_ABI s32 sceGnmUpdateGsShader(void* dcb, const void* shader);
+PS4_SYSV_ABI s32 sceGnmUpdateHsShader(void* dcb, const void* shader);
+PS4_SYSV_ABI s32 sceGnmSetGsRingSizes(void* dcb, u32 ring_sizes);
+PS4_SYSV_ABI s32 sceGnmDebugHardwareStatus(void* status);
+PS4_SYSV_ABI s32 sceGnmDisableMipStatsReport(void* dcb);
+PS4_SYSV_ABI s32 sceGnmSetupMipStatsReport(void* dcb, const void* report);
+PS4_SYSV_ABI s32 sceGnmRequestMipStatsReportAndReset(void* dcb, const void* report);
+
 } // extern "C"
 
 } // namespace GPU

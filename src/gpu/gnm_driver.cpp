@@ -735,6 +735,212 @@ PS4_SYSV_ABI s32 sceGnmDrawInitToDefaultContextState(void* dcb, u32 num_dwords) 
     return sceGnmDrawInitDefaultHardwareState(dcb, num_dwords);
 }
 
+PS4_SYSV_ABI s32 sceGnmSetEmbeddedPsShader(void* dcb, u32 num_dwords, u32 shader_id, u32 shader_modifier) {
+    (void)shader_id;
+    (void)shader_modifier;
+    if (dcb && num_dwords >= 8) {
+        u32* cmdbuf = static_cast<u32*>(dcb);
+        cmdbuf[0] = (3U << 30) | (2U << 16) | (IT_SET_SH_REG << 8);
+        cmdbuf[1] = 0x00u; // SPI_SHADER_PGM_LO_PS
+        cmdbuf[2] = 0xfe000000u;
+        cmdbuf[3] = 0;
+        cmdbuf[4] = (3U << 30) | (2U << 16) | (IT_SET_SH_REG << 8);
+        cmdbuf[5] = 0x02u; // SPI_SHADER_PGM_RSRC1_PS
+        cmdbuf[6] = 0x000c0000u;
+        cmdbuf[7] = 4u;
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmUpdateVsShader(void* dcb, const void* vs_regs, u32 shader_modifier) {
+    (void)dcb;
+    (void)vs_regs;
+    (void)shader_modifier;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmSetEsShader(void* dcb, const void* shader) {
+    (void)dcb;
+    (void)shader;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmSetGsShader(void* dcb, const void* shader) {
+    (void)dcb;
+    (void)shader;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmSetHsShader(void* dcb, const void* shader) {
+    (void)dcb;
+    (void)shader;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmSetLsShader(void* dcb, const void* shader) {
+    (void)dcb;
+    (void)shader;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmDrawOpaqueAuto(void* dcb, u32 num_dwords) {
+    if (dcb && num_dwords >= 2) {
+        u32* cmdbuf = static_cast<u32*>(dcb);
+        cmdbuf[0] = (3U << 30) | (0U << 16) | (IT_DRAW_INDEX_AUTO << 8);
+        cmdbuf[1] = 0;
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmDispatchIndirect(void* dcb, u32 num_dwords, u64 data_offset) {
+    (void)dcb;
+    (void)num_dwords;
+    (void)data_offset;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmDispatchIndirectOnMec(void* dcb, u32 num_dwords, u64 data_offset) {
+    (void)dcb;
+    (void)num_dwords;
+    (void)data_offset;
+    return 0;
+}
+
+PS4_SYSV_ABI void* sceGnmGetShaderProgramBaseAddress(u32 type) {
+    (void)type;
+    static u8 s_dummy_shader_arena[65536]{};
+    return s_dummy_shader_arena;
+}
+
+PS4_SYSV_ABI s32 sceGnmGetGpuInfoStatus(void* status, u32 size) {
+    if (status && size > 0) std::memset(status, 0, size);
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmGetShaderStatus(void* status) {
+    if (status) *reinterpret_cast<u32*>(status) = 0;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmInsertPushColorMarker(void* dcb, const char* name, u32 color) {
+    (void)dcb;
+    (void)name;
+    (void)color;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmInsertSetColorMarker(void* dcb, const char* name, u32 color) {
+    (void)dcb;
+    (void)name;
+    (void)color;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmInsertSetMarker(void* dcb, const char* name) {
+    (void)dcb;
+    (void)name;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmInsertThreadTraceMarker(void* dcb, u32 marker) {
+    (void)dcb;
+    (void)marker;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmSetVgtControl(void* dcb, u32 vgt_control) {
+    (void)dcb;
+    (void)vgt_control;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmResetVgtControl(void* dcb) {
+    (void)dcb;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmSetWaveLimitMultipliers(void* dcb, u32 multipliers) {
+    (void)dcb;
+    (void)multipliers;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmUnmapComputeQueue(u32 vqid) {
+    (void)vqid;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmRequestFlipAndSubmitDone(u32 video_handle, u32 display_buffer_index, u32 flip_mode, s64 flip_arg) {
+    return Video::sceVideoOutSubmitFlip(static_cast<s32>(video_handle), static_cast<s32>(display_buffer_index), flip_mode, flip_arg);
+}
+
+PS4_SYSV_ABI s32 sceGnmCreateWorkloadStream(void* stream, u32 size) {
+    (void)stream;
+    (void)size;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmDestroyWorkloadStream(void* stream) {
+    (void)stream;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmGetNumTcaUnits() {
+    return 2;
+}
+
+PS4_SYSV_ABI s32 sceGnmIsUserPaEnabled() {
+    return 0;
+}
+
+PS4_SYSV_ABI u32 sceGnmLogicalCuIndexToPhysicalCuIndex(u32 cu) {
+    return cu;
+}
+
+PS4_SYSV_ABI u32 sceGnmLogicalCuMaskToPhysicalCuMask(u32 mask) {
+    return mask;
+}
+
+PS4_SYSV_ABI s32 sceGnmUpdateGsShader(void* dcb, const void* shader) {
+    (void)dcb;
+    (void)shader;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmUpdateHsShader(void* dcb, const void* shader) {
+    (void)dcb;
+    (void)shader;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmSetGsRingSizes(void* dcb, u32 ring_sizes) {
+    (void)dcb;
+    (void)ring_sizes;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmDebugHardwareStatus(void* status) {
+    if (status) *reinterpret_cast<u32*>(status) = 0;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmDisableMipStatsReport(void* dcb) {
+    (void)dcb;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmSetupMipStatsReport(void* dcb, const void* report) {
+    (void)dcb;
+    (void)report;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmRequestMipStatsReportAndReset(void* dcb, const void* report) {
+    (void)dcb;
+    (void)report;
+    return 0;
+}
+
 } // extern "C"
 
 } // namespace GPU

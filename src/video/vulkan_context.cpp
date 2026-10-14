@@ -34,14 +34,16 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         }
         break;
     case WM_CLOSE:
-        PostQuitMessage(0);
+        LOG_INFO("VULKAN", "Window close requested by user.");
+        ExitProcess(0);
         return 0;
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;
     case WM_KEYDOWN:
         if (wParam == VK_ESCAPE) {
-            PostQuitMessage(0);
+            LOG_INFO("VULKAN", "Escape key pressed; exiting process.");
+            ExitProcess(0);
             return 0;
         }
         break;
@@ -73,7 +75,14 @@ bool VulkanContext::Initialize(u32 width, u32 height, bool fullscreen, bool head
     }
 
     if (!m_headless) {
-        if (!CreateAppWindow()) {
+        m_window_ready_event = CreateEventW(nullptr, TRUE, FALSE, nullptr);
+        m_window_running.store(true, std::memory_order_relaxed);
+        m_window_thread = std::thread(&VulkanContext::WindowThreadLoop, this);
+        WaitForSingleObject(m_window_ready_event, INFINITE);
+        CloseHandle(m_window_ready_event);
+        m_window_ready_event = NULL;
+
+        if (!m_hwnd) {
             LOG_ERROR("VULKAN", "Failed to create Win32 application window.");
             return false;
         }
@@ -196,9 +205,14 @@ void VulkanContext::Shutdown() {
         m_vk_instance = VK_NULL_HANDLE;
     }
 
-    if (m_hwnd) {
-        DestroyWindow(m_hwnd);
-        m_hwnd = NULL;
+    if (m_window_running.load(std::memory_order_relaxed)) {
+        m_window_running.store(false, std::memory_order_relaxed);
+        if (m_hwnd) {
+            PostMessageW(m_hwnd, WM_CLOSE, 0, 0);
+        }
+        if (m_window_thread.joinable()) {
+            m_window_thread.join();
+        }
     }
 
     if (m_vulkan_dll) {
@@ -265,6 +279,32 @@ bool VulkanContext::CreateAppWindow() {
     LOG_INFO("VULKAN", "Win32 Game Window created (Handle: 0x" + 
              std::to_string(reinterpret_cast<uintptr_t>(m_hwnd)) + ")");
     return true;
+}
+
+void VulkanContext::WindowThreadLoop() {
+    if (!CreateAppWindow()) {
+        SetEvent(m_window_ready_event);
+        return;
+    }
+    SetEvent(m_window_ready_event);
+
+    MSG msg{};
+    while (m_window_running.load(std::memory_order_relaxed)) {
+        while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
+            if (msg.message == WM_QUIT) {
+                m_window_running.store(false, std::memory_order_relaxed);
+                break;
+            }
+            TranslateMessage(&msg);
+            DispatchMessageW(&msg);
+        }
+        MsgWaitForMultipleObjects(0, nullptr, FALSE, 10, QS_ALLINPUT);
+    }
+
+    if (m_hwnd) {
+        DestroyWindow(m_hwnd);
+        m_hwnd = NULL;
+    }
 }
 
 bool VulkanContext::CreateInstance() {
@@ -740,15 +780,7 @@ void VulkanContext::PresentFrame(const void* frame_data) {
 }
 
 bool VulkanContext::ProcessWindowMessages() {
-    if (!m_hwnd) return true;
-
-    MSG msg;
-    while (PeekMessageW(&msg, nullptr, 0, 0, PM_REMOVE)) {
-        if (msg.message == WM_QUIT) return false;
-        TranslateMessage(&msg);
-        DispatchMessageW(&msg);
-    }
-    return true;
+    return m_window_running.load(std::memory_order_relaxed);
 }
 
 } // namespace Video

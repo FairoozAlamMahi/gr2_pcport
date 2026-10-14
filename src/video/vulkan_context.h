@@ -6,6 +6,8 @@
 #include <vulkan/vulkan.h>
 #include <string>
 #include <vector>
+#include <thread>
+#include <atomic>
 
 namespace Video {
 
@@ -34,6 +36,7 @@ private:
 
     bool LoadVulkanLibrary();
     bool CreateAppWindow();
+    void WindowThreadLoop();
     bool CreateInstance();
     bool SelectPhysicalDevice();
     bool CreateLogicalDevice();
@@ -45,6 +48,10 @@ private:
     u32 m_width{1920};
     u32 m_height{1080};
     bool m_fullscreen{false};
+
+    std::thread m_window_thread;
+    std::atomic<bool> m_window_running{false};
+    HANDLE m_window_ready_event{NULL};
 
     HMODULE m_vulkan_dll{NULL};
     HWND m_hwnd{NULL};

@@ -14,6 +14,7 @@
 #include "kernel/rtc_service.h"
 #include "kernel/http_service.h"
 #include "kernel/security_service.h"
+#include "kernel/content_service.h"
 #include "audio/audio_out.h"
 #include "gpu/gnm_driver.h"
 #include <iostream>
@@ -682,39 +683,39 @@ void NidTable::RegisterHostSubsystems() {
     m_names["BYIZGKm6bO4"] = "sceNpBandwidthTestGetStatus";
     m_names["jktww3yJXnc"] = "sceNpBandwidthTestInitStart";
     m_names["pLr1fEQS1z8"] = "sceNpBandwidthTestShutdown";
-    m_names["iQr9UxPHUFs"] = "sceNpLookupCreateRequest";
-    m_names["8533Q+LU7EQ"] = "sceNpLookupCreateTitleCtx";
-    m_names["wLaxchvEEnk"] = "sceNpLookupDeleteRequest";
-    m_names["mtqDK9zkoIE"] = "sceNpLookupDeleteTitleCtx";
-    m_names["T6tnM1Uti4g"] = "sceNpLookupNpId";
-    m_names["rAOOqDAxBIk"] = "sceNpWordFilterAbortRequest";
-    m_names["1dMndqL-QgE"] = "sceNpWordFilterCensorComment";
-    m_names["IEB+vgVoQbw"] = "sceNpWordFilterCreateAsyncRequest";
-    m_names["iCq5xW5KQW4"] = "sceNpWordFilterCreateRequest";
-    m_names["r9BgI0PfJZg"] = "sceNpWordFilterCreateTitleCtx";
-    m_names["PYFS1H70bDs"] = "sceNpWordFilterDeleteRequest";
-    m_names["t0P5z5yuFPA"] = "sceNpWordFilterDeleteTitleCtx";
-    m_names["ur5SShyG0dk"] = "sceNpWordFilterPollAsync";
-    m_names["Jj4mkpFO2gE"] = "sceNpWordFilterSanitizeComment";
+    RegisterSymbol("iQr9UxPHUFs", reinterpret_cast<uintptr_t>(&Np::sceNpLookupCreateRequest), "sceNpLookupCreateRequest");
+    RegisterSymbol("8533Q+LU7EQ", reinterpret_cast<uintptr_t>(&Np::sceNpLookupCreateTitleCtx), "sceNpLookupCreateTitleCtx");
+    RegisterSymbol("wLaxchvEEnk", reinterpret_cast<uintptr_t>(&Np::sceNpLookupDeleteRequest), "sceNpLookupDeleteRequest");
+    RegisterSymbol("mtqDK9zkoIE", reinterpret_cast<uintptr_t>(&Np::sceNpLookupDeleteTitleCtx), "sceNpLookupDeleteTitleCtx");
+    RegisterSymbol("T6tnM1Uti4g", reinterpret_cast<uintptr_t>(&Np::sceNpLookupNpId), "sceNpLookupNpId");
+    RegisterSymbol("rAOOqDAxBIk", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterAbortRequest), "sceNpWordFilterAbortRequest");
+    RegisterSymbol("1dMndqL-QgE", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterCensorComment), "sceNpWordFilterCensorComment");
+    RegisterSymbol("IEB+vgVoQbw", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterCreateAsyncRequest), "sceNpWordFilterCreateAsyncRequest");
+    RegisterSymbol("iCq5xW5KQW4", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterCreateRequest), "sceNpWordFilterCreateRequest");
+    RegisterSymbol("r9BgI0PfJZg", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterCreateTitleCtx), "sceNpWordFilterCreateTitleCtx");
+    RegisterSymbol("PYFS1H70bDs", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterDeleteRequest), "sceNpWordFilterDeleteRequest");
+    RegisterSymbol("t0P5z5yuFPA", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterDeleteTitleCtx), "sceNpWordFilterDeleteTitleCtx");
+    RegisterSymbol("ur5SShyG0dk", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterPollAsync), "sceNpWordFilterPollAsync");
+    RegisterSymbol("Jj4mkpFO2gE", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterSanitizeComment), "sceNpWordFilterSanitizeComment");
 
     // ===== libSceNpTus.sprx.json (17 symbols) =====
-    m_names["-SUR+UoLS6c"] = "sceNpTssGetData";
-    m_names["cRVmNrJDbG8"] = "sceNpTusAddAndGetVariable";
-    m_names["ukr6FBSrkJw"] = "sceNpTusAddAndGetVariableVUser";
-    m_names["BIkMmUfNKWM"] = "sceNpTusCreateNpTitleCtx";
-    m_names["3bh2aBvvmvM"] = "sceNpTusCreateRequest";
-    m_names["0DT5bP6YzBo"] = "sceNpTusDeleteMultiSlotData";
-    m_names["xutwCvsydkk"] = "sceNpTusDeleteMultiSlotDataVUser";
-    m_names["H3uq7x0sZOI"] = "sceNpTusDeleteNpTitleCtx";
-    m_names["CcIH40dYS88"] = "sceNpTusDeleteRequest";
-    m_names["XOzszO4ONWU"] = "sceNpTusGetData";
-    m_names["GQHCksS7aLs"] = "sceNpTusGetDataVUser";
-    m_names["F+eQlfcka98"] = "sceNpTusGetMultiSlotVariable";
-    m_names["uFxVYJEkcmc"] = "sceNpTusGetMultiSlotVariableVUser";
-    m_names["4NrufkNCkiE"] = "sceNpTusSetData";
-    m_names["+RhzSuuXwxo"] = "sceNpTusSetDataVUser";
-    m_names["c6aYoa47YgI"] = "sceNpTusSetMultiSlotVariable";
-    m_names["1Cz0hTJFyh4"] = "sceNpTusSetMultiSlotVariableVUser";
+    RegisterSymbol("-SUR+UoLS6c", reinterpret_cast<uintptr_t>(&Np::sceNpTssGetData), "sceNpTssGetData");
+    RegisterSymbol("cRVmNrJDbG8", reinterpret_cast<uintptr_t>(&Np::sceNpTusAddAndGetVariable), "sceNpTusAddAndGetVariable");
+    RegisterSymbol("ukr6FBSrkJw", reinterpret_cast<uintptr_t>(&Np::sceNpTusAddAndGetVariableVUser), "sceNpTusAddAndGetVariableVUser");
+    RegisterSymbol("BIkMmUfNKWM", reinterpret_cast<uintptr_t>(&Np::sceNpTusCreateNpTitleCtx), "sceNpTusCreateNpTitleCtx");
+    RegisterSymbol("3bh2aBvvmvM", reinterpret_cast<uintptr_t>(&Np::sceNpTusCreateRequest), "sceNpTusCreateRequest");
+    RegisterSymbol("0DT5bP6YzBo", reinterpret_cast<uintptr_t>(&Np::sceNpTusDeleteMultiSlotData), "sceNpTusDeleteMultiSlotData");
+    RegisterSymbol("xutwCvsydkk", reinterpret_cast<uintptr_t>(&Np::sceNpTusDeleteMultiSlotDataVUser), "sceNpTusDeleteMultiSlotDataVUser");
+    RegisterSymbol("H3uq7x0sZOI", reinterpret_cast<uintptr_t>(&Np::sceNpTusDeleteNpTitleCtx), "sceNpTusDeleteNpTitleCtx");
+    RegisterSymbol("CcIH40dYS88", reinterpret_cast<uintptr_t>(&Np::sceNpTusDeleteRequest), "sceNpTusDeleteRequest");
+    RegisterSymbol("XOzszO4ONWU", reinterpret_cast<uintptr_t>(&Np::sceNpTusGetData), "sceNpTusGetData");
+    RegisterSymbol("GQHCksS7aLs", reinterpret_cast<uintptr_t>(&Np::sceNpTusGetDataVUser), "sceNpTusGetDataVUser");
+    RegisterSymbol("F+eQlfcka98", reinterpret_cast<uintptr_t>(&Np::sceNpTusGetMultiSlotVariable), "sceNpTusGetMultiSlotVariable");
+    RegisterSymbol("uFxVYJEkcmc", reinterpret_cast<uintptr_t>(&Np::sceNpTusGetMultiSlotVariableVUser), "sceNpTusGetMultiSlotVariableVUser");
+    RegisterSymbol("4NrufkNCkiE", reinterpret_cast<uintptr_t>(&Np::sceNpTusSetData), "sceNpTusSetData");
+    RegisterSymbol("+RhzSuuXwxo", reinterpret_cast<uintptr_t>(&Np::sceNpTusSetDataVUser), "sceNpTusSetDataVUser");
+    RegisterSymbol("c6aYoa47YgI", reinterpret_cast<uintptr_t>(&Np::sceNpTusSetMultiSlotVariable), "sceNpTusSetMultiSlotVariable");
+    RegisterSymbol("1Cz0hTJFyh4", reinterpret_cast<uintptr_t>(&Np::sceNpTusSetMultiSlotVariableVUser), "sceNpTusSetMultiSlotVariableVUser");
 
     // ===== libSceAvPlayer.sprx.json (14 symbols) =====
     RegisterSymbol("KMcEa+rHsIo", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerAddSource), "sceAvPlayerAddSource");
@@ -788,23 +789,23 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("BMR4F-Uek3E", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataUmount), "sceSaveDataUmount");
 
     // ===== libSceContentSearch.sprx.json (9 symbols) =====
-    m_names["-YbpaF0XS-I"] = "sceContentSearchCloseMetadata";
-    m_names["ruNe-FgCzO8"] = "sceContentSearchGetMetadataValue";
-    m_names["FRT4EYtZU1Y"] = "sceContentSearchGetMyApplicationIndex";
-    m_names["o-RBPV0qr8c"] = "sceContentSearchGetNumOfContent";
-    m_names["dPj4ZtRcIWk"] = "sceContentSearchInit";
-    m_names["bjAlYWwRTJA"] = "sceContentSearchOpenMetadataByContentId";
-    m_names["TEW3IKxYfXc"] = "sceContentSearchSearchContent";
-    m_names["1xSZodB2geA"] = "sceContentSearchTerm";
+    RegisterSymbol("-YbpaF0XS-I", reinterpret_cast<uintptr_t>(&Content::sceContentSearchCloseMetadata), "sceContentSearchCloseMetadata");
+    RegisterSymbol("ruNe-FgCzO8", reinterpret_cast<uintptr_t>(&Content::sceContentSearchGetMetadataValue), "sceContentSearchGetMetadataValue");
+    RegisterSymbol("FRT4EYtZU1Y", reinterpret_cast<uintptr_t>(&Content::sceContentSearchGetMyApplicationIndex), "sceContentSearchGetMyApplicationIndex");
+    RegisterSymbol("o-RBPV0qr8c", reinterpret_cast<uintptr_t>(&Content::sceContentSearchGetNumOfContent), "sceContentSearchGetNumOfContent");
+    RegisterSymbol("dPj4ZtRcIWk", reinterpret_cast<uintptr_t>(&Content::sceContentSearchInit), "sceContentSearchInit");
+    RegisterSymbol("bjAlYWwRTJA", reinterpret_cast<uintptr_t>(&Content::sceContentSearchOpenMetadataByContentId), "sceContentSearchOpenMetadataByContentId");
+    RegisterSymbol("TEW3IKxYfXc", reinterpret_cast<uintptr_t>(&Content::sceContentSearchSearchContent), "sceContentSearchSearchContent");
+    RegisterSymbol("1xSZodB2geA", reinterpret_cast<uintptr_t>(&Content::sceContentSearchTerm), "sceContentSearchTerm");
     RegisterSymbol("CdWp0oHWGr0", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceGetInitialUser), "sceUserServiceGetInitialUser");
 
     // ===== libSceContentExport.sprx.json (9 symbols) =====
-    m_names["tb3cZTCl8Ps"] = "sceContentExportFinish";
-    m_names["AOWqIYsgVHs"] = "sceContentExportFromData";
-    m_names["uZTQHI50WpY"] = "sceContentExportFromDataWithThumbnail";
-    m_names["FzEWeYnAFlI"] = "sceContentExportInit";
-    m_names["FCygF4Ec4so"] = "sceContentExportStart";
-    m_names["+KDWny9Y-6k"] = "sceContentExportTerm";
+    RegisterSymbol("tb3cZTCl8Ps", reinterpret_cast<uintptr_t>(&Content::sceContentExportFinish), "sceContentExportFinish");
+    RegisterSymbol("AOWqIYsgVHs", reinterpret_cast<uintptr_t>(&Content::sceContentExportFromData), "sceContentExportFromData");
+    RegisterSymbol("uZTQHI50WpY", reinterpret_cast<uintptr_t>(&Content::sceContentExportFromDataWithThumbnail), "sceContentExportFromDataWithThumbnail");
+    RegisterSymbol("FzEWeYnAFlI", reinterpret_cast<uintptr_t>(&Content::sceContentExportInit), "sceContentExportInit");
+    RegisterSymbol("FCygF4Ec4so", reinterpret_cast<uintptr_t>(&Content::sceContentExportStart), "sceContentExportStart");
+    RegisterSymbol("+KDWny9Y-6k", reinterpret_cast<uintptr_t>(&Content::sceContentExportTerm), "sceContentExportTerm");
     RegisterSymbol("fPhymKNvK-A", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceGetLoginUserIdList), "sceUserServiceGetLoginUserIdList");
     RegisterSymbol("j3YMu1MVNNo", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceInitialize), "sceUserServiceInitialize");
     RegisterSymbol("bwFjS+bX9mA", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceTerminate), "sceUserServiceTerminate");
@@ -853,19 +854,19 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("sceAppContentUmount", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentUmount), "sceAppContentUmount");
 
     // ===== libScePlayGo.sprx.json (6 symbols) =====
-    m_names["Uco1I0dlDi8"] = "scePlayGoClose";
-    m_names["uWIYLFkkwqk"] = "scePlayGoGetLocus";
-    m_names["-RJWNMK3fC8"] = "scePlayGoGetProgress";
-    m_names["ts6GlZOKRrE"] = "scePlayGoInitialize";
-    m_names["M1Gma1ocrGE"] = "scePlayGoOpen";
-    m_names["MPe0EeBGM-E"] = "scePlayGoTerminate";
+    RegisterSymbol("Uco1I0dlDi8", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoClose), "scePlayGoClose");
+    RegisterSymbol("uWIYLFkkwqk", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoGetLocus), "scePlayGoGetLocus");
+    RegisterSymbol("-RJWNMK3fC8", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoGetProgress), "scePlayGoGetProgress");
+    RegisterSymbol("ts6GlZOKRrE", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoInitialize), "scePlayGoInitialize");
+    RegisterSymbol("M1Gma1ocrGE", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoOpen), "scePlayGoOpen");
+    RegisterSymbol("MPe0EeBGM-E", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoTerminate), "scePlayGoTerminate");
 
     // ===== libSceGameCustomDataDialog.sprx.json (6 symbols) =====
-    m_names["sJptZwvs1is"] = "sceGameCustomDataDialogGetResult";
-    m_names["xtbb-2f703A"] = "sceGameCustomDataDialogInitialize";
-    m_names["5TvttyRuU84"] = "sceGameCustomDataDialogOpen";
-    m_names["HwEtHFCpU5U"] = "sceGameCustomDataDialogTerminate";
-    m_names["PkdLsRA4ON0"] = "sceGameCustomDataDialogUpdateStatus";
+    RegisterSymbol("sJptZwvs1is", reinterpret_cast<uintptr_t>(&Dialog::sceGameCustomDataDialogGetResult), "sceGameCustomDataDialogGetResult");
+    RegisterSymbol("xtbb-2f703A", reinterpret_cast<uintptr_t>(&Dialog::sceGameCustomDataDialogInitialize), "sceGameCustomDataDialogInitialize");
+    RegisterSymbol("5TvttyRuU84", reinterpret_cast<uintptr_t>(&Dialog::sceGameCustomDataDialogOpen), "sceGameCustomDataDialogOpen");
+    RegisterSymbol("HwEtHFCpU5U", reinterpret_cast<uintptr_t>(&Dialog::sceGameCustomDataDialogTerminate), "sceGameCustomDataDialogTerminate");
+    RegisterSymbol("PkdLsRA4ON0", reinterpret_cast<uintptr_t>(&Dialog::sceGameCustomDataDialogUpdateStatus), "sceGameCustomDataDialogUpdateStatus");
     RegisterSymbol("XDncXQIJUSk", reinterpret_cast<uintptr_t>(&Np::sceNpGetOnlineId), "sceNpGetOnlineId");
 
     // ===== libScePad.sprx.json (6 symbols) =====
@@ -921,8 +922,8 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("Yb60K7BST48", reinterpret_cast<uintptr_t>(&Dialog::scePlayGoDialogUpdateStatus), "scePlayGoDialogUpdateStatus");
 
     // ===== libSceNpCommon.sprx.json (5 symbols) =====
-    m_names["i8UmXTSq7N4"] = "sceNpCmpNpId";
-    m_names["dj+O5aD2a0Q"] = "sceNpCmpOnlineId";
+    RegisterSymbol("i8UmXTSq7N4", reinterpret_cast<uintptr_t>(&Np::sceNpCmpNpId), "sceNpCmpNpId");
+    RegisterSymbol("dj+O5aD2a0Q", reinterpret_cast<uintptr_t>(&Np::sceNpCmpOnlineId), "sceNpCmpOnlineId");
     RegisterSymbol("NR1J0N7L2xY", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcTickAddDays), "sceRtcTickAddDays");
     RegisterSymbol("MDc5cd8HfCA", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcTickAddHours), "sceRtcTickAddHours");
     RegisterSymbol("mn-tf4QiFzk", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcTickAddMinutes), "sceRtcTickAddMinutes");
@@ -949,55 +950,55 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("WWiGuh9XfgQ", reinterpret_cast<uintptr_t>(&Dialog::sceErrorDialogUpdateStatus), "sceErrorDialogUpdateStatus");
 
     // ===== libSceNpCommerce.sprx.json (5 symbols) =====
-    m_names["r42bWcQbtZY"] = "sceNpCommerceDialogGetResult";
-    m_names["0aR2aWmQal4"] = "sceNpCommerceDialogInitialize";
-    m_names["DfSCDRA3EjY"] = "sceNpCommerceDialogOpen";
-    m_names["m-I92Ab50W8"] = "sceNpCommerceDialogTerminate";
-    m_names["LR5cwFMMCVE"] = "sceNpCommerceDialogUpdateStatus";
+    RegisterSymbol("r42bWcQbtZY", reinterpret_cast<uintptr_t>(&Dialog::sceNpCommerceDialogGetResult), "sceNpCommerceDialogGetResult");
+    RegisterSymbol("0aR2aWmQal4", reinterpret_cast<uintptr_t>(&Dialog::sceNpCommerceDialogInitialize), "sceNpCommerceDialogInitialize");
+    RegisterSymbol("DfSCDRA3EjY", reinterpret_cast<uintptr_t>(&Dialog::sceNpCommerceDialogOpen), "sceNpCommerceDialogOpen");
+    RegisterSymbol("m-I92Ab50W8", reinterpret_cast<uintptr_t>(&Dialog::sceNpCommerceDialogTerminate), "sceNpCommerceDialogTerminate");
+    RegisterSymbol("LR5cwFMMCVE", reinterpret_cast<uintptr_t>(&Dialog::sceNpCommerceDialogUpdateStatus), "sceNpCommerceDialogUpdateStatus");
 
     // ===== libSceInvitationDialog.sprx.json (5 symbols) =====
-    m_names["8XKR6wa64iQ"] = "sceInvitationDialogGetResult";
-    m_names["XvA5KS56wcs"] = "sceInvitationDialogInitialize";
-    m_names["0zU0G+wiVLA"] = "sceInvitationDialogOpen";
-    m_names["B6HVJtDYxEE"] = "sceInvitationDialogTerminate";
-    m_names["9+g9iOq+7kg"] = "sceInvitationDialogUpdateStatus";
+    RegisterSymbol("8XKR6wa64iQ", reinterpret_cast<uintptr_t>(&Dialog::sceInvitationDialogGetResult), "sceInvitationDialogGetResult");
+    RegisterSymbol("XvA5KS56wcs", reinterpret_cast<uintptr_t>(&Dialog::sceInvitationDialogInitialize), "sceInvitationDialogInitialize");
+    RegisterSymbol("0zU0G+wiVLA", reinterpret_cast<uintptr_t>(&Dialog::sceInvitationDialogOpen), "sceInvitationDialogOpen");
+    RegisterSymbol("B6HVJtDYxEE", reinterpret_cast<uintptr_t>(&Dialog::sceInvitationDialogTerminate), "sceInvitationDialogTerminate");
+    RegisterSymbol("9+g9iOq+7kg", reinterpret_cast<uintptr_t>(&Dialog::sceInvitationDialogUpdateStatus), "sceInvitationDialogUpdateStatus");
 
     // ===== libSceNpSnsFacebookDialog.sprx.json (5 symbols) =====
-    m_names["AifdcI1aKas"] = "sceNpSnsFacebookDialogGetResult";
-    m_names["tdQArULbNQk"] = "sceNpSnsFacebookDialogInitialize";
-    m_names["Hi3onqHSN6M"] = "sceNpSnsFacebookDialogOpen";
-    m_names["cdqOFyupRS4"] = "sceNpSnsFacebookDialogTerminate";
-    m_names["fjV7C8H0Y8k"] = "sceNpSnsFacebookDialogUpdateStatus";
+    RegisterSymbol("AifdcI1aKas", reinterpret_cast<uintptr_t>(&Dialog::sceNpSnsFacebookDialogGetResult), "sceNpSnsFacebookDialogGetResult");
+    RegisterSymbol("tdQArULbNQk", reinterpret_cast<uintptr_t>(&Dialog::sceNpSnsFacebookDialogInitialize), "sceNpSnsFacebookDialogInitialize");
+    RegisterSymbol("Hi3onqHSN6M", reinterpret_cast<uintptr_t>(&Dialog::sceNpSnsFacebookDialogOpen), "sceNpSnsFacebookDialogOpen");
+    RegisterSymbol("cdqOFyupRS4", reinterpret_cast<uintptr_t>(&Dialog::sceNpSnsFacebookDialogTerminate), "sceNpSnsFacebookDialogTerminate");
+    RegisterSymbol("fjV7C8H0Y8k", reinterpret_cast<uintptr_t>(&Dialog::sceNpSnsFacebookDialogUpdateStatus), "sceNpSnsFacebookDialogUpdateStatus");
 
     // ===== libSceJpegEnc.sprx.json (4 symbols) =====
-    m_names["K+rocojkr-I"] = "sceJpegEncCreate";
-    m_names["j1LyMdaM+C0"] = "sceJpegEncDelete";
-    m_names["QbrU0cUghEM"] = "sceJpegEncEncode";
-    m_names["o6ZgXfFdWXQ"] = "sceJpegEncQueryMemorySize";
+    RegisterSymbol("K+rocojkr-I", reinterpret_cast<uintptr_t>(&ImageDecoder::sceJpegEncCreate), "sceJpegEncCreate");
+    RegisterSymbol("j1LyMdaM+C0", reinterpret_cast<uintptr_t>(&ImageDecoder::sceJpegEncDelete), "sceJpegEncDelete");
+    RegisterSymbol("QbrU0cUghEM", reinterpret_cast<uintptr_t>(&ImageDecoder::sceJpegEncEncode), "sceJpegEncEncode");
+    RegisterSymbol("o6ZgXfFdWXQ", reinterpret_cast<uintptr_t>(&ImageDecoder::sceJpegEncQueryMemorySize), "sceJpegEncQueryMemorySize");
 
     // ===== libSceCdlgUtilServer.sprx.json (4 symbols) =====
     RegisterSymbol("WJ3rqFwymew", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcFormatRfc3339), "sceRtcFormatRFC3339");
     RegisterSymbol("18B2NS1y9UU", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcGetCurrentNetworkTick), "sceRtcGetCurrentTick");
-    m_names["jMNwqYr4R-k"] = "sceRtcGetTickResolution";
+    RegisterSymbol("jMNwqYr4R-k", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcGetTickResolution), "sceRtcGetTickResolution");
     RegisterSymbol("99bMGglFW3I", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcParseRfc3339), "sceRtcParseRFC3339");
 
     // ===== libSceRtc.sprx.json (4 symbols) =====
-    m_names["eiuobaF-hK4"] = "sceRtcFormatRFC2822";
-    m_names["AxHBk3eat04"] = "sceRtcFormatRFC2822LocalTime";
-    m_names["CL6y9q-XbuQ"] = "sceRtcTickAddMonths";
-    m_names["-5y2uJ62qS8"] = "sceRtcTickAddYears";
+    RegisterSymbol("eiuobaF-hK4", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcFormatRFC2822), "sceRtcFormatRFC2822");
+    RegisterSymbol("AxHBk3eat04", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcFormatRFC2822LocalTime), "sceRtcFormatRFC2822LocalTime");
+    RegisterSymbol("CL6y9q-XbuQ", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcTickAddMonths), "sceRtcTickAddMonths");
+    RegisterSymbol("-5y2uJ62qS8", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcTickAddYears), "sceRtcTickAddYears");
 
     // ===== libSceNpEulaDialog.sprx.json (4 symbols) =====
-    m_names["GpLQDNKICac"] = "sceNpCreateRequest";
+    RegisterSymbol("GpLQDNKICac", reinterpret_cast<uintptr_t>(&Np::sceNpCreateRequest), "sceNpCreateRequest");
     RegisterSymbol("S7QTn72PrDw", reinterpret_cast<uintptr_t>(&Np::sceNpDeleteRequest), "sceNpDeleteRequest");
-    m_names["Ghz9iWDUtC4"] = "sceNpGetAccountCountry";
-    m_names["KZ1Mj9yEGYc"] = "sceNpGetAccountLanguage";
+    RegisterSymbol("Ghz9iWDUtC4", reinterpret_cast<uintptr_t>(&Np::sceNpGetAccountCountry), "sceNpGetAccountCountry");
+    RegisterSymbol("KZ1Mj9yEGYc", reinterpret_cast<uintptr_t>(&Np::sceNpGetAccountLanguage), "sceNpGetAccountLanguage");
 
     // ===== libSceShareUtility.sprx.json (4 symbols) =====
-    m_names["Jlv-lYxEnvM"] = "sceShareUtilityInitialize";
-    m_names["Lqp4EDIRXSo"] = "sceShareUtilityOpenShareMenu";
-    m_names["8hZ2EEl2Tto"] = "sceShareUtilityOpenShareMenuDefault";
-    m_names["DUWhxkyVPj4"] = "sceShareUtilityTerminate";
+    RegisterSymbol("Jlv-lYxEnvM", reinterpret_cast<uintptr_t>(&Kernel::sceShareUtilityInitialize), "sceShareUtilityInitialize");
+    RegisterSymbol("Lqp4EDIRXSo", reinterpret_cast<uintptr_t>(&Dialog::sceShareUtilityOpenShareMenu), "sceShareUtilityOpenShareMenu");
+    RegisterSymbol("8hZ2EEl2Tto", reinterpret_cast<uintptr_t>(&Dialog::sceShareUtilityOpenShareMenuDefault), "sceShareUtilityOpenShareMenuDefault");
+    RegisterSymbol("DUWhxkyVPj4", reinterpret_cast<uintptr_t>(&Dialog::sceShareUtilityTerminate), "sceShareUtilityTerminate");
 
     // ===== libSceVideoCoreInterface.sprx.json (4 symbols) =====
     RegisterSymbol("HXzjK9yI30k", reinterpret_cast<uintptr_t>(&Video::sceVideoOutAddFlipEvent), "sceVideoOutAddFlipEvent");
@@ -1007,33 +1008,33 @@ void NidTable::RegisterHostSubsystems() {
 
     // ===== libSceAbstractTwitter.sprx.json (3 symbols) =====
     RegisterSymbol("zO9UL3qIINQ", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcGetCurrentNetworkTick), "sceRtcGetCurrentNetworkTick");
-    m_names["BtqmpTRXHgk"] = "sceRtcGetTime_t";
-    m_names["ueega6v3GUw"] = "sceRtcSetTick";
+    RegisterSymbol("BtqmpTRXHgk", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcGetTime_t), "sceRtcGetTime_t");
+    RegisterSymbol("ueega6v3GUw", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcSetTick), "sceRtcSetTick");
 
     // ===== libSceContentDelete.sprx.json (3 symbols) =====
-    m_names["pXJh3aVk8Ks"] = "sceContentDeleteById";
-    m_names["zoxb0wEChEM"] = "sceContentDeleteInitialize";
-    m_names["5XLSih32qHA"] = "sceContentDeleteTerminate";
+    RegisterSymbol("pXJh3aVk8Ks", reinterpret_cast<uintptr_t>(&Content::sceContentDeleteById), "sceContentDeleteById");
+    RegisterSymbol("zoxb0wEChEM", reinterpret_cast<uintptr_t>(&Content::sceContentDeleteInitialize), "sceContentDeleteInitialize");
+    RegisterSymbol("5XLSih32qHA", reinterpret_cast<uintptr_t>(&Content::sceContentDeleteTerminate), "sceContentDeleteTerminate");
 
     // ===== libSceGnmDriver.sprx.json (3 symbols) =====
-    m_names["5q95ravnueg"] = "sceGnmDrawIndexIndirectMulti";
-    m_names["f5QQLp9rzGk"] = "sceGnmDrawIndirectMulti";
-    m_names["8lH54sfjfmU"] = "sceGnmDrawInitToDefaultContextState";
+    RegisterSymbol("5q95ravnueg", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndexIndirectMulti), "sceGnmDrawIndexIndirectMulti");
+    RegisterSymbol("f5QQLp9rzGk", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndirectMulti), "sceGnmDrawIndirectMulti");
+    RegisterSymbol("8lH54sfjfmU", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawInitToDefaultContextState), "sceGnmDrawInitToDefaultContextState");
 
     // ===== libSceAudioOut.sprx.json (3 symbols) =====
-    m_names["GrQ9s4IrNaQ"] = "sceAudioOutGetPortState";
-    m_names["w3PdaSTSwGE"] = "sceAudioOutOutputs";
+    RegisterSymbol("GrQ9s4IrNaQ", reinterpret_cast<uintptr_t>(&Audio::sceAudioOutGetPortState), "sceAudioOutGetPortState");
+    RegisterSymbol("w3PdaSTSwGE", reinterpret_cast<uintptr_t>(&Audio::sceAudioOutOutputs), "sceAudioOutOutputs");
     RegisterSymbol("wVwPU50pS1c", reinterpret_cast<uintptr_t>(&Audio::sceAudioOutSetMixLevelPadSpk), "sceAudioOutSetMixLevelPadSpk");
 
     // ===== libSceNpAuth.sprx.json (3 symbols) =====
-    m_names["6bwFkosYRQg"] = "sceNpAuthCreateRequest";
-    m_names["H8wG9Bk-nPc"] = "sceNpAuthDeleteRequest";
-    m_names["KxGkOrQJTqY"] = "sceNpAuthGetAuthorizationCode";
+    RegisterSymbol("6bwFkosYRQg", reinterpret_cast<uintptr_t>(&Np::sceNpAuthCreateRequest), "sceNpAuthCreateRequest");
+    RegisterSymbol("H8wG9Bk-nPc", reinterpret_cast<uintptr_t>(&Np::sceNpAuthDeleteRequest), "sceNpAuthDeleteRequest");
+    RegisterSymbol("KxGkOrQJTqY", reinterpret_cast<uintptr_t>(&Np::sceNpAuthGetAuthorizationCode), "sceNpAuthGetAuthorizationCode");
 
     // ===== libSceNpSns.sprx.json (3 symbols) =====
-    m_names["OoTjfxl8-wI"] = "sceNpSnsFacebookCreateRequest";
-    m_names["pTvAKV1iQkE"] = "sceNpSnsFacebookDeleteRequest";
-    m_names["VtyS8XLBqNE"] = "sceNpSnsFacebookGetAccessToken";
+    RegisterSymbol("OoTjfxl8-wI", reinterpret_cast<uintptr_t>(&Np::sceNpSnsFacebookCreateRequest), "sceNpSnsFacebookCreateRequest");
+    RegisterSymbol("pTvAKV1iQkE", reinterpret_cast<uintptr_t>(&Np::sceNpSnsFacebookDeleteRequest), "sceNpSnsFacebookDeleteRequest");
+    RegisterSymbol("VtyS8XLBqNE", reinterpret_cast<uintptr_t>(&Np::sceNpSnsFacebookGetAccessToken), "sceNpSnsFacebookGetAccessToken");
 
     // ===== libSceSystemService.sprx.json (2 symbols) =====
     RegisterSymbol("Vo5V8KAwCmk", reinterpret_cast<uintptr_t>(&Kernel::sceSystemServiceHideSplashScreen), "sceSystemServiceHideSplashScreen");
@@ -1060,7 +1061,7 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("1xxcMiGu2fo", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceGetUserName), "sceUserServiceGetUserName");
 
     // ===== libSceNgs2.sprx.json (2 symbols) =====
-    m_names["cLV4aiT9JpA"] = "sceNgs2RackCreate";
+    RegisterSymbol("cLV4aiT9JpA", reinterpret_cast<uintptr_t>(&Audio::sceNgs2RackCreate), "sceNgs2RackCreate");
     RegisterSymbol("0eFLVCfWVds", reinterpret_cast<uintptr_t>(&Audio::sceNgs2RackQueryBufferSize), "sceNgs2RackQueryBufferSize");
 
     // ===== libmonosgen-2.0.sprx.json (2 symbols) =====
@@ -1081,7 +1082,7 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("hv1luiJrqQM", reinterpret_cast<uintptr_t>(&Pad::scePadInit), "scePadInit");
 
     // ===== libSceHmd.sprx.json (1 symbols) =====
-    m_names["6kPnj51T62Y"] = "sceVideoOutGetResolutionStatus";
+    RegisterSymbol("6kPnj51T62Y", reinterpret_cast<uintptr_t>(&Kernel::sceVideoOutGetResolutionStatus), "sceVideoOutGetResolutionStatus");
 
     // ===== libSceVideoOut.sprx.json (1 symbols) =====
     RegisterSymbol("CBiu4mCE1DA", reinterpret_cast<uintptr_t>(&Video::sceVideoOutSetFlipRate), "sceVideoOutSetFlipRate");
@@ -1187,6 +1188,95 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("sceLibSecureCryptographyDeleteContext", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographyDeleteContext), "sceLibSecureCryptographyDeleteContext");
     RegisterSymbol("sceLibSecureCryptographyMessagePadding", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographyMessagePadding), "sceLibSecureCryptographyMessagePadding");
     RegisterSymbol("sceLibSecureCryptographyMessagePaddingSize", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographyMessagePaddingSize), "sceLibSecureCryptographyMessagePaddingSize");
+
+    // ===== Content Named Registrations =====
+    RegisterSymbol("sceContentSearchInit", reinterpret_cast<uintptr_t>(&Content::sceContentSearchInit), "sceContentSearchInit");
+    RegisterSymbol("sceContentSearchTerm", reinterpret_cast<uintptr_t>(&Content::sceContentSearchTerm), "sceContentSearchTerm");
+    RegisterSymbol("sceContentSearchGetNumOfContent", reinterpret_cast<uintptr_t>(&Content::sceContentSearchGetNumOfContent), "sceContentSearchGetNumOfContent");
+    RegisterSymbol("sceContentSearchSearchContent", reinterpret_cast<uintptr_t>(&Content::sceContentSearchSearchContent), "sceContentSearchSearchContent");
+    RegisterSymbol("sceContentSearchOpenMetadataByContentId", reinterpret_cast<uintptr_t>(&Content::sceContentSearchOpenMetadataByContentId), "sceContentSearchOpenMetadataByContentId");
+    RegisterSymbol("sceContentSearchCloseMetadata", reinterpret_cast<uintptr_t>(&Content::sceContentSearchCloseMetadata), "sceContentSearchCloseMetadata");
+    RegisterSymbol("sceContentSearchGetMetadataValue", reinterpret_cast<uintptr_t>(&Content::sceContentSearchGetMetadataValue), "sceContentSearchGetMetadataValue");
+    RegisterSymbol("sceContentSearchGetMyApplicationIndex", reinterpret_cast<uintptr_t>(&Content::sceContentSearchGetMyApplicationIndex), "sceContentSearchGetMyApplicationIndex");
+    RegisterSymbol("sceContentExportInit", reinterpret_cast<uintptr_t>(&Content::sceContentExportInit), "sceContentExportInit");
+    RegisterSymbol("sceContentExportTerm", reinterpret_cast<uintptr_t>(&Content::sceContentExportTerm), "sceContentExportTerm");
+    RegisterSymbol("sceContentExportStart", reinterpret_cast<uintptr_t>(&Content::sceContentExportStart), "sceContentExportStart");
+    RegisterSymbol("sceContentExportFinish", reinterpret_cast<uintptr_t>(&Content::sceContentExportFinish), "sceContentExportFinish");
+    RegisterSymbol("sceContentExportFromData", reinterpret_cast<uintptr_t>(&Content::sceContentExportFromData), "sceContentExportFromData");
+    RegisterSymbol("sceContentExportFromDataWithThumbnail", reinterpret_cast<uintptr_t>(&Content::sceContentExportFromDataWithThumbnail), "sceContentExportFromDataWithThumbnail");
+    RegisterSymbol("sceContentDeleteInitialize", reinterpret_cast<uintptr_t>(&Content::sceContentDeleteInitialize), "sceContentDeleteInitialize");
+    RegisterSymbol("sceContentDeleteTerminate", reinterpret_cast<uintptr_t>(&Content::sceContentDeleteTerminate), "sceContentDeleteTerminate");
+    RegisterSymbol("sceContentDeleteById", reinterpret_cast<uintptr_t>(&Content::sceContentDeleteById), "sceContentDeleteById");
+
+    // ===== PlayGo & Additional Dialog Named Registrations =====
+    RegisterSymbol("scePlayGoInitialize", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoInitialize), "scePlayGoInitialize");
+    RegisterSymbol("scePlayGoTerminate", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoTerminate), "scePlayGoTerminate");
+    RegisterSymbol("scePlayGoOpen", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoOpen), "scePlayGoOpen");
+    RegisterSymbol("scePlayGoClose", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoClose), "scePlayGoClose");
+    RegisterSymbol("scePlayGoGetLocus", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoGetLocus), "scePlayGoGetLocus");
+    RegisterSymbol("scePlayGoGetProgress", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoGetProgress), "scePlayGoGetProgress");
+    RegisterSymbol("sceGameCustomDataDialogInitialize", reinterpret_cast<uintptr_t>(&Dialog::sceGameCustomDataDialogInitialize), "sceGameCustomDataDialogInitialize");
+    RegisterSymbol("sceGameCustomDataDialogOpen", reinterpret_cast<uintptr_t>(&Dialog::sceGameCustomDataDialogOpen), "sceGameCustomDataDialogOpen");
+    RegisterSymbol("sceGameCustomDataDialogGetResult", reinterpret_cast<uintptr_t>(&Dialog::sceGameCustomDataDialogGetResult), "sceGameCustomDataDialogGetResult");
+    RegisterSymbol("sceGameCustomDataDialogTerminate", reinterpret_cast<uintptr_t>(&Dialog::sceGameCustomDataDialogTerminate), "sceGameCustomDataDialogTerminate");
+    RegisterSymbol("sceGameCustomDataDialogUpdateStatus", reinterpret_cast<uintptr_t>(&Dialog::sceGameCustomDataDialogUpdateStatus), "sceGameCustomDataDialogUpdateStatus");
+    RegisterSymbol("sceNpCommerceDialogInitialize", reinterpret_cast<uintptr_t>(&Dialog::sceNpCommerceDialogInitialize), "sceNpCommerceDialogInitialize");
+    RegisterSymbol("sceNpCommerceDialogOpen", reinterpret_cast<uintptr_t>(&Dialog::sceNpCommerceDialogOpen), "sceNpCommerceDialogOpen");
+    RegisterSymbol("sceNpCommerceDialogGetResult", reinterpret_cast<uintptr_t>(&Dialog::sceNpCommerceDialogGetResult), "sceNpCommerceDialogGetResult");
+    RegisterSymbol("sceNpCommerceDialogTerminate", reinterpret_cast<uintptr_t>(&Dialog::sceNpCommerceDialogTerminate), "sceNpCommerceDialogTerminate");
+    RegisterSymbol("sceNpCommerceDialogUpdateStatus", reinterpret_cast<uintptr_t>(&Dialog::sceNpCommerceDialogUpdateStatus), "sceNpCommerceDialogUpdateStatus");
+    RegisterSymbol("sceInvitationDialogInitialize", reinterpret_cast<uintptr_t>(&Dialog::sceInvitationDialogInitialize), "sceInvitationDialogInitialize");
+    RegisterSymbol("sceInvitationDialogOpen", reinterpret_cast<uintptr_t>(&Dialog::sceInvitationDialogOpen), "sceInvitationDialogOpen");
+    RegisterSymbol("sceInvitationDialogGetResult", reinterpret_cast<uintptr_t>(&Dialog::sceInvitationDialogGetResult), "sceInvitationDialogGetResult");
+    RegisterSymbol("sceInvitationDialogTerminate", reinterpret_cast<uintptr_t>(&Dialog::sceInvitationDialogTerminate), "sceInvitationDialogTerminate");
+    RegisterSymbol("sceInvitationDialogUpdateStatus", reinterpret_cast<uintptr_t>(&Dialog::sceInvitationDialogUpdateStatus), "sceInvitationDialogUpdateStatus");
+    RegisterSymbol("sceNpSnsFacebookDialogInitialize", reinterpret_cast<uintptr_t>(&Dialog::sceNpSnsFacebookDialogInitialize), "sceNpSnsFacebookDialogInitialize");
+    RegisterSymbol("sceNpSnsFacebookDialogOpen", reinterpret_cast<uintptr_t>(&Dialog::sceNpSnsFacebookDialogOpen), "sceNpSnsFacebookDialogOpen");
+    RegisterSymbol("sceNpSnsFacebookDialogGetResult", reinterpret_cast<uintptr_t>(&Dialog::sceNpSnsFacebookDialogGetResult), "sceNpSnsFacebookDialogGetResult");
+    RegisterSymbol("sceNpSnsFacebookDialogTerminate", reinterpret_cast<uintptr_t>(&Dialog::sceNpSnsFacebookDialogTerminate), "sceNpSnsFacebookDialogTerminate");
+    RegisterSymbol("sceNpSnsFacebookDialogUpdateStatus", reinterpret_cast<uintptr_t>(&Dialog::sceNpSnsFacebookDialogUpdateStatus), "sceNpSnsFacebookDialogUpdateStatus");
+    RegisterSymbol("sceShareUtilityInitialize", reinterpret_cast<uintptr_t>(&Kernel::sceShareUtilityInitialize), "sceShareUtilityInitialize");
+    RegisterSymbol("sceShareUtilityOpenShareMenu", reinterpret_cast<uintptr_t>(&Dialog::sceShareUtilityOpenShareMenu), "sceShareUtilityOpenShareMenu");
+    RegisterSymbol("sceShareUtilityOpenShareMenuDefault", reinterpret_cast<uintptr_t>(&Dialog::sceShareUtilityOpenShareMenuDefault), "sceShareUtilityOpenShareMenuDefault");
+    RegisterSymbol("sceShareUtilityTerminate", reinterpret_cast<uintptr_t>(&Dialog::sceShareUtilityTerminate), "sceShareUtilityTerminate");
+
+    // ===== TUS & ScoreRanking Named Registrations =====
+    RegisterSymbol("sceNpTusCreateNpTitleCtx", reinterpret_cast<uintptr_t>(&Np::sceNpTusCreateNpTitleCtx), "sceNpTusCreateNpTitleCtx");
+    RegisterSymbol("sceNpTusDeleteNpTitleCtx", reinterpret_cast<uintptr_t>(&Np::sceNpTusDeleteNpTitleCtx), "sceNpTusDeleteNpTitleCtx");
+    RegisterSymbol("sceNpTusCreateRequest", reinterpret_cast<uintptr_t>(&Np::sceNpTusCreateRequest), "sceNpTusCreateRequest");
+    RegisterSymbol("sceNpTusDeleteRequest", reinterpret_cast<uintptr_t>(&Np::sceNpTusDeleteRequest), "sceNpTusDeleteRequest");
+    RegisterSymbol("sceNpTusSetData", reinterpret_cast<uintptr_t>(&Np::sceNpTusSetData), "sceNpTusSetData");
+    RegisterSymbol("sceNpTusSetDataVUser", reinterpret_cast<uintptr_t>(&Np::sceNpTusSetDataVUser), "sceNpTusSetDataVUser");
+    RegisterSymbol("sceNpTusGetData", reinterpret_cast<uintptr_t>(&Np::sceNpTusGetData), "sceNpTusGetData");
+    RegisterSymbol("sceNpTusGetDataVUser", reinterpret_cast<uintptr_t>(&Np::sceNpTusGetDataVUser), "sceNpTusGetDataVUser");
+    RegisterSymbol("sceNpTusSetMultiSlotVariable", reinterpret_cast<uintptr_t>(&Np::sceNpTusSetMultiSlotVariable), "sceNpTusSetMultiSlotVariable");
+    RegisterSymbol("sceNpTusSetMultiSlotVariableVUser", reinterpret_cast<uintptr_t>(&Np::sceNpTusSetMultiSlotVariableVUser), "sceNpTusSetMultiSlotVariableVUser");
+    RegisterSymbol("sceNpTusGetMultiSlotVariable", reinterpret_cast<uintptr_t>(&Np::sceNpTusGetMultiSlotVariable), "sceNpTusGetMultiSlotVariable");
+    RegisterSymbol("sceNpTusGetMultiSlotVariableVUser", reinterpret_cast<uintptr_t>(&Np::sceNpTusGetMultiSlotVariableVUser), "sceNpTusGetMultiSlotVariableVUser");
+    RegisterSymbol("sceNpTusAddAndGetVariable", reinterpret_cast<uintptr_t>(&Np::sceNpTusAddAndGetVariable), "sceNpTusAddAndGetVariable");
+    RegisterSymbol("sceNpTusAddAndGetVariableVUser", reinterpret_cast<uintptr_t>(&Np::sceNpTusAddAndGetVariableVUser), "sceNpTusAddAndGetVariableVUser");
+    RegisterSymbol("sceNpTusDeleteMultiSlotData", reinterpret_cast<uintptr_t>(&Np::sceNpTusDeleteMultiSlotData), "sceNpTusDeleteMultiSlotData");
+    RegisterSymbol("sceNpTusDeleteMultiSlotDataVUser", reinterpret_cast<uintptr_t>(&Np::sceNpTusDeleteMultiSlotDataVUser), "sceNpTusDeleteMultiSlotDataVUser");
+    RegisterSymbol("sceNpTssGetData", reinterpret_cast<uintptr_t>(&Np::sceNpTssGetData), "sceNpTssGetData");
+    RegisterSymbol("sceNpWordFilterAbortRequest", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterAbortRequest), "sceNpWordFilterAbortRequest");
+    RegisterSymbol("sceNpWordFilterCensorComment", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterCensorComment), "sceNpWordFilterCensorComment");
+    RegisterSymbol("sceNpWordFilterCreateAsyncRequest", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterCreateAsyncRequest), "sceNpWordFilterCreateAsyncRequest");
+    RegisterSymbol("sceNpWordFilterCreateRequest", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterCreateRequest), "sceNpWordFilterCreateRequest");
+    RegisterSymbol("sceNpWordFilterCreateTitleCtx", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterCreateTitleCtx), "sceNpWordFilterCreateTitleCtx");
+    RegisterSymbol("sceNpWordFilterDeleteRequest", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterDeleteRequest), "sceNpWordFilterDeleteRequest");
+    RegisterSymbol("sceNpWordFilterDeleteTitleCtx", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterDeleteTitleCtx), "sceNpWordFilterDeleteTitleCtx");
+    RegisterSymbol("sceNpWordFilterPollAsync", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterPollAsync), "sceNpWordFilterPollAsync");
+    RegisterSymbol("sceNpWordFilterSanitizeComment", reinterpret_cast<uintptr_t>(&Np::sceNpWordFilterSanitizeComment), "sceNpWordFilterSanitizeComment");
+    RegisterSymbol("sceNpLookupCreateRequest", reinterpret_cast<uintptr_t>(&Np::sceNpLookupCreateRequest), "sceNpLookupCreateRequest");
+    RegisterSymbol("sceNpLookupCreateTitleCtx", reinterpret_cast<uintptr_t>(&Np::sceNpLookupCreateTitleCtx), "sceNpLookupCreateTitleCtx");
+    RegisterSymbol("sceNpLookupDeleteRequest", reinterpret_cast<uintptr_t>(&Np::sceNpLookupDeleteRequest), "sceNpLookupDeleteRequest");
+    RegisterSymbol("sceNpLookupDeleteTitleCtx", reinterpret_cast<uintptr_t>(&Np::sceNpLookupDeleteTitleCtx), "sceNpLookupDeleteTitleCtx");
+    RegisterSymbol("sceNpLookupNpId", reinterpret_cast<uintptr_t>(&Np::sceNpLookupNpId), "sceNpLookupNpId");
+    RegisterSymbol("sceNpCmpNpId", reinterpret_cast<uintptr_t>(&Np::sceNpCmpNpId), "sceNpCmpNpId");
+    RegisterSymbol("sceNpCmpOnlineId", reinterpret_cast<uintptr_t>(&Np::sceNpCmpOnlineId), "sceNpCmpOnlineId");
+    RegisterSymbol("sceNpAuthCreateRequest", reinterpret_cast<uintptr_t>(&Np::sceNpAuthCreateRequest), "sceNpAuthCreateRequest");
+    RegisterSymbol("sceNpAuthDeleteRequest", reinterpret_cast<uintptr_t>(&Np::sceNpAuthDeleteRequest), "sceNpAuthDeleteRequest");
+    RegisterSymbol("sceNpAuthGetAuthorizationCode", reinterpret_cast<uintptr_t>(&Np::sceNpAuthGetAuthorizationCode), "sceNpAuthGetAuthorizationCode");
 
     LOG_INFO("NID", "Registered " + std::to_string(m_symbols.size()) + " native host API symbols and " +
              std::to_string(m_names.size()) + " named API stubs.");

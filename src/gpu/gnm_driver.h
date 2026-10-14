@@ -80,6 +80,9 @@ PS4_SYSV_ABI s32 sceGnmDrawIndexOffset(void* dcb, u32 num_dwords, u32 index_coun
 PS4_SYSV_ABI s32 sceGnmDrawIndirect(void* dcb, u32 num_dwords, const void* arg2, const void* arg3);
 PS4_SYSV_ABI s32 sceGnmDrawIndexIndirect(void* dcb, u32 num_dwords, const void* arg2, const void* arg3);
 PS4_SYSV_ABI s32 sceGnmDrawIndexMultiInstanced(void* dcb, u32 num_dwords, u32 index_count, u32 instance_count, u32 first_index, u32 vertex_offset, u32 first_instance);
+PS4_SYSV_ABI s32 sceGnmDrawIndexIndirectMulti(void* dcb, u32 num_dwords, const void* arg2, u32 count, u32 stride);
+PS4_SYSV_ABI s32 sceGnmDrawIndirectMulti(void* dcb, u32 num_dwords, const void* arg2, u32 count, u32 stride);
+PS4_SYSV_ABI s32 sceGnmDrawInitToDefaultContextState(void* dcb, u32 num_dwords);
 
 } // extern "C"
 

@@ -1313,7 +1313,10 @@ PS4_SYSV_ABI int* __error() {
 }
 
 PS4_SYSV_ABI void __stack_chk_fail() {
-    LOG_FATAL("CRT", "__stack_chk_fail called by guest! Stack corruption detected.");
+    uintptr_t caller = reinterpret_cast<uintptr_t>(__builtin_return_address(0));
+    char buf[64];
+    std::snprintf(buf, sizeof(buf), "0x%llX", static_cast<unsigned long long>(caller));
+    LOG_FATAL("CRT", std::string("__stack_chk_fail called by guest from RIP ") + buf + "! Stack corruption detected.");
     RaiseException(0xC0000409, 0, 0, nullptr);
 }
 
@@ -1323,6 +1326,9 @@ PS4_SYSV_ABI void* __tls_get_addr(void* ti) {
 }
 
 PS4_SYSV_ABI void ps4_exit(s32 status) {
+    uintptr_t caller = reinterpret_cast<uintptr_t>(__builtin_return_address(0));
+    LOG_FATAL("KERNEL", "ps4_exit called with status=" + std::to_string(status) + 
+              " from caller 0x" + std::to_string(caller));
     ExitProcess(status);
 }
 

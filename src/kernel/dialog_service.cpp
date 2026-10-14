@@ -179,6 +179,155 @@ PS4_SYSV_ABI s32 scePlayGoDialogUpdateStatus() {
     return SCE_COMMON_DIALOG_STATUS_FINISHED;
 }
 
+// ========================================================================
+// libSceGameCustomDataDialog
+// ========================================================================
+
+PS4_SYSV_ABI s32 sceGameCustomDataDialogInitialize(const void* param) {
+    (void)param;
+    LOG_INFO("DIALOG", "sceGameCustomDataDialogInitialize called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGameCustomDataDialogOpen(const void* param) {
+    (void)param;
+    LOG_INFO("DIALOG", "sceGameCustomDataDialogOpen called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGameCustomDataDialogGetResult(void* result) {
+    if (result) {
+        std::memset(result, 0, 32);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGameCustomDataDialogTerminate() {
+    LOG_INFO("DIALOG", "sceGameCustomDataDialogTerminate called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGameCustomDataDialogUpdateStatus() {
+    return SCE_COMMON_DIALOG_STATUS_FINISHED;
+}
+
+// ========================================================================
+// libSceNpCommerceDialog
+// ========================================================================
+
+PS4_SYSV_ABI s32 sceNpCommerceDialogInitialize(const void* param) {
+    (void)param;
+    LOG_INFO("DIALOG", "sceNpCommerceDialogInitialize called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpCommerceDialogOpen(const void* param) {
+    (void)param;
+    LOG_INFO("DIALOG", "sceNpCommerceDialogOpen called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpCommerceDialogGetResult(void* result) {
+    if (result) {
+        std::memset(result, 0, 32);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpCommerceDialogTerminate() {
+    LOG_INFO("DIALOG", "sceNpCommerceDialogTerminate called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpCommerceDialogUpdateStatus() {
+    return SCE_COMMON_DIALOG_STATUS_FINISHED;
+}
+
+// ========================================================================
+// libSceInvitationDialog
+// ========================================================================
+
+PS4_SYSV_ABI s32 sceInvitationDialogInitialize(const void* param) {
+    (void)param;
+    LOG_INFO("DIALOG", "sceInvitationDialogInitialize called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceInvitationDialogOpen(const void* param) {
+    (void)param;
+    LOG_INFO("DIALOG", "sceInvitationDialogOpen called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceInvitationDialogGetResult(void* result) {
+    if (result) {
+        std::memset(result, 0, 32);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceInvitationDialogTerminate() {
+    LOG_INFO("DIALOG", "sceInvitationDialogTerminate called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceInvitationDialogUpdateStatus() {
+    return SCE_COMMON_DIALOG_STATUS_FINISHED;
+}
+
+// ========================================================================
+// libSceNpSnsFacebookDialog
+// ========================================================================
+
+PS4_SYSV_ABI s32 sceNpSnsFacebookDialogInitialize(const void* param) {
+    (void)param;
+    LOG_INFO("DIALOG", "sceNpSnsFacebookDialogInitialize called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpSnsFacebookDialogOpen(const void* param) {
+    (void)param;
+    LOG_INFO("DIALOG", "sceNpSnsFacebookDialogOpen called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpSnsFacebookDialogGetResult(void* result) {
+    if (result) {
+        std::memset(result, 0, 32);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpSnsFacebookDialogTerminate() {
+    LOG_INFO("DIALOG", "sceNpSnsFacebookDialogTerminate called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpSnsFacebookDialogUpdateStatus() {
+    return SCE_COMMON_DIALOG_STATUS_FINISHED;
+}
+
+// ========================================================================
+// libSceShareUtility
+// ========================================================================
+
+PS4_SYSV_ABI s32 sceShareUtilityOpenShareMenu(const void* param) {
+    (void)param;
+    LOG_INFO("SHARE", "sceShareUtilityOpenShareMenu called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceShareUtilityOpenShareMenuDefault(const void* param) {
+    (void)param;
+    LOG_INFO("SHARE", "sceShareUtilityOpenShareMenuDefault called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceShareUtilityTerminate() {
+    LOG_INFO("SHARE", "sceShareUtilityTerminate called");
+    return 0;
+}
+
 } // extern "C"
 
 } // namespace Dialog

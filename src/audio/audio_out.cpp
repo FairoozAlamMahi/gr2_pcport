@@ -336,6 +336,16 @@ PS4_SYSV_ABI s32 sceNgs2SystemCreateWithAllocator(const void* desc, const void* 
     return 0;
 }
 
+PS4_SYSV_ABI s32 sceNgs2RackCreate(void* sys, const void* desc, void** handle) {
+    (void)sys;
+    (void)desc;
+    if (handle) {
+        *handle = s_dummy_ngs2_rack;
+    }
+    LOG_INFO("AUDIO", "sceNgs2RackCreate called");
+    return 0;
+}
+
 PS4_SYSV_ABI s32 sceNgs2RackCreateWithAllocator(void* sys, const void* desc, const void* alloc, void** handle) {
     (void)sys;
     (void)desc;

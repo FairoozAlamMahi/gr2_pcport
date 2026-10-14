@@ -94,6 +94,55 @@ PS4_SYSV_ABI s32 sceRtcParseDateTime(void* time, const char* str) {
     return 0;
 }
 
+PS4_SYSV_ABI s32 sceRtcGetTickResolution(u64* res) {
+    if (res) {
+        *res = 1000000; // 1,000,000 ticks per second (microsecond resolution)
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceRtcFormatRFC2822(char* str, const void* time, s32 timezone) {
+    (void)time;
+    (void)timezone;
+    if (str) {
+        std::memcpy(str, "Wed, 14 Oct 2026 21:30:00 GMT\0", 30);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceRtcFormatRFC2822LocalTime(char* str, const void* time) {
+    return sceRtcFormatRFC2822(str, time, 0);
+}
+
+PS4_SYSV_ABI s32 sceRtcTickAddMonths(u64* tick, const u64* src, s32 months) {
+    if (tick && src) {
+        *tick = *src + static_cast<u64>(months) * 30ULL * 86400000000ULL;
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceRtcTickAddYears(u64* tick, const u64* src, s32 years) {
+    if (tick && src) {
+        *tick = *src + static_cast<u64>(years) * 365ULL * 86400000000ULL;
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceRtcGetTime_t(const void* time, int64_t* t) {
+    (void)time;
+    if (t) {
+        *t = static_cast<int64_t>(std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::system_clock::now().time_since_epoch()).count());
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceRtcSetTick(void* time, const u64* tick) {
+    (void)time;
+    (void)tick;
+    return 0;
+}
+
 } // extern "C"
 
 } // namespace Kernel::Rtc

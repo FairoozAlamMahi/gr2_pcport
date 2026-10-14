@@ -90,12 +90,19 @@ LONG WINAPI CrashHandler::ExceptionHandler(PEXCEPTION_POINTERS pExceptionInfo) {
 
     std::lock_guard<std::mutex> lock(s_crash_mutex);
 
-    std::cerr << "\n===============================================================\n";
-    std::cerr << "         [CRASH DIAGNOSTIC] UNHANDLED GUEST EXCEPTION          \n";
-    std::cerr << "===============================================================\n";
+    auto log_out = [](const std::string& msg) {
+        std::cerr << msg;
+        std::cout << msg;
+        std::cerr.flush();
+        std::cout.flush();
+    };
 
-    std::cerr << "Exception Code:    0x" << std::hex << std::uppercase << code << "\n";
-    std::cerr << "Faulting Address:  0x" << rip << "\n";
+    std::stringstream diag;
+    diag << "\n===============================================================\n"
+         << "         [CRASH DIAGNOSTIC] UNHANDLED GUEST EXCEPTION          \n"
+         << "===============================================================\n"
+         << "Exception Code:    0x" << std::hex << std::uppercase << code << "\n"
+         << "Faulting Address:  0x" << rip << "\n";
 
     hMod = nullptr;
     if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT,
@@ -103,39 +110,37 @@ LONG WINAPI CrashHandler::ExceptionHandler(PEXCEPTION_POINTERS pExceptionInfo) {
         char mod_name[MAX_PATH] = {};
         GetModuleFileNameA(hMod, mod_name, sizeof(mod_name));
         uintptr_t rva = rip - reinterpret_cast<uintptr_t>(hMod);
-        std::cerr << "Faulting Module:   " << mod_name << " (RVA: 0x" << std::hex << rva << ")\n";
+        diag << "Faulting Module:   " << mod_name << " (RVA: 0x" << std::hex << rva << ")\n";
     }
 
     if (code == EXCEPTION_ACCESS_VIOLATION) {
         ULONG_PTR is_write = pExceptionInfo->ExceptionRecord->ExceptionInformation[0];
         ULONG_PTR target = pExceptionInfo->ExceptionRecord->ExceptionInformation[1];
-        std::cerr << "Violation Type:    " << (is_write == 1 ? "WRITE" : is_write == 8 ? "EXECUTE" : "READ") 
-                  << " at 0x" << target << "\n";
+        diag << "Violation Type:    " << (is_write == 1 ? "WRITE" : is_write == 8 ? "EXECUTE" : "READ") 
+             << " at 0x" << target << "\n";
     }
 
-    std::cerr << "\n--- CPU Register State (AMD64 / System V) ---\n";
-    std::cerr << "RAX: 0x" << ctx->Rax << "  RBX: 0x" << ctx->Rbx << "  RCX: 0x" << ctx->Rcx << "  RDX: 0x" << ctx->Rdx << "\n";
-    std::cerr << "RSI: 0x" << ctx->Rsi << "  RDI: 0x" << ctx->Rdi << "  RBP: 0x" << ctx->Rbp << "  RSP: 0x" << ctx->Rsp << "\n";
-    std::cerr << "R8:  0x" << ctx->R8  << "  R9:  0x" << ctx->R9  << "  R10: 0x" << ctx->R10 << "  R11: 0x" << ctx->R11 << "\n";
-    std::cerr << "R12: 0x" << ctx->R12 << "  R13: 0x" << ctx->R13 << "  R14: 0x" << ctx->R14 << "  R15: 0x" << ctx->R15 << "\n";
-    std::cerr << "EFLAGS: 0x" << ctx->EFlags << "\n";
+    diag << "\n--- CPU Register State (AMD64 / System V) ---\n"
+         << "RAX: 0x" << ctx->Rax << "  RBX: 0x" << ctx->Rbx << "  RCX: 0x" << ctx->Rcx << "  RDX: 0x" << ctx->Rdx << "\n"
+         << "RSI: 0x" << ctx->Rsi << "  RDI: 0x" << ctx->Rdi << "  RBP: 0x" << ctx->Rbp << "  RSP: 0x" << ctx->Rsp << "\n"
+         << "R8:  0x" << ctx->R8  << "  R9:  0x" << ctx->R9  << "  R10: 0x" << ctx->R10 << "  R11: 0x" << ctx->R11 << "\n"
+         << "R12: 0x" << ctx->R12 << "  R13: 0x" << ctx->R13 << "  R14: 0x" << ctx->R14 << "  R15: 0x" << ctx->R15 << "\n"
+         << "EFLAGS: 0x" << ctx->EFlags << "\n"
+         << "\n--- Instruction Bytes at RIP ---\n";
 
-    // Safely dump instruction bytes at RIP
-    std::cerr << "\n--- Instruction Bytes at RIP ---\n";
     u8 rip_bytes[16] = {};
     SIZE_T rip_read = 0;
     if (ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<LPCVOID>(rip), rip_bytes, sizeof(rip_bytes), &rip_read) && rip_read > 0) {
-        std::cerr << "Bytes: ";
+        diag << "Bytes: ";
         for (SIZE_T i = 0; i < rip_read; ++i) {
-            std::cerr << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(rip_bytes[i]) << " ";
+            diag << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(rip_bytes[i]) << " ";
         }
-        std::cerr << "\n";
+        diag << "\n";
     } else {
-        std::cerr << "<Failed to read instruction memory at 0x" << std::hex << rip << ">\n";
+        diag << "<Failed to read instruction memory at 0x" << std::hex << rip << ">\n";
     }
 
-    // Safely dump stack memory around RSP
-    std::cerr << "\n--- Stack Trace (Top 32 Words at RSP) ---\n";
+    diag << "\n--- Stack Trace (Top 32 Words at RSP) ---\n";
     uintptr_t stack_words[32] = {};
     SIZE_T stack_read = 0;
     if (ReadProcessMemory(GetCurrentProcess(), reinterpret_cast<LPCVOID>(ctx->Rsp), stack_words, sizeof(stack_words), &stack_read) && stack_read >= 8) {
@@ -159,13 +164,14 @@ LONG WINAPI CrashHandler::ExceptionHandler(PEXCEPTION_POINTERS pExceptionInfo) {
                 const char* base_name = strrchr(frame_name, '\\');
                 ss << " [" << (base_name ? base_name + 1 : frame_name) << " + 0x" << std::hex << (addr - reinterpret_cast<uintptr_t>(hFrameMod)) << "]";
             }
-            std::cerr << "  RSP+" << std::setw(2) << std::setfill('0') << std::hex << (i * 8) << ": 0x" << addr << ss.str() << "\n";
+            diag << "  RSP+" << std::setw(2) << std::setfill('0') << std::hex << (i * 8) << ": 0x" << addr << ss.str() << "\n";
         }
     } else {
-        std::cerr << "<Failed to read stack memory at 0x" << std::hex << ctx->Rsp << ">\n";
+        diag << "<Failed to read stack memory at 0x" << std::hex << ctx->Rsp << ">\n";
     }
 
-    std::cerr << "===============================================================\n\n";
+    diag << "===============================================================\n\n";
+    log_out(diag.str());
 
     // Fast exit to prevent WER minidump freezing
     ExitProcess(code);

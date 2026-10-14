@@ -45,6 +45,56 @@ PS4_SYSV_ABI s32 sceNpMatching2Terminate();
 PS4_SYSV_ABI s32 sceNpScoreRankingInitialize(const void* opt);
 PS4_SYSV_ABI s32 sceNpScoreRankingTerminate();
 
+// libSceNpTus
+PS4_SYSV_ABI s32 sceNpTusCreateNpTitleCtx(const void* np_title_id, void** title_ctx);
+PS4_SYSV_ABI s32 sceNpTusDeleteNpTitleCtx(void* title_ctx);
+PS4_SYSV_ABI s32 sceNpTusCreateRequest(void* title_ctx, void** req);
+PS4_SYSV_ABI s32 sceNpTusDeleteRequest(void* req);
+PS4_SYSV_ABI s32 sceNpTusSetData(void* req, const void* slot, const void* data, usize size, void* out);
+PS4_SYSV_ABI s32 sceNpTusSetDataVUser(void* req, const void* vuser, const void* slot, const void* data, usize size, void* out);
+PS4_SYSV_ABI s32 sceNpTusGetData(void* req, const void* slot, void* buf, usize size, void* out);
+PS4_SYSV_ABI s32 sceNpTusGetDataVUser(void* req, const void* vuser, const void* slot, void* buf, usize size, void* out);
+PS4_SYSV_ABI s32 sceNpTusSetMultiSlotVariable(void* req, const void* slots, u32 count, void* out);
+PS4_SYSV_ABI s32 sceNpTusSetMultiSlotVariableVUser(void* req, const void* vuser, const void* slots, u32 count, void* out);
+PS4_SYSV_ABI s32 sceNpTusGetMultiSlotVariable(void* req, const void* slots, u32 count, void* out);
+PS4_SYSV_ABI s32 sceNpTusGetMultiSlotVariableVUser(void* req, const void* vuser, const void* slots, u32 count, void* out);
+PS4_SYSV_ABI s32 sceNpTusAddAndGetVariable(void* req, const void* slot, s64 delta, void* out);
+PS4_SYSV_ABI s32 sceNpTusAddAndGetVariableVUser(void* req, const void* vuser, const void* slot, s64 delta, void* out);
+PS4_SYSV_ABI s32 sceNpTusDeleteMultiSlotData(void* req, const void* slots, u32 count, void* out);
+PS4_SYSV_ABI s32 sceNpTusDeleteMultiSlotDataVUser(void* req, const void* vuser, const void* slots, u32 count, void* out);
+PS4_SYSV_ABI s32 sceNpTssGetData(void* req, const void* slot, void* buf, usize size, void* out);
+
+// libSceNpWordFilter
+PS4_SYSV_ABI s32 sceNpWordFilterAbortRequest(void* req);
+PS4_SYSV_ABI s32 sceNpWordFilterCensorComment(void* req, const char* src, char* dst, usize size);
+PS4_SYSV_ABI s32 sceNpWordFilterCreateAsyncRequest(void* title_ctx, void** req);
+PS4_SYSV_ABI s32 sceNpWordFilterCreateRequest(void* title_ctx, void** req);
+PS4_SYSV_ABI s32 sceNpWordFilterCreateTitleCtx(const void* np_title_id, void** title_ctx);
+PS4_SYSV_ABI s32 sceNpWordFilterDeleteRequest(void* req);
+PS4_SYSV_ABI s32 sceNpWordFilterDeleteTitleCtx(void* title_ctx);
+PS4_SYSV_ABI s32 sceNpWordFilterPollAsync(void* req, s32* result);
+PS4_SYSV_ABI s32 sceNpWordFilterSanitizeComment(void* req, const char* src, char* dst, usize size);
+
+// libSceNpLookup
+PS4_SYSV_ABI s32 sceNpLookupCreateRequest(void* title_ctx, void** req);
+PS4_SYSV_ABI s32 sceNpLookupCreateTitleCtx(const void* np_title_id, void** title_ctx);
+PS4_SYSV_ABI s32 sceNpLookupDeleteRequest(void* req);
+PS4_SYSV_ABI s32 sceNpLookupDeleteTitleCtx(void* title_ctx);
+PS4_SYSV_ABI s32 sceNpLookupNpId(void* req, const void* online_id, void* np_id);
+
+// libSceNpAuth & Utils
+PS4_SYSV_ABI s32 sceNpAuthCreateRequest(const void* param, void** req);
+PS4_SYSV_ABI s32 sceNpAuthDeleteRequest(void* req);
+PS4_SYSV_ABI s32 sceNpAuthGetAuthorizationCode(void* req, const void* param, void* code);
+PS4_SYSV_ABI s32 sceNpCmpNpId(const void* id1, const void* id2);
+PS4_SYSV_ABI s32 sceNpCmpOnlineId(const void* id1, const void* id2);
+PS4_SYSV_ABI s32 sceNpCreateRequest(const void* param, void** req);
+PS4_SYSV_ABI s32 sceNpGetAccountCountry(void* req, void* country);
+PS4_SYSV_ABI s32 sceNpGetAccountLanguage(void* req, void* lang);
+PS4_SYSV_ABI s32 sceNpSnsFacebookCreateRequest(const void* param, void** req);
+PS4_SYSV_ABI s32 sceNpSnsFacebookDeleteRequest(void* req);
+PS4_SYSV_ABI s32 sceNpSnsFacebookGetAccessToken(void* req, void* token);
+
 } // extern "C"
 
 } // namespace Np

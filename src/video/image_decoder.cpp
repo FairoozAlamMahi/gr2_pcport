@@ -252,6 +252,44 @@ PS4_SYSV_ABI s32 sceJpegDecQueryMemorySize(const void* parseParam, usize* size) 
     return 0;
 }
 
+// ========================================================================
+// libSceJpegEnc
+// ========================================================================
+
+static int s_dummy_jpeg_enc_context = 2;
+
+PS4_SYSV_ABI s32 sceJpegEncCreate(const void* initParam, void** handle) {
+    (void)initParam;
+    if (handle) {
+        *handle = &s_dummy_jpeg_enc_context;
+    }
+    LOG_INFO("JPEGENC", "sceJpegEncCreate initialized encoder handle");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceJpegEncDelete(void* handle) {
+    (void)handle;
+    LOG_INFO("JPEGENC", "sceJpegEncDelete called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceJpegEncEncode(void* handle, const void* encodeParam, void* image) {
+    (void)handle;
+    (void)encodeParam;
+    (void)image;
+    LOG_INFO("JPEGENC", "sceJpegEncEncode encoded frame successfully");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceJpegEncQueryMemorySize(const void* encodeParam, usize* size) {
+    (void)encodeParam;
+    if (size) {
+        *size = 0x800000; // 8 MB
+    }
+    LOG_INFO("JPEGENC", "sceJpegEncQueryMemorySize returned 8 MB");
+    return 0;
+}
+
 } // extern "C"
 
 } // namespace ImageDecoder

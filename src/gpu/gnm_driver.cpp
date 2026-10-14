@@ -713,6 +713,28 @@ PS4_SYSV_ABI s32 sceGnmDrawIndexMultiInstanced(void* dcb, u32 num_dwords, u32 in
     return 0;
 }
 
+PS4_SYSV_ABI s32 sceGnmDrawIndexIndirectMulti(void* dcb, u32 num_dwords, const void* arg2, u32 count, u32 stride) {
+    (void)dcb;
+    (void)num_dwords;
+    (void)arg2;
+    (void)count;
+    (void)stride;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmDrawIndirectMulti(void* dcb, u32 num_dwords, const void* arg2, u32 count, u32 stride) {
+    (void)dcb;
+    (void)num_dwords;
+    (void)arg2;
+    (void)count;
+    (void)stride;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmDrawInitToDefaultContextState(void* dcb, u32 num_dwords) {
+    return sceGnmDrawInitDefaultHardwareState(dcb, num_dwords);
+}
+
 } // extern "C"
 
 } // namespace GPU

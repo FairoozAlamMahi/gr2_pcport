@@ -19,6 +19,13 @@ PS4_SYSV_ABI s32 sceRtcFormatRFC3339(char* str, const void* time, s32 timezone);
 PS4_SYSV_ABI s32 sceRtcParseRfc3339(void* time, const char* str);
 PS4_SYSV_ABI s32 sceRtcParseRFC3339(void* time, const char* str);
 PS4_SYSV_ABI s32 sceRtcParseDateTime(void* time, const char* str);
+PS4_SYSV_ABI s32 sceRtcGetTickResolution(u64* res);
+PS4_SYSV_ABI s32 sceRtcFormatRFC2822(char* str, const void* time, s32 timezone);
+PS4_SYSV_ABI s32 sceRtcFormatRFC2822LocalTime(char* str, const void* time);
+PS4_SYSV_ABI s32 sceRtcTickAddMonths(u64* tick, const u64* src, s32 months);
+PS4_SYSV_ABI s32 sceRtcTickAddYears(u64* tick, const u64* src, s32 years);
+PS4_SYSV_ABI s32 sceRtcGetTime_t(const void* time, int64_t* t);
+PS4_SYSV_ABI s32 sceRtcSetTick(void* time, const u64* tick);
 
 } // extern "C"
 

@@ -46,6 +46,39 @@ PS4_SYSV_ABI s32 scePlayGoDialogClose();
 PS4_SYSV_ABI s32 scePlayGoDialogTerminate();
 PS4_SYSV_ABI s32 scePlayGoDialogUpdateStatus();
 
+// libSceGameCustomDataDialog
+PS4_SYSV_ABI s32 sceGameCustomDataDialogInitialize(const void* param);
+PS4_SYSV_ABI s32 sceGameCustomDataDialogOpen(const void* param);
+PS4_SYSV_ABI s32 sceGameCustomDataDialogGetResult(void* result);
+PS4_SYSV_ABI s32 sceGameCustomDataDialogTerminate();
+PS4_SYSV_ABI s32 sceGameCustomDataDialogUpdateStatus();
+
+// libSceNpCommerceDialog
+PS4_SYSV_ABI s32 sceNpCommerceDialogInitialize(const void* param);
+PS4_SYSV_ABI s32 sceNpCommerceDialogOpen(const void* param);
+PS4_SYSV_ABI s32 sceNpCommerceDialogGetResult(void* result);
+PS4_SYSV_ABI s32 sceNpCommerceDialogTerminate();
+PS4_SYSV_ABI s32 sceNpCommerceDialogUpdateStatus();
+
+// libSceInvitationDialog
+PS4_SYSV_ABI s32 sceInvitationDialogInitialize(const void* param);
+PS4_SYSV_ABI s32 sceInvitationDialogOpen(const void* param);
+PS4_SYSV_ABI s32 sceInvitationDialogGetResult(void* result);
+PS4_SYSV_ABI s32 sceInvitationDialogTerminate();
+PS4_SYSV_ABI s32 sceInvitationDialogUpdateStatus();
+
+// libSceNpSnsFacebookDialog
+PS4_SYSV_ABI s32 sceNpSnsFacebookDialogInitialize(const void* param);
+PS4_SYSV_ABI s32 sceNpSnsFacebookDialogOpen(const void* param);
+PS4_SYSV_ABI s32 sceNpSnsFacebookDialogGetResult(void* result);
+PS4_SYSV_ABI s32 sceNpSnsFacebookDialogTerminate();
+PS4_SYSV_ABI s32 sceNpSnsFacebookDialogUpdateStatus();
+
+// libSceShareUtility
+PS4_SYSV_ABI s32 sceShareUtilityOpenShareMenu(const void* param);
+PS4_SYSV_ABI s32 sceShareUtilityOpenShareMenuDefault(const void* param);
+PS4_SYSV_ABI s32 sceShareUtilityTerminate();
+
 } // extern "C"
 
 } // namespace Dialog

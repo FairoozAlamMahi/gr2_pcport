@@ -132,10 +132,15 @@ PS4_SYSV_ABI s32 sceNpCheckNpAvailability(s32 req_id) {
 }
 
 PS4_SYSV_ABI s32 sceNpGetParentalControlInfo(s32 req_id, void* info) {
+    uintptr_t caller = reinterpret_cast<uintptr_t>(__builtin_return_address(0));
+    char buf[64];
+    std::snprintf(buf, sizeof(buf), "0x%llX", static_cast<unsigned long long>(caller));
     if (info) {
-        std::memset(info, 0, 64);
+        // SceNpParentalControlInfo is 8 bytes (chatRestriction=0, ugcRestriction=0)
+        std::memset(info, 0, 8);
     }
-    LOG_INFO("NP", "sceNpGetParentalControlInfo: req ID " + std::to_string(req_id) + " -> unrestricted");
+    LOG_INFO("NP", std::string("sceNpGetParentalControlInfo called from ") + buf +
+                   ": req ID " + std::to_string(req_id) + " -> unrestricted");
     return 0;
 }
 
@@ -257,6 +262,349 @@ PS4_SYSV_ABI s32 sceNpScoreRankingInitialize(const void* opt) {
 
 PS4_SYSV_ABI s32 sceNpScoreRankingTerminate() {
     LOG_INFO("NP", "sceNpScoreRankingTerminate called");
+    return 0;
+}
+
+// ============================================================================
+// libSceNpTus
+// ============================================================================
+
+PS4_SYSV_ABI s32 sceNpTusCreateNpTitleCtx(const void* np_title_id, void** title_ctx) {
+    (void)np_title_id;
+    if (title_ctx) {
+        *title_ctx = reinterpret_cast<void*>(0x3001);
+    }
+    LOG_INFO("NP", "sceNpTusCreateNpTitleCtx called -> handle 0x3001");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTusDeleteNpTitleCtx(void* title_ctx) {
+    (void)title_ctx;
+    LOG_INFO("NP", "sceNpTusDeleteNpTitleCtx called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTusCreateRequest(void* title_ctx, void** req) {
+    (void)title_ctx;
+    if (req) {
+        *req = reinterpret_cast<void*>(0x4001);
+    }
+    LOG_INFO("NP", "sceNpTusCreateRequest called -> handle 0x4001");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTusDeleteRequest(void* req) {
+    (void)req;
+    LOG_INFO("NP", "sceNpTusDeleteRequest called");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTusSetData(void* req, const void* slot, const void* data, usize size, void* out) {
+    (void)req;
+    (void)slot;
+    (void)data;
+    (void)size;
+    (void)out;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTusSetDataVUser(void* req, const void* vuser, const void* slot, const void* data, usize size, void* out) {
+    (void)req;
+    (void)vuser;
+    (void)slot;
+    (void)data;
+    (void)size;
+    (void)out;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTusGetData(void* req, const void* slot, void* buf, usize size, void* out) {
+    (void)req;
+    (void)slot;
+    if (buf && size > 0) {
+        std::memset(buf, 0, size);
+    }
+    (void)out;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTusGetDataVUser(void* req, const void* vuser, const void* slot, void* buf, usize size, void* out) {
+    (void)req;
+    (void)vuser;
+    (void)slot;
+    if (buf && size > 0) {
+        std::memset(buf, 0, size);
+    }
+    (void)out;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTusSetMultiSlotVariable(void* req, const void* slots, u32 count, void* out) {
+    (void)req;
+    (void)slots;
+    (void)count;
+    (void)out;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTusSetMultiSlotVariableVUser(void* req, const void* vuser, const void* slots, u32 count, void* out) {
+    (void)req;
+    (void)vuser;
+    (void)slots;
+    (void)count;
+    (void)out;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTusGetMultiSlotVariable(void* req, const void* slots, u32 count, void* out) {
+    (void)req;
+    (void)slots;
+    (void)count;
+    (void)out;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTusGetMultiSlotVariableVUser(void* req, const void* vuser, const void* slots, u32 count, void* out) {
+    (void)req;
+    (void)vuser;
+    (void)slots;
+    (void)count;
+    (void)out;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTusAddAndGetVariable(void* req, const void* slot, s64 delta, void* out) {
+    (void)req;
+    (void)slot;
+    (void)delta;
+    (void)out;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTusAddAndGetVariableVUser(void* req, const void* vuser, const void* slot, s64 delta, void* out) {
+    (void)req;
+    (void)vuser;
+    (void)slot;
+    (void)delta;
+    (void)out;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTusDeleteMultiSlotData(void* req, const void* slots, u32 count, void* out) {
+    (void)req;
+    (void)slots;
+    (void)count;
+    (void)out;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTusDeleteMultiSlotDataVUser(void* req, const void* vuser, const void* slots, u32 count, void* out) {
+    (void)req;
+    (void)vuser;
+    (void)slots;
+    (void)count;
+    (void)out;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpTssGetData(void* req, const void* slot, void* buf, usize size, void* out) {
+    (void)req;
+    (void)slot;
+    if (buf && size > 0) {
+        std::memset(buf, 0, size);
+    }
+    (void)out;
+    return 0;
+}
+
+// ============================================================================
+// libSceNpWordFilter
+// ============================================================================
+
+PS4_SYSV_ABI s32 sceNpWordFilterAbortRequest(void* req) {
+    (void)req;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpWordFilterCensorComment(void* req, const char* src, char* dst, usize size) {
+    (void)req;
+    if (src && dst && size > 0) {
+        strncpy(dst, src, size - 1);
+        dst[size - 1] = '\0';
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpWordFilterCreateAsyncRequest(void* title_ctx, void** req) {
+    (void)title_ctx;
+    if (req) {
+        *req = reinterpret_cast<void*>(0x5001);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpWordFilterCreateRequest(void* title_ctx, void** req) {
+    (void)title_ctx;
+    if (req) {
+        *req = reinterpret_cast<void*>(0x5002);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpWordFilterCreateTitleCtx(const void* np_title_id, void** title_ctx) {
+    (void)np_title_id;
+    if (title_ctx) {
+        *title_ctx = reinterpret_cast<void*>(0x5003);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpWordFilterDeleteRequest(void* req) {
+    (void)req;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpWordFilterDeleteTitleCtx(void* title_ctx) {
+    (void)title_ctx;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpWordFilterPollAsync(void* req, s32* result) {
+    (void)req;
+    if (result) {
+        *result = 0;
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpWordFilterSanitizeComment(void* req, const char* src, char* dst, usize size) {
+    (void)req;
+    if (src && dst && size > 0) {
+        strncpy(dst, src, size - 1);
+        dst[size - 1] = '\0';
+    }
+    return 0;
+}
+
+// ============================================================================
+// libSceNpLookup
+// ============================================================================
+
+PS4_SYSV_ABI s32 sceNpLookupCreateRequest(void* title_ctx, void** req) {
+    (void)title_ctx;
+    if (req) {
+        *req = reinterpret_cast<void*>(0x6001);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpLookupCreateTitleCtx(const void* np_title_id, void** title_ctx) {
+    (void)np_title_id;
+    if (title_ctx) {
+        *title_ctx = reinterpret_cast<void*>(0x6002);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpLookupDeleteRequest(void* req) {
+    (void)req;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpLookupDeleteTitleCtx(void* title_ctx) {
+    (void)title_ctx;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpLookupNpId(void* req, const void* online_id, void* np_id) {
+    (void)req;
+    (void)online_id;
+    if (np_id) {
+        std::memset(np_id, 0, 32);
+        std::memcpy(np_id, "KatPC\0", 6);
+    }
+    return 0;
+}
+
+// ============================================================================
+// libSceNpAuth & Utils
+// ============================================================================
+
+PS4_SYSV_ABI s32 sceNpAuthCreateRequest(const void* param, void** req) {
+    (void)param;
+    if (req) {
+        *req = reinterpret_cast<void*>(0x7001);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpAuthDeleteRequest(void* req) {
+    (void)req;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpAuthGetAuthorizationCode(void* req, const void* param, void* code) {
+    (void)req;
+    (void)param;
+    if (code) {
+        std::memset(code, 0, 64);
+        std::memcpy(code, "AUTH_KAT_PC_PORT_CODE\0", 23);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpCmpNpId(const void* id1, const void* id2) {
+    if (!id1 || !id2) return -1;
+    return std::memcmp(id1, id2, 32);
+}
+
+PS4_SYSV_ABI s32 sceNpCmpOnlineId(const void* id1, const void* id2) {
+    if (!id1 || !id2) return -1;
+    return std::strncmp(reinterpret_cast<const char*>(id1), reinterpret_cast<const char*>(id2), 16);
+}
+
+PS4_SYSV_ABI s32 sceNpCreateRequest(const void* param, void** req) {
+    (void)param;
+    if (req) {
+        *req = reinterpret_cast<void*>(0x8001);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpGetAccountCountry(void* req, void* country) {
+    (void)req;
+    if (country) {
+        std::memcpy(country, "us\0", 3);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpGetAccountLanguage(void* req, void* lang) {
+    (void)req;
+    if (lang) {
+        std::memcpy(lang, "en\0", 3);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpSnsFacebookCreateRequest(const void* param, void** req) {
+    (void)param;
+    if (req) {
+        *req = reinterpret_cast<void*>(0x9001);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpSnsFacebookDeleteRequest(void* req) {
+    (void)req;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpSnsFacebookGetAccessToken(void* req, void* token) {
+    (void)req;
+    if (token) {
+        std::memset(token, 0, 64);
+    }
     return 0;
 }
 

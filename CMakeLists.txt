@@ -40,6 +40,10 @@ set(SOURCES
     src/audio/audio_out.cpp
     src/gpu/gnm_driver.cpp
     src/kernel/save_data.cpp
+    src/kernel/net_service.cpp
+    src/kernel/np_service.cpp
+    src/video/image_decoder.cpp
+    src/kernel/dialog_service.cpp
 )
 
 set(HEADERS
@@ -59,6 +63,10 @@ set(HEADERS
     src/audio/audio_out.h
     src/gpu/gnm_driver.h
     src/kernel/save_data.h
+    src/kernel/net_service.h
+    src/kernel/np_service.h
+    src/video/image_decoder.h
+    src/kernel/dialog_service.h
 )
 
 add_executable(gr2_pc ${SOURCES} ${HEADERS})
@@ -70,6 +78,7 @@ target_link_libraries(gr2_pc PRIVATE
     gdi32
     rpcrt4
     ole32
+    ws2_32
 )
 
 set_target_properties(gr2_pc PROPERTIES

@@ -1543,11 +1543,6 @@ PS4_SYSV_ABI s32 scePlayGoGetProgress(s32 handle, const u32* chunk_ids, u32 num_
     return 0;
 }
 
-PS4_SYSV_ABI s32 sceCommonDialogInitialize(const void* param) {
-    (void)param;
-    return 0;
-}
-
 PS4_SYSV_ABI s32 sceSystemServiceHideSplashScreen() {
     return 0;
 }

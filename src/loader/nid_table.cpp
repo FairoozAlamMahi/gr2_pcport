@@ -2,9 +2,13 @@
 #include "common/logger.h"
 #include "kernel/libkernel.h"
 #include "kernel/save_data.h"
+#include "kernel/net_service.h"
+#include "kernel/np_service.h"
 #include "pad/pad_handler.h"
 #include "video/video_out.h"
 #include "video/font_service.h"
+#include "video/image_decoder.h"
+#include "kernel/dialog_service.h"
 #include "audio/audio_out.h"
 #include "gpu/gnm_driver.h"
 #include <iostream>
@@ -162,7 +166,7 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("Uco1I0dlDi8", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoClose), "scePlayGoClose");
     RegisterSymbol("MPe0EeBGM-E", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoTerminate), "scePlayGoTerminate");
     RegisterSymbol("TywrFKCoLGY", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataInitialize3), "sceSaveDataInitialize3");
-    RegisterSymbol("uoUpLGNkygk", reinterpret_cast<uintptr_t>(&Kernel::sceCommonDialogInitialize), "sceCommonDialogInitialize");
+    RegisterSymbol("uoUpLGNkygk", reinterpret_cast<uintptr_t>(&Dialog::sceCommonDialogInitialize), "sceCommonDialogInitialize");
     RegisterSymbol("Vo5V8KAwCmk", reinterpret_cast<uintptr_t>(&Kernel::sceSystemServiceHideSplashScreen), "sceSystemServiceHideSplashScreen");
     RegisterSymbol("R9lA82OraNs", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentInitialize), "sceAppContentInitialize");
     RegisterSymbol("Jlv-lYxEnvM", reinterpret_cast<uintptr_t>(&Kernel::sceShareUtilityInitialize), "sceShareUtilityInitialize");
@@ -492,15 +496,15 @@ void NidTable::RegisterHostSubsystems() {
     m_names["hyfPWjJB8pI"] = "sceLibSecureCryptographySetContext";
     m_names["t4lnn4rB+U0"] = "sceLibSecureDestroy";
     m_names["fIqNvkKIUPQ"] = "sceLibSecureInit";
-    m_names["iQw3iQPhvUQ"] = "sceNetCtlCheckCallback";
-    m_names["0cBgduPRR+M"] = "sceNetCtlGetResult";
-    m_names["uBPlr0lbuiI"] = "sceNetCtlGetState";
-    m_names["UJ+Z7Q+4ck0"] = "sceNetCtlRegisterCallback";
-    m_names["Rqm2OnZMCz0"] = "sceNetCtlUnregisterCallback";
-    m_names["Nlev7Lg8k3A"] = "sceNetInit";
-    m_names["dgJBaeJnGpo"] = "sceNetPoolCreate";
-    m_names["K7RlrTkI-mw"] = "sceNetPoolDestroy";
-    m_names["cTGkc6-TBlI"] = "sceNetTerm";
+    RegisterSymbol("iQw3iQPhvUQ", reinterpret_cast<uintptr_t>(&Net::sceNetCtlCheckCallback), "sceNetCtlCheckCallback");
+    RegisterSymbol("0cBgduPRR+M", reinterpret_cast<uintptr_t>(&Net::sceNetCtlGetResult), "sceNetCtlGetResult");
+    RegisterSymbol("uBPlr0lbuiI", reinterpret_cast<uintptr_t>(&Net::sceNetCtlGetState), "sceNetCtlGetState");
+    RegisterSymbol("UJ+Z7Q+4ck0", reinterpret_cast<uintptr_t>(&Net::sceNetCtlRegisterCallback), "sceNetCtlRegisterCallback");
+    RegisterSymbol("Rqm2OnZMCz0", reinterpret_cast<uintptr_t>(&Net::sceNetCtlUnregisterCallback), "sceNetCtlUnregisterCallback");
+    RegisterSymbol("Nlev7Lg8k3A", reinterpret_cast<uintptr_t>(&Net::sceNetInit), "sceNetInit");
+    RegisterSymbol("dgJBaeJnGpo", reinterpret_cast<uintptr_t>(&Net::sceNetPoolCreate), "sceNetPoolCreate");
+    RegisterSymbol("K7RlrTkI-mw", reinterpret_cast<uintptr_t>(&Net::sceNetPoolDestroy), "sceNetPoolDestroy");
+    RegisterSymbol("cTGkc6-TBlI", reinterpret_cast<uintptr_t>(&Net::sceNetTerm), "sceNetTerm");
     RegisterSymbol("U546k6orxQo", reinterpret_cast<uintptr_t>(&Audio::sceNgs2RackCreateWithAllocator), "sceNgs2RackCreateWithAllocator");
     m_names["lCqD7oycmIM"] = "sceNgs2RackDestroy";
     RegisterSymbol("MwmHz8pAdAo", reinterpret_cast<uintptr_t>(&Audio::sceNgs2RackGetVoiceHandle), "sceNgs2RackGetVoiceHandle");
@@ -530,7 +534,7 @@ void NidTable::RegisterHostSubsystems() {
     m_names["LhCPctIICxQ"] = "sceNpMatching2GetServerId";
     m_names["qeF-q5KDtAc"] = "sceNpMatching2GetUserInfoList";
     m_names["rJNPJqDCpiI"] = "sceNpMatching2GetWorldInfoList";
-    m_names["10t3e5+JPnU"] = "sceNpMatching2Initialize";
+    RegisterSymbol("10t3e5+JPnU", reinterpret_cast<uintptr_t>(&Np::sceNpMatching2Initialize), "sceNpMatching2Initialize");
     m_names["CSIMDsVjs-g"] = "sceNpMatching2JoinRoom";
     m_names["AUVfU6byg3c"] = "sceNpMatching2KickoutRoomMember";
     m_names["BD6kfx442Do"] = "sceNpMatching2LeaveRoom";
@@ -548,19 +552,19 @@ void NidTable::RegisterHostSubsystems() {
     m_names["meEjIdbjAA0"] = "sceNpMatching2SetUserInfo";
     m_names["twVupeaYYrk"] = "sceNpMatching2SignalingGetConnectionInfo";
     m_names["wUmwXZHaX1w"] = "sceNpMatching2SignalingGetPingInfo";
-    m_names["Mqp3lJ+sjy4"] = "sceNpMatching2Terminate";
+    RegisterSymbol("Mqp3lJ+sjy4", reinterpret_cast<uintptr_t>(&Np::sceNpMatching2Terminate), "sceNpMatching2Terminate");
     m_names["-PoIzr3PEk0"] = "sceSslGetMemoryPoolStats";
 
     // ===== libSceNpManager.sprx.json (25 symbols) =====
     m_names["OzKvTvg3ZYU"] = "sceNpAbortRequest";
-    m_names["3Zl8BePTh9Y"] = "sceNpCheckCallback";
-    m_names["JELHf4xPufo"] = "sceNpCheckCallbackForLib";
+    RegisterSymbol("3Zl8BePTh9Y", reinterpret_cast<uintptr_t>(&Np::sceNpCheckCallback), "sceNpCheckCallback");
+    RegisterSymbol("JELHf4xPufo", reinterpret_cast<uintptr_t>(&Np::sceNpCheckCallbackForLib), "sceNpCheckCallbackForLib");
     m_names["2rsFmlGWleQ"] = "sceNpCheckNpAvailability";
     m_names["eiqMCt9UshI"] = "sceNpCreateAsyncRequest";
-    m_names["a8R9-75u4iM"] = "sceNpGetAccountId";
-    m_names["p-o74CnoNzY"] = "sceNpGetNpId";
+    RegisterSymbol("a8R9-75u4iM", reinterpret_cast<uintptr_t>(&Np::sceNpGetAccountId), "sceNpGetAccountId");
+    RegisterSymbol("p-o74CnoNzY", reinterpret_cast<uintptr_t>(&Np::sceNpGetNpId), "sceNpGetNpId");
     m_names["ilwLM4zOmu4"] = "sceNpGetParentalControlInfo";
-    m_names["eQH7nWPcAgc"] = "sceNpGetState";
+    RegisterSymbol("eQH7nWPcAgc", reinterpret_cast<uintptr_t>(&Np::sceNpGetState), "sceNpGetState");
     m_names["F6E4ycq9Dbg"] = "sceNpGetUserIdByOnlineId";
     m_names["s4UEa5iBJdc"] = "sceNpInGameMessageCreateHandle";
     m_names["+anuSx2avHQ"] = "sceNpInGameMessageDeleteHandle";
@@ -628,12 +632,12 @@ void NidTable::RegisterHostSubsystems() {
     // ===== libSceHttp.sprx.json (19 symbols) =====
     m_names["mSQCxzWTwVI"] = "sceHttpsDisableOption";
     m_names["OXXX4mUk3uk"] = "sceNetConnect";
-    m_names["Z4wwCFiBELQ"] = "sceNetCtlTerm";
-    m_names["w21YgGGNtBk"] = "sceNetEpollAbort";
-    m_names["ZVw46bsasAk"] = "sceNetEpollControl";
-    m_names["SF47kB2MNTo"] = "sceNetEpollCreate";
-    m_names["Inp1lfL+Jdw"] = "sceNetEpollDestroy";
-    m_names["drjIbDbA7UQ"] = "sceNetEpollWait";
+    RegisterSymbol("Z4wwCFiBELQ", reinterpret_cast<uintptr_t>(&Net::sceNetCtlTerm), "sceNetCtlTerm");
+    RegisterSymbol("w21YgGGNtBk", reinterpret_cast<uintptr_t>(&Net::sceNetEpollAbort), "sceNetEpollAbort");
+    RegisterSymbol("ZVw46bsasAk", reinterpret_cast<uintptr_t>(&Net::sceNetEpollControl), "sceNetEpollControl");
+    RegisterSymbol("SF47kB2MNTo", reinterpret_cast<uintptr_t>(&Net::sceNetEpollCreate), "sceNetEpollCreate");
+    RegisterSymbol("Inp1lfL+Jdw", reinterpret_cast<uintptr_t>(&Net::sceNetEpollDestroy), "sceNetEpollDestroy");
+    RegisterSymbol("drjIbDbA7UQ", reinterpret_cast<uintptr_t>(&Net::sceNetEpollWait), "sceNetEpollWait");
     m_names["iWQWrwiSt8A"] = "sceNetHtons";
     m_names["9vA2aW+CHuA"] = "sceNetInetNtop";
     m_names["8Kcp5d-q1Uo"] = "sceNetInetPton";
@@ -723,18 +727,19 @@ void NidTable::RegisterHostSubsystems() {
 
     // ===== libSceNpTrophy.sprx.json (13 symbols) =====
     m_names["cqGkYAN-gRw"] = "sceNpTrophyCaptureScreenshot";
-    m_names["XbkjbobZlCY"] = "sceNpTrophyCreateContext";
-    m_names["q7U6tEAQf7c"] = "sceNpTrophyCreateHandle";
-    m_names["E1Wrwd07Lr8"] = "sceNpTrophyDestroyContext";
-    m_names["GNcF4oidY0Y"] = "sceNpTrophyDestroyHandle";
+    RegisterSymbol("XbkjbobZlCY", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyCreateContext), "sceNpTrophyCreateContext");
+    RegisterSymbol("q7U6tEAQf7c", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyCreateHandle), "sceNpTrophyCreateHandle");
+    RegisterSymbol("E1Wrwd07Lr8", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyDestroyContext), "sceNpTrophyDestroyContext");
+    RegisterSymbol("GNcF4oidY0Y", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyDestroyHandle), "sceNpTrophyDestroyHandle");
     m_names["HLwz1fRIycA"] = "sceNpTrophyGetGameIcon";
     m_names["YYP3f2W09og"] = "sceNpTrophyGetGameInfo";
     m_names["w4uMPmErD4I"] = "sceNpTrophyGetGroupIcon";
     m_names["wTUwGfspKic"] = "sceNpTrophyGetGroupInfo";
     m_names["eBL+l6HG9xk"] = "sceNpTrophyGetTrophyIcon";
     m_names["qqUVGDgQBm0"] = "sceNpTrophyGetTrophyInfo";
-    m_names["TJCAxto9SEU"] = "sceNpTrophyRegisterContext";
-    m_names["28xmRUFao68"] = "sceNpTrophyUnlockTrophy";
+    RegisterSymbol("TJCAxto9SEU", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyRegisterContext), "sceNpTrophyRegisterContext");
+    RegisterSymbol("28xmRUFao68", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyUnlockTrophy), "sceNpTrophyUnlockTrophy");
+    RegisterSymbol("LHuSmO3SLd8", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyGetTrophyUnlockState), "sceNpTrophyGetTrophyUnlockState");
 
     // ===== libSceJson.sprx.json (12 symbols) =====
     m_names["Cxwy7wHq4J0"] = "_ZN3sce4Json11Initializer10initializeEPKNS0_13InitParameterE";
@@ -810,12 +815,12 @@ void NidTable::RegisterHostSubsystems() {
     // ===== libSceNet.sprx.json (8 symbols) =====
     m_names["PIWqhn9oSxc"] = "sceNetAccept";
     m_names["bErx49PgxyY"] = "sceNetBind";
-    m_names["6Oc0bLsIYe0"] = "sceNetGetMacAddress";
+    RegisterSymbol("6Oc0bLsIYe0", reinterpret_cast<uintptr_t>(&Net::sceNetGetMacAddress), "sceNetGetMacAddress");
     m_names["TCkRD0DWNLg"] = "sceNetGetpeername";
     m_names["hoOAofhhRvE"] = "sceNetGetsockname";
     m_names["kOj1HiAGE54"] = "sceNetListen";
-    m_names["RCCY01Xd+58"] = "sceNetResolverStartNtoaMultipleRecords";
-    m_names["TSM6whtekok"] = "sceNetShutdown";
+    RegisterSymbol("RCCY01Xd+58", reinterpret_cast<uintptr_t>(&Net::sceNetResolverStartNtoaMultipleRecords), "sceNetResolverStartNtoaMultipleRecords");
+    RegisterSymbol("TSM6whtekok", reinterpret_cast<uintptr_t>(&Net::sceNetShutdown), "sceNetShutdown");
 
     // ===== libSceSsl.sprx.json (7 symbols) =====
     m_names["RwXD8grHZHM"] = "sceSslFreeSslCertName";
@@ -848,7 +853,7 @@ void NidTable::RegisterHostSubsystems() {
     m_names["5TvttyRuU84"] = "sceGameCustomDataDialogOpen";
     m_names["HwEtHFCpU5U"] = "sceGameCustomDataDialogTerminate";
     m_names["PkdLsRA4ON0"] = "sceGameCustomDataDialogUpdateStatus";
-    m_names["XDncXQIJUSk"] = "sceNpGetOnlineId";
+    RegisterSymbol("XDncXQIJUSk", reinterpret_cast<uintptr_t>(&Np::sceNpGetOnlineId), "sceNpGetOnlineId");
 
     // ===== libScePad.sprx.json (6 symbols) =====
     RegisterSymbol("6ncge5+l5Qs", reinterpret_cast<uintptr_t>(&Pad::scePadClose), "scePadClose");
@@ -858,13 +863,19 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("vDLMoJLde8I", reinterpret_cast<uintptr_t>(&Pad::scePadSetTiltCorrectionState), "scePadSetTiltCorrectionState");
     RegisterSymbol("yFVnOdGxvZY", reinterpret_cast<uintptr_t>(&Pad::scePadSetVibration), "scePadSetVibration");
 
-    // ===== libSceMsgDialog.sprx.json (6 symbols) =====
-    m_names["Lr8ovHH9l6A"] = "sceMsgDialogGetResult";
-    m_names["CWVW78Qc3fI"] = "sceMsgDialogGetStatus";
-    m_names["lDqxaY1UbEo"] = "sceMsgDialogInitialize";
-    m_names["b06Hh0DPEaE"] = "sceMsgDialogOpen";
-    m_names["ePw-kqZmelo"] = "sceMsgDialogTerminate";
-    m_names["6fIC3XKt2k0"] = "sceMsgDialogUpdateStatus";
+    // ===== libSceMsgDialog.sprx.json (7 symbols) =====
+    RegisterSymbol("u4i36qCq7r4", reinterpret_cast<uintptr_t>(&Dialog::sceMsgDialogClose), "sceMsgDialogClose");
+    RegisterSymbol("qKjHjUa40-c", reinterpret_cast<uintptr_t>(&Dialog::sceMsgDialogGetResult), "sceMsgDialogGetResult");
+    RegisterSymbol("Lr8ovHH9l6A", reinterpret_cast<uintptr_t>(&Dialog::sceMsgDialogGetResult), "sceMsgDialogGetResult");
+    RegisterSymbol("Vz8r6m31J94", reinterpret_cast<uintptr_t>(&Dialog::sceMsgDialogGetStatus), "sceMsgDialogGetStatus");
+    RegisterSymbol("CWVW78Qc3fI", reinterpret_cast<uintptr_t>(&Dialog::sceMsgDialogGetStatus), "sceMsgDialogGetStatus");
+    RegisterSymbol("qN8-U+2hO7k", reinterpret_cast<uintptr_t>(&Dialog::sceMsgDialogInitialize), "sceMsgDialogInitialize");
+    RegisterSymbol("lDqxaY1UbEo", reinterpret_cast<uintptr_t>(&Dialog::sceMsgDialogInitialize), "sceMsgDialogInitialize");
+    RegisterSymbol("B3yV9k2gG+4", reinterpret_cast<uintptr_t>(&Dialog::sceMsgDialogOpen), "sceMsgDialogOpen");
+    RegisterSymbol("b06Hh0DPEaE", reinterpret_cast<uintptr_t>(&Dialog::sceMsgDialogOpen), "sceMsgDialogOpen");
+    RegisterSymbol("L7j-3q2s634", reinterpret_cast<uintptr_t>(&Dialog::sceMsgDialogTerminate), "sceMsgDialogTerminate");
+    RegisterSymbol("ePw-kqZmelo", reinterpret_cast<uintptr_t>(&Dialog::sceMsgDialogTerminate), "sceMsgDialogTerminate");
+    RegisterSymbol("6fIC3XKt2k0", reinterpret_cast<uintptr_t>(&Dialog::sceMsgDialogUpdateStatus), "sceMsgDialogUpdateStatus");
 
     // ===== libSceFont.sprx.json (6 symbols) =====
     RegisterSymbol("L97d+3OgMlE", reinterpret_cast<uintptr_t>(&Font::sceFontGetCharGlyphMetrics), "sceFontGetCharGlyphMetrics");
@@ -875,12 +886,12 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("N1EBMeGhf7E", reinterpret_cast<uintptr_t>(&Font::sceFontSetScalePixel), "sceFontSetScalePixel");
 
     // ===== libSceSigninDialog.sprx.json (6 symbols) =====
-    m_names["M3OkENHcyiU"] = "sceSigninDialogClose";
-    m_names["nqG7rqnYw1U"] = "sceSigninDialogGetResult";
-    m_names["mlYGfmqE3fQ"] = "sceSigninDialogInitialize";
-    m_names["JlpJVoRWv7U"] = "sceSigninDialogOpen";
-    m_names["LXlmS6PvJdU"] = "sceSigninDialogTerminate";
-    m_names["Bw31liTFT3A"] = "sceSigninDialogUpdateStatus";
+    RegisterSymbol("M3OkENHcyiU", reinterpret_cast<uintptr_t>(&Dialog::sceSigninDialogClose), "sceSigninDialogClose");
+    RegisterSymbol("nqG7rqnYw1U", reinterpret_cast<uintptr_t>(&Dialog::sceSigninDialogGetResult), "sceSigninDialogGetResult");
+    RegisterSymbol("mlYGfmqE3fQ", reinterpret_cast<uintptr_t>(&Dialog::sceSigninDialogInitialize), "sceSigninDialogInitialize");
+    RegisterSymbol("JlpJVoRWv7U", reinterpret_cast<uintptr_t>(&Dialog::sceSigninDialogOpen), "sceSigninDialogOpen");
+    RegisterSymbol("LXlmS6PvJdU", reinterpret_cast<uintptr_t>(&Dialog::sceSigninDialogTerminate), "sceSigninDialogTerminate");
+    RegisterSymbol("Bw31liTFT3A", reinterpret_cast<uintptr_t>(&Dialog::sceSigninDialogUpdateStatus), "sceSigninDialogUpdateStatus");
 
     // ===== libSceFiber.sprx.json (5 symbols) =====
     m_names["hVYD7Ou2pCQ"] = "_sceFiberInitializeImpl";
@@ -890,11 +901,11 @@ void NidTable::RegisterHostSubsystems() {
     m_names["PFT2S-tJ7Uk"] = "sceFiberSwitch";
 
     // ===== libScePlayGoDialog.sprx.json (5 symbols) =====
-    m_names["fbigNQiZpm0"] = "scePlayGoDialogClose";
-    m_names["fECamTJKpsM"] = "scePlayGoDialogInitialize";
-    m_names["kHd72ukqbxw"] = "scePlayGoDialogOpen";
-    m_names["okgIGdr5Iz0"] = "scePlayGoDialogTerminate";
-    m_names["Yb60K7BST48"] = "scePlayGoDialogUpdateStatus";
+    RegisterSymbol("fbigNQiZpm0", reinterpret_cast<uintptr_t>(&Dialog::scePlayGoDialogClose), "scePlayGoDialogClose");
+    RegisterSymbol("fECamTJKpsM", reinterpret_cast<uintptr_t>(&Dialog::scePlayGoDialogInitialize), "scePlayGoDialogInitialize");
+    RegisterSymbol("kHd72ukqbxw", reinterpret_cast<uintptr_t>(&Dialog::scePlayGoDialogOpen), "scePlayGoDialogOpen");
+    RegisterSymbol("okgIGdr5Iz0", reinterpret_cast<uintptr_t>(&Dialog::scePlayGoDialogTerminate), "scePlayGoDialogTerminate");
+    RegisterSymbol("Yb60K7BST48", reinterpret_cast<uintptr_t>(&Dialog::scePlayGoDialogUpdateStatus), "scePlayGoDialogUpdateStatus");
 
     // ===== libSceNpCommon.sprx.json (5 symbols) =====
     m_names["i8UmXTSq7N4"] = "sceNpCmpNpId";
@@ -904,25 +915,25 @@ void NidTable::RegisterHostSubsystems() {
     m_names["mn-tf4QiFzk"] = "sceRtcTickAddMinutes";
 
     // ===== libScePngDec.sprx.json (5 symbols) =====
-    m_names["m0uW+8pFyaw"] = "scePngDecCreate";
-    m_names["WC216DD3El4"] = "scePngDecDecode";
-    m_names["QbD+eENEwo8"] = "scePngDecDelete";
-    m_names["U6h4e5JRPaQ"] = "scePngDecParseHeader";
-    m_names["-6srIGbLTIU"] = "scePngDecQueryMemorySize";
+    RegisterSymbol("m0uW+8pFyaw", reinterpret_cast<uintptr_t>(&ImageDecoder::scePngDecCreate), "scePngDecCreate");
+    RegisterSymbol("WC216DD3El4", reinterpret_cast<uintptr_t>(&ImageDecoder::scePngDecDecode), "scePngDecDecode");
+    RegisterSymbol("QbD+eENEwo8", reinterpret_cast<uintptr_t>(&ImageDecoder::scePngDecDelete), "scePngDecDelete");
+    RegisterSymbol("U6h4e5JRPaQ", reinterpret_cast<uintptr_t>(&ImageDecoder::scePngDecParseHeader), "scePngDecParseHeader");
+    RegisterSymbol("-6srIGbLTIU", reinterpret_cast<uintptr_t>(&ImageDecoder::scePngDecQueryMemorySize), "scePngDecQueryMemorySize");
 
     // ===== libSceJpegDec.sprx.json (5 symbols) =====
-    m_names["JPh3Zgg0Zwc"] = "sceJpegDecCreate";
-    m_names["1kzQRoWEgSA"] = "sceJpegDecDecode";
-    m_names["Hwh11+m5KoI"] = "sceJpegDecDelete";
-    m_names["LSinoSQH790"] = "sceJpegDecParseHeader";
-    m_names["uNAUmANZMEw"] = "sceJpegDecQueryMemorySize";
+    RegisterSymbol("JPh3Zgg0Zwc", reinterpret_cast<uintptr_t>(&ImageDecoder::sceJpegDecCreate), "sceJpegDecCreate");
+    RegisterSymbol("1kzQRoWEgSA", reinterpret_cast<uintptr_t>(&ImageDecoder::sceJpegDecDecode), "sceJpegDecDecode");
+    RegisterSymbol("Hwh11+m5KoI", reinterpret_cast<uintptr_t>(&ImageDecoder::sceJpegDecDelete), "sceJpegDecDelete");
+    RegisterSymbol("LSinoSQH790", reinterpret_cast<uintptr_t>(&ImageDecoder::sceJpegDecParseHeader), "sceJpegDecParseHeader");
+    RegisterSymbol("uNAUmANZMEw", reinterpret_cast<uintptr_t>(&ImageDecoder::sceJpegDecQueryMemorySize), "sceJpegDecQueryMemorySize");
 
     // ===== libSceErrorDialog.sprx.json (5 symbols) =====
-    m_names["t2FvHRXzgqk"] = "sceErrorDialogGetStatus";
-    m_names["I88KChlynSs"] = "sceErrorDialogInitialize";
-    m_names["M2ZF-ClLhgY"] = "sceErrorDialogOpen";
-    m_names["9XAxK2PMwk8"] = "sceErrorDialogTerminate";
-    m_names["WWiGuh9XfgQ"] = "sceErrorDialogUpdateStatus";
+    RegisterSymbol("t2FvHRXzgqk", reinterpret_cast<uintptr_t>(&Dialog::sceErrorDialogGetStatus), "sceErrorDialogGetStatus");
+    RegisterSymbol("I88KChlynSs", reinterpret_cast<uintptr_t>(&Dialog::sceErrorDialogInitialize), "sceErrorDialogInitialize");
+    RegisterSymbol("M2ZF-ClLhgY", reinterpret_cast<uintptr_t>(&Dialog::sceErrorDialogOpen), "sceErrorDialogOpen");
+    RegisterSymbol("9XAxK2PMwk8", reinterpret_cast<uintptr_t>(&Dialog::sceErrorDialogTerminate), "sceErrorDialogTerminate");
+    RegisterSymbol("WWiGuh9XfgQ", reinterpret_cast<uintptr_t>(&Dialog::sceErrorDialogUpdateStatus), "sceErrorDialogUpdateStatus");
 
     // ===== libSceNpCommerce.sprx.json (5 symbols) =====
     m_names["r42bWcQbtZY"] = "sceNpCommerceDialogGetResult";
@@ -1044,11 +1055,11 @@ void NidTable::RegisterHostSubsystems() {
     m_names["C4UgDHHPvdw"] = "sceNetResolverCreate";
 
     // ===== libSceCompanionHttpd.sprx.json (2 symbols) =====
-    m_names["obuxdTiwkF8"] = "sceNetCtlGetInfo";
-    m_names["gky0+oaNM4k"] = "sceNetCtlInit";
+    RegisterSymbol("obuxdTiwkF8", reinterpret_cast<uintptr_t>(&Net::sceNetCtlGetInfo), "sceNetCtlGetInfo");
+    RegisterSymbol("gky0+oaNM4k", reinterpret_cast<uintptr_t>(&Net::sceNetCtlInit), "sceNetCtlInit");
 
     // ===== libSceCommonDialog.sprx.json (1 symbols) =====
-    m_names["uoUpLGNkygk"] = "sceCommonDialogInitialize";
+    RegisterSymbol("uoUpLGNkygk", reinterpret_cast<uintptr_t>(&Dialog::sceCommonDialogInitialize), "sceCommonDialogInitialize");
 
     // ===== libSceGameLiveStreaming.sprx.json (1 symbols) =====
     m_names["rPo6tV8D9bM"] = "sceSystemServiceGetStatus";
@@ -1072,7 +1083,27 @@ void NidTable::RegisterHostSubsystems() {
     m_names["lbQKqsERhtE"] = "sceDiscMapIsRequestOnHDD";
 
     // ===== libSceNetCtl.sprx.json (1 symbols) =====
-    m_names["JO4yuTuMoKI"] = "sceNetCtlGetNatInfo";
+    RegisterSymbol("JO4yuTuMoKI", reinterpret_cast<uintptr_t>(&Net::sceNetCtlGetNatInfo), "sceNetCtlGetNatInfo");
+
+    // ===== Named NP & Trophy Offline Subsystem Symbol Registrations =====
+    RegisterSymbol("sceNpManagerGetStatus", reinterpret_cast<uintptr_t>(&Np::sceNpManagerGetStatus), "sceNpManagerGetStatus");
+    RegisterSymbol("sceNpManagerGetOnlineId", reinterpret_cast<uintptr_t>(&Np::sceNpManagerGetOnlineId), "sceNpManagerGetOnlineId");
+    RegisterSymbol("sceNpManagerGetNpId", reinterpret_cast<uintptr_t>(&Np::sceNpManagerGetNpId), "sceNpManagerGetNpId");
+    RegisterSymbol("sceNpManagerGetAccountId", reinterpret_cast<uintptr_t>(&Np::sceNpManagerGetAccountId), "sceNpManagerGetAccountId");
+    RegisterSymbol("sceNpCheckCallback", reinterpret_cast<uintptr_t>(&Np::sceNpCheckCallback), "sceNpCheckCallback");
+    RegisterSymbol("sceNpTrophyInit", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyInit), "sceNpTrophyInit");
+    RegisterSymbol("sceNpTrophyTerm", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyTerm), "sceNpTrophyTerm");
+    RegisterSymbol("sceNpTrophyCreateContext", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyCreateContext), "sceNpTrophyCreateContext");
+    RegisterSymbol("sceNpTrophyDestroyContext", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyDestroyContext), "sceNpTrophyDestroyContext");
+    RegisterSymbol("sceNpTrophyCreateHandle", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyCreateHandle), "sceNpTrophyCreateHandle");
+    RegisterSymbol("sceNpTrophyDestroyHandle", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyDestroyHandle), "sceNpTrophyDestroyHandle");
+    RegisterSymbol("sceNpTrophyRegisterContext", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyRegisterContext), "sceNpTrophyRegisterContext");
+    RegisterSymbol("sceNpTrophyUnlockTrophy", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyUnlockTrophy), "sceNpTrophyUnlockTrophy");
+    RegisterSymbol("sceNpTrophyGetTrophyUnlockState", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyGetTrophyUnlockState), "sceNpTrophyGetTrophyUnlockState");
+    RegisterSymbol("sceNpMatching2Initialize", reinterpret_cast<uintptr_t>(&Np::sceNpMatching2Initialize), "sceNpMatching2Initialize");
+    RegisterSymbol("sceNpMatching2Terminate", reinterpret_cast<uintptr_t>(&Np::sceNpMatching2Terminate), "sceNpMatching2Terminate");
+    RegisterSymbol("sceNpScoreRankingInitialize", reinterpret_cast<uintptr_t>(&Np::sceNpScoreRankingInitialize), "sceNpScoreRankingInitialize");
+    RegisterSymbol("sceNpScoreRankingTerminate", reinterpret_cast<uintptr_t>(&Np::sceNpScoreRankingTerminate), "sceNpScoreRankingTerminate");
 
     LOG_INFO("NID", "Registered " + std::to_string(m_symbols.size()) + " native host API symbols and " +
              std::to_string(m_names.size()) + " named API stubs.");

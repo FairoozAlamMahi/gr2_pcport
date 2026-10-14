@@ -11,7 +11,6 @@ namespace SaveData {
 static constexpr const char* SAVE_DIR = "./savedata";
 static constexpr s32 SCE_OK = 0;
 static constexpr s32 SCE_SAVE_DATA_DIALOG_STATUS_NONE = 0;
-static constexpr s32 SCE_SAVE_DATA_DIALOG_STATUS_RUNNING = 1;
 static constexpr s32 SCE_SAVE_DATA_DIALOG_STATUS_FINISHED = 2;
 
 static s32 s_dialog_status = SCE_SAVE_DATA_DIALOG_STATUS_NONE;

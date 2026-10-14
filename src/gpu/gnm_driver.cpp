@@ -295,9 +295,74 @@ static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, co
                               "] IT_SET_CONFIG_REG (0x68): Reg 0x" + ToHex(reg_offset) + ", NumRegs: " + std::to_string(count));
                     break;
                 }
-                case IT_INDIRECT_BUFFER: { // 0x3F
+                case IT_EVENT_WRITE_EOP: { // 0x47
+                    if (count >= 4) {
+                        u32 data_sel = (body[2] >> 29) & 0x7;
+                        u64 gpu_addr = (static_cast<u64>(body[2] & 0xFFFF) << 32) | (static_cast<u64>(body[1]) & ~0x3ULL);
+                        void* host_dest = Memory::VirtualMemoryManager::Instance().GuestToHost(gpu_addr);
+                        if (host_dest) {
+                            if (data_sel == 1) {
+                                *reinterpret_cast<u32*>(host_dest) = body[3];
+                            } else {
+                                u64 val = (static_cast<u64>(body[4]) << 32) | body[3];
+                                *reinterpret_cast<u64*>(host_dest) = val;
+                            }
+                            LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                                      "] IT_EVENT_WRITE_EOP (0x47): Wrote fence 0x" + 
+                                      ToHex((static_cast<u64>(body[4]) << 32) | body[3]) + " to VA 0x" + ToHex(gpu_addr));
+                        }
+                    }
+                    break;
+                }
+                case IT_RELEASE_MEM: { // 0x49
+                    if (count >= 5) {
+                        u32 data_sel = (body[1] >> 29) & 0x7;
+                        u64 gpu_addr = (static_cast<u64>(body[3] & 0xFFFF) << 32) | (static_cast<u64>(body[2]) & ~0x3ULL);
+                        void* host_dest = Memory::VirtualMemoryManager::Instance().GuestToHost(gpu_addr);
+                        if (host_dest) {
+                            if (data_sel == 1) {
+                                *reinterpret_cast<u32*>(host_dest) = body[4];
+                            } else {
+                                u64 val = (static_cast<u64>(body[5]) << 32) | body[4];
+                                *reinterpret_cast<u64*>(host_dest) = val;
+                            }
+                            LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                                      "] IT_RELEASE_MEM (0x49): Wrote fence 0x" + 
+                                      ToHex((static_cast<u64>(body[5]) << 32) | body[4]) + " to VA 0x" + ToHex(gpu_addr));
+                        }
+                    }
+                    break;
+                }
+                case IT_EVENT_WRITE: { // 0x46
                     LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
-                              "] IT_INDIRECT_BUFFER (0x3F)");
+                              "] IT_EVENT_WRITE (0x46)");
+                    break;
+                }
+                case IT_WAIT_REG_MEM: { // 0x3C
+                    LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                              "] IT_WAIT_REG_MEM (0x3C)");
+                    break;
+                }
+                case IT_DRAW_INDEX_OFFSET_2: { // 0x35
+                    u32 index_count = (count >= 1) ? body[0] : 0;
+                    s_stat_draw_calls++;
+                    local_draws++;
+                    LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                              "] IT_DRAW_INDEX_OFFSET_2 (0x35): IndexCount: " + std::to_string(index_count));
+                    break;
+                }
+                case IT_INDIRECT_BUFFER: { // 0x3F
+                    if (count >= 3) {
+                        u64 ib_addr = (static_cast<u64>(body[1] & 0xFFFF) << 32) | (static_cast<u64>(body[0]) & ~0x3ULL);
+                        u32 ib_size_bytes = (body[2] & 0xFFFFF) * sizeof(u32);
+                        void* ib_host = Memory::VirtualMemoryManager::Instance().GuestToHost(ib_addr);
+                        if (ib_host && ib_size_bytes > 0) {
+                            LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                                      "] Executing Indirect Buffer at VA 0x" + ToHex(ib_addr) + " (" + 
+                                      std::to_string(ib_size_bytes) + " bytes)");
+                            DecodePM4CommandBuffer(ib_host, ib_size_bytes, "IB", buffer_index);
+                        }
+                    }
                     break;
                 }
                 default:
@@ -504,6 +569,10 @@ PS4_SYSV_ABI s32 sceGnmSubmitAndFlipCommandBuffers(
     u32 flip_mode,
     s64 flip_arg
 ) {
+    if (s_submitted_dcbs <= 20 || s_submitted_dcbs % 60 == 0) {
+        LOG_INFO("GPU", "sceGnmSubmitAndFlipCommandBuffers: buffer_index=" + std::to_string(display_buffer_index) +
+                        ", count=" + std::to_string(count) + ", flip_mode=" + std::to_string(flip_mode));
+    }
     sceGnmSubmitCommandBuffers(count, dcb_gpu_addrs, dcb_sizes_in_bytes, ccb_gpu_addrs, ccb_sizes_in_bytes);
     Video::sceVideoOutSubmitFlip(static_cast<s32>(video_handle), static_cast<s32>(display_buffer_index), flip_mode, flip_arg);
     return 0;

@@ -96,6 +96,18 @@ void Shutdown() {
     LOG_INFO("VIDEO", "libSceVideoOut subsystem shut down.");
 }
 
+static std::vector<void*> s_registered_buffers;
+static SceVideoOutBufferAttribute s_buffer_attr{};
+static void* s_flip_equeue = nullptr;
+static void* s_flip_udata = nullptr;
+static u64 s_flip_count = 0;
+
+static inline std::string ToHex(u64 val) {
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%llX", static_cast<unsigned long long>(val));
+    return std::string(buf);
+}
+
 extern "C" {
 
 PS4_SYSV_ABI s32 sceVideoOutOpen(s32 user_id, s32 bus_type, s32 index, const void* param) {
@@ -107,11 +119,81 @@ PS4_SYSV_ABI s32 sceVideoOutClose(s32 handle) {
     return 0;
 }
 
+PS4_SYSV_ABI s32 sceVideoOutSetBufferAttribute(
+    SceVideoOutBufferAttribute* attribute,
+    u32 pixelFormat,
+    u32 tilingMode,
+    u32 aspectRatio,
+    u32 width,
+    u32 height,
+    u32 pitchInPixel
+) {
+    if (!attribute) return -1;
+    attribute->pixelFormat = pixelFormat;
+    attribute->tilingMode = tilingMode;
+    attribute->aspectRatio = aspectRatio;
+    attribute->width = width;
+    attribute->height = height;
+    attribute->pitchInPixel = pitchInPixel;
+    s_buffer_attr = *attribute;
+    LOG_INFO("VIDEO", "sceVideoOutSetBufferAttribute: " + std::to_string(width) + "x" + 
+             std::to_string(height) + ", pitch=" + std::to_string(pitchInPixel) + 
+             ", format=0x" + ToHex(pixelFormat) + ", tiling=" + std::to_string(tilingMode));
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceVideoOutRegisterBuffers(
+    s32 handle,
+    s32 startIndex,
+    void* const* addresses,
+    s32 bufferNum,
+    const SceVideoOutBufferAttribute* attribute
+) {
+    if (attribute) s_buffer_attr = *attribute;
+    if (addresses && bufferNum > 0) {
+        if (s_registered_buffers.size() < static_cast<size_t>(startIndex + bufferNum)) {
+            s_registered_buffers.resize(startIndex + bufferNum, nullptr);
+        }
+        for (s32 i = 0; i < bufferNum; ++i) {
+            s_registered_buffers[startIndex + i] = addresses[i];
+            LOG_INFO("VIDEO", "Registered display buffer " + std::to_string(startIndex + i) + 
+                     " at VA 0x" + ToHex(reinterpret_cast<uintptr_t>(addresses[i])));
+        }
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceVideoOutAddFlipEvent(void* eq, s32 handle, void* udata) {
+    s_flip_equeue = eq;
+    s_flip_udata = udata;
+    (void)s_flip_udata;
+    LOG_INFO("VIDEO", "sceVideoOutAddFlipEvent registered with equeue 0x" + 
+             ToHex(reinterpret_cast<uintptr_t>(eq)));
+    return 0;
+}
+
 PS4_SYSV_ABI s32 sceVideoOutSubmitFlip(s32 handle, s32 buffer_index, u32 flip_mode, s64 flip_arg) {
+    s_flip_count++;
+    void* frame_data = nullptr;
+    if (buffer_index >= 0 && static_cast<size_t>(buffer_index) < s_registered_buffers.size()) {
+        frame_data = s_registered_buffers[buffer_index];
+    }
+
+    if (s_flip_count <= 20 || s_flip_count % 60 == 0) {
+        LOG_INFO("VIDEO", "sceVideoOutSubmitFlip: Presented display buffer " + std::to_string(buffer_index) + 
+                          " (Frame #" + std::to_string(s_flip_count) + ")");
+    }
+
     if (VulkanContext::Instance().IsInitialized()) {
         VulkanContext::Instance().ProcessWindowMessages();
-        VulkanContext::Instance().PresentFrame();
+        VulkanContext::Instance().PresentFrame(frame_data);
     }
+
+    // Signal flip event if registered
+    if (s_flip_equeue) {
+        SetEvent(reinterpret_cast<HANDLE>(s_flip_equeue));
+    }
+
     // Pace frame and compute delta-time
     float dt = FramePacer::Instance().PaceAndComputeDeltaTime();
     (void)dt;

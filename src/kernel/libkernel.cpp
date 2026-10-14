@@ -1045,8 +1045,29 @@ PS4_SYSV_ABI s32 sceKernelWaitEqueue(void* eq, void* events, s32 num_events, s32
     if (out_events) *out_events = 0;
     if (!eq) return -1;
     DWORD ms = timeout ? 50 : INFINITE;
-    WaitForSingleObject(reinterpret_cast<HANDLE>(eq), ms);
-    return 0;
+    DWORD res = WaitForSingleObject(reinterpret_cast<HANDLE>(eq), ms);
+    if (res == WAIT_OBJECT_0) {
+        if (out_events) *out_events = 1;
+        if (events && num_events > 0) {
+            struct SceKernelEvent {
+                uintptr_t ident;
+                short filter;
+                unsigned short flags;
+                unsigned int fflags;
+                intptr_t data;
+                void* udata;
+            };
+            auto* ev = reinterpret_cast<SceKernelEvent*>(events);
+            ev[0].ident = reinterpret_cast<uintptr_t>(eq);
+            ev[0].filter = -1;
+            ev[0].flags = 0;
+            ev[0].fflags = 0;
+            ev[0].data = 1;
+            ev[0].udata = nullptr;
+        }
+        return 0;
+    }
+    return (res == WAIT_TIMEOUT) ? 0x8002000B : -1;
 }
 
 PS4_SYSV_ABI s32 sceKernelAddUserEvent(void* eq, s32 id) { return 0; }

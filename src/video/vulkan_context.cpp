@@ -1,8 +1,10 @@
 #include "video/vulkan_context.h"
 #include "gpu/gnm_driver.h"
+#include "memory/vm.h"
 #include "common/logger.h"
 #include <iostream>
 #include <algorithm>
+#include <cstring>
 
 namespace Video {
 
@@ -124,6 +126,7 @@ bool VulkanContext::Initialize(u32 width, u32 height, bool fullscreen, bool head
             LOG_ERROR("VULKAN", "Failed to create Vulkan presentation swapchain.");
             return false;
         }
+        CreateStagingResources();
     }
 
     m_initialized = true;
@@ -136,6 +139,26 @@ void VulkanContext::Shutdown() {
 
     if (fp_vkDeviceWaitIdle && m_vk_device) {
         fp_vkDeviceWaitIdle(m_vk_device);
+    }
+
+    if (m_staging_mapped_ptr && fp_vkUnmapMemory) {
+        fp_vkUnmapMemory(m_vk_device, m_staging_memory);
+        m_staging_mapped_ptr = nullptr;
+    }
+
+    if (m_staging_buffer && fp_vkDestroyBuffer) {
+        fp_vkDestroyBuffer(m_vk_device, m_staging_buffer, nullptr);
+        m_staging_buffer = VK_NULL_HANDLE;
+    }
+
+    if (m_staging_memory && fp_vkFreeMemory) {
+        fp_vkFreeMemory(m_vk_device, m_staging_memory, nullptr);
+        m_staging_memory = VK_NULL_HANDLE;
+    }
+
+    if (m_cmd_pool && fp_vkDestroyCommandPool) {
+        fp_vkDestroyCommandPool(m_vk_device, m_cmd_pool, nullptr);
+        m_cmd_pool = VK_NULL_HANDLE;
     }
 
     if (m_render_finished_semaphore && fp_vkDestroySemaphore) {
@@ -275,6 +298,7 @@ bool VulkanContext::CreateInstance() {
     LOAD_INST(vkEnumeratePhysicalDevices);
     LOAD_INST(vkGetPhysicalDeviceProperties);
     LOAD_INST(vkGetPhysicalDeviceQueueFamilyProperties);
+    LOAD_INST(vkGetPhysicalDeviceMemoryProperties);
     LOAD_INST(vkCreateDevice);
     LOAD_INST(vkDestroyDevice);
     LOAD_INST(vkGetDeviceQueue);
@@ -395,6 +419,22 @@ bool VulkanContext::CreateLogicalDevice() {
     LOAD_DEV(vkQueueSubmit);
     LOAD_DEV(vkCreateSemaphore);
     LOAD_DEV(vkDestroySemaphore);
+    LOAD_DEV(vkCreateCommandPool);
+    LOAD_DEV(vkDestroyCommandPool);
+    LOAD_DEV(vkAllocateCommandBuffers);
+    LOAD_DEV(vkFreeCommandBuffers);
+    LOAD_DEV(vkBeginCommandBuffer);
+    LOAD_DEV(vkEndCommandBuffer);
+    LOAD_DEV(vkCmdPipelineBarrier);
+    LOAD_DEV(vkCmdCopyBufferToImage);
+    LOAD_DEV(vkCreateBuffer);
+    LOAD_DEV(vkDestroyBuffer);
+    LOAD_DEV(vkGetBufferMemoryRequirements);
+    LOAD_DEV(vkAllocateMemory);
+    LOAD_DEV(vkFreeMemory);
+    LOAD_DEV(vkBindBufferMemory);
+    LOAD_DEV(vkMapMemory);
+    LOAD_DEV(vkUnmapMemory);
     #undef LOAD_DEV
 
     LOG_INFO("VULKAN", "Vulkan Logical Device and Queues created successfully.");
@@ -456,7 +496,82 @@ bool VulkanContext::CreateSwapchain() {
     return true;
 }
 
-void VulkanContext::PresentFrame() {
+bool VulkanContext::CreateStagingResources() {
+    if (m_headless || !m_vk_device) return true;
+
+    // 1. Create Command Pool
+    VkCommandPoolCreateInfo cpci{};
+    cpci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    cpci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    cpci.queueFamilyIndex = m_graphics_queue_family;
+    if (!fp_vkCreateCommandPool || fp_vkCreateCommandPool(m_vk_device, &cpci, nullptr, &m_cmd_pool) != VK_SUCCESS) {
+        LOG_WARN("VULKAN", "Failed to create Vulkan command pool.");
+        return false;
+    }
+
+    // 2. Allocate Primary Command Buffer
+    VkCommandBufferAllocateInfo cbai{};
+    cbai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cbai.commandPool = m_cmd_pool;
+    cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cbai.commandBufferCount = 1;
+    if (!fp_vkAllocateCommandBuffers || fp_vkAllocateCommandBuffers(m_vk_device, &cbai, &m_cmd_buffer) != VK_SUCCESS) {
+        LOG_WARN("VULKAN", "Failed to allocate Vulkan command buffer.");
+        return false;
+    }
+
+    // 3. Create Host-Visible Staging Buffer for Frame Blit
+    m_staging_size = static_cast<u64>(m_width) * m_height * 4;
+    VkBufferCreateInfo bci{};
+    bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bci.size = m_staging_size;
+    bci.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    bci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (!fp_vkCreateBuffer || fp_vkCreateBuffer(m_vk_device, &bci, nullptr, &m_staging_buffer) != VK_SUCCESS) {
+        LOG_WARN("VULKAN", "Failed to create staging buffer.");
+        return false;
+    }
+
+    VkMemoryRequirements mem_reqs;
+    fp_vkGetBufferMemoryRequirements(m_vk_device, m_staging_buffer, &mem_reqs);
+
+    VkPhysicalDeviceMemoryProperties mem_props;
+    fp_vkGetPhysicalDeviceMemoryProperties(m_vk_physical_device, &mem_props);
+
+    u32 memory_type_index = UINT32_MAX;
+    VkMemoryPropertyFlags required_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    for (u32 i = 0; i < mem_props.memoryTypeCount; ++i) {
+        if ((mem_reqs.memoryTypeBits & (1 << i)) &&
+            (mem_props.memoryTypes[i].propertyFlags & required_flags) == required_flags) {
+            memory_type_index = i;
+            break;
+        }
+    }
+
+    if (memory_type_index == UINT32_MAX) {
+        LOG_WARN("VULKAN", "No host-visible coherent memory type found for staging buffer.");
+        return false;
+    }
+
+    VkMemoryAllocateInfo mai{};
+    mai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    mai.allocationSize = mem_reqs.size;
+    mai.memoryTypeIndex = memory_type_index;
+
+    if (!fp_vkAllocateMemory || fp_vkAllocateMemory(m_vk_device, &mai, nullptr, &m_staging_memory) != VK_SUCCESS) {
+        LOG_WARN("VULKAN", "Failed to allocate staging memory.");
+        return false;
+    }
+
+    fp_vkBindBufferMemory(m_vk_device, m_staging_buffer, m_staging_memory, 0);
+    fp_vkMapMemory(m_vk_device, m_staging_memory, 0, m_staging_size, 0, &m_staging_mapped_ptr);
+
+    LOG_INFO("VULKAN", "Staging frame buffer initialized (" + std::to_string(m_staging_size) + " bytes).");
+    return true;
+}
+
+void VulkanContext::PresentFrame(const void* frame_data) {
     if (!m_initialized || !m_vk_swapchain || !fp_vkQueuePresentKHR || !m_vk_device) return;
 
     u32 image_index = 0;
@@ -477,13 +592,102 @@ void VulkanContext::PresentFrame() {
         m_current_image_index = image_index;
     }
 
-    if (fp_vkQueueSubmit && m_render_finished_semaphore && m_image_available_semaphore) {
-        VkPipelineStageFlags wait_stages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    // If game frame data is provided and staging resources exist, blit frame into swapchain image!
+    if (frame_data && m_staging_mapped_ptr && m_cmd_buffer && fp_vkBeginCommandBuffer) {
+        const void* src_pixels = frame_data;
+        if (Memory::VirtualMemoryManager::Instance().IsGuestAddress(frame_data)) {
+            src_pixels = Memory::VirtualMemoryManager::Instance().GuestToHost(reinterpret_cast<uintptr_t>(frame_data));
+        }
+
+        MEMORY_BASIC_INFORMATION mbi{};
+        if (src_pixels && VirtualQuery(src_pixels, &mbi, sizeof(mbi)) != 0 && mbi.State == MEM_COMMIT) {
+            std::memcpy(m_staging_mapped_ptr, src_pixels, m_staging_size);
+        }
+
+        VkCommandBufferBeginInfo bi{};
+        bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        fp_vkBeginCommandBuffer(m_cmd_buffer, &bi);
+
+        VkImage target_image = m_swapchain_images[m_current_image_index];
+
+        // Transition swapchain image UNDEFINED -> TRANSFER_DST_OPTIMAL
+        VkImageMemoryBarrier barrier1{};
+        barrier1.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier1.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        barrier1.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier1.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier1.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier1.image = target_image;
+        barrier1.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier1.subresourceRange.levelCount = 1;
+        barrier1.subresourceRange.layerCount = 1;
+        barrier1.srcAccessMask = 0;
+        barrier1.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+        fp_vkCmdPipelineBarrier(
+            m_cmd_buffer,
+            VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier1
+        );
+
+        // Copy staging buffer to swapchain image
+        VkBufferImageCopy region{};
+        region.bufferOffset = 0;
+        region.bufferRowLength = m_width;
+        region.bufferImageHeight = m_height;
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.layerCount = 1;
+        region.imageExtent = {m_width, m_height, 1};
+
+        fp_vkCmdCopyBufferToImage(
+            m_cmd_buffer,
+            m_staging_buffer,
+            target_image,
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            1,
+            &region
+        );
+
+        // Transition swapchain image TRANSFER_DST_OPTIMAL -> PRESENT_SRC_KHR
+        VkImageMemoryBarrier barrier2{};
+        barrier2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+        barrier2.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+        barrier2.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        barrier2.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier2.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+        barrier2.image = target_image;
+        barrier2.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        barrier2.subresourceRange.levelCount = 1;
+        barrier2.subresourceRange.layerCount = 1;
+        barrier2.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier2.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+
+        fp_vkCmdPipelineBarrier(
+            m_cmd_buffer,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+            0,
+            0, nullptr,
+            0, nullptr,
+            1, &barrier2
+        );
+
+        fp_vkEndCommandBuffer(m_cmd_buffer);
+
+        // Submit with semaphores
+        VkPipelineStageFlags wait_stages = VK_PIPELINE_STAGE_TRANSFER_BIT;
         VkSubmitInfo si{};
         si.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         si.waitSemaphoreCount = 1;
         si.pWaitSemaphores = &m_image_available_semaphore;
         si.pWaitDstStageMask = &wait_stages;
+        si.commandBufferCount = 1;
+        si.pCommandBuffers = &m_cmd_buffer;
         si.signalSemaphoreCount = 1;
         si.pSignalSemaphores = &m_render_finished_semaphore;
         fp_vkQueueSubmit(m_graphics_queue, 1, &si, VK_NULL_HANDLE);
@@ -498,17 +702,40 @@ void VulkanContext::PresentFrame() {
 
         fp_vkQueuePresentKHR(m_present_queue, &pi);
     } else {
-        VkPresentInfoKHR pi{};
-        pi.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-        if (m_image_available_semaphore) {
-            pi.waitSemaphoreCount = 1;
-            pi.pWaitSemaphores = &m_image_available_semaphore;
-        }
-        pi.swapchainCount = 1;
-        pi.pSwapchains = &m_vk_swapchain;
-        pi.pImageIndices = &m_current_image_index;
+        // Fallback present
+        if (fp_vkQueueSubmit && m_render_finished_semaphore && m_image_available_semaphore) {
+            VkPipelineStageFlags wait_stages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            VkSubmitInfo si{};
+            si.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+            si.waitSemaphoreCount = 1;
+            si.pWaitSemaphores = &m_image_available_semaphore;
+            si.pWaitDstStageMask = &wait_stages;
+            si.signalSemaphoreCount = 1;
+            si.pSignalSemaphores = &m_render_finished_semaphore;
+            fp_vkQueueSubmit(m_graphics_queue, 1, &si, VK_NULL_HANDLE);
 
-        fp_vkQueuePresentKHR(m_present_queue, &pi);
+            VkPresentInfoKHR pi{};
+            pi.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+            pi.waitSemaphoreCount = 1;
+            pi.pWaitSemaphores = &m_render_finished_semaphore;
+            pi.swapchainCount = 1;
+            pi.pSwapchains = &m_vk_swapchain;
+            pi.pImageIndices = &m_current_image_index;
+
+            fp_vkQueuePresentKHR(m_present_queue, &pi);
+        } else {
+            VkPresentInfoKHR pi{};
+            pi.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+            if (m_image_available_semaphore) {
+                pi.waitSemaphoreCount = 1;
+                pi.pWaitSemaphores = &m_image_available_semaphore;
+            }
+            pi.swapchainCount = 1;
+            pi.pSwapchains = &m_vk_swapchain;
+            pi.pImageIndices = &m_current_image_index;
+
+            fp_vkQueuePresentKHR(m_present_queue, &pi);
+        }
     }
 }
 

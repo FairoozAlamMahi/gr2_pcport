@@ -430,7 +430,7 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("xbxNatawohc", reinterpret_cast<uintptr_t>(&GPU::sceGnmSubmitAndFlipCommandBuffers), "sceGnmSubmitAndFlipCommandBuffers");
     RegisterSymbol("Ga6r7H6Y0RI", reinterpret_cast<uintptr_t>(&GPU::sceGnmSubmitAndFlipCommandBuffers), "sceGnmSubmitAndFlipCommandBuffersForWorkload");
     RegisterSymbol("zwY0YV91TTI", reinterpret_cast<uintptr_t>(&GPU::sceGnmSubmitCommandBuffers), "sceGnmSubmitCommandBuffers");
-    m_names["jRcI8VcgTz4"] = "sceGnmSubmitCommandBuffersForWorkload";
+    RegisterSymbol("jRcI8VcgTz4", reinterpret_cast<uintptr_t>(&GPU::sceGnmSubmitCommandBuffers), "sceGnmSubmitCommandBuffersForWorkload");
     RegisterSymbol("yvZ73uQUqrk", reinterpret_cast<uintptr_t>(&GPU::sceGnmSubmitDone), "sceGnmSubmitDone");
     m_names["ArSg-TGinhk"] = "sceGnmUnmapComputeQueue";
     m_names["nLM2i2+65hA"] = "sceGnmUpdateGsShader";
@@ -955,10 +955,10 @@ void NidTable::RegisterHostSubsystems() {
     m_names["DUWhxkyVPj4"] = "sceShareUtilityTerminate";
 
     // ===== libSceVideoCoreInterface.sprx.json (4 symbols) =====
-    m_names["HXzjK9yI30k"] = "sceVideoOutAddFlipEvent";
+    RegisterSymbol("HXzjK9yI30k", reinterpret_cast<uintptr_t>(&Video::sceVideoOutAddFlipEvent), "sceVideoOutAddFlipEvent");
     RegisterSymbol("Up36PTk687E", reinterpret_cast<uintptr_t>(&Video::sceVideoOutOpen), "sceVideoOutOpen");
-    m_names["w3BY+tAEiQY"] = "sceVideoOutRegisterBuffers";
-    m_names["i6-sR91Wt-4"] = "sceVideoOutSetBufferAttribute";
+    RegisterSymbol("w3BY+tAEiQY", reinterpret_cast<uintptr_t>(&Video::sceVideoOutRegisterBuffers), "sceVideoOutRegisterBuffers");
+    RegisterSymbol("i6-sR91Wt-4", reinterpret_cast<uintptr_t>(&Video::sceVideoOutSetBufferAttribute), "sceVideoOutSetBufferAttribute");
 
     // ===== libSceAbstractTwitter.sprx.json (3 symbols) =====
     m_names["zO9UL3qIINQ"] = "sceRtcGetCurrentNetworkTick";

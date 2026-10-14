@@ -174,16 +174,29 @@ bool VirtualMemoryManager::FreeFlexibleMemory(void* vaddr, u64 size) {
 }
 
 bool VirtualMemoryManager::IsGuestAddress(const void* ptr) const {
+    if (!ptr) return false;
     uintptr_t addr = reinterpret_cast<uintptr_t>(ptr);
     uintptr_t base = reinterpret_cast<uintptr_t>(m_guest_arena_base);
-    return (addr >= base && addr < (base + GUEST_ARENA_SIZE));
+    if (addr >= base && addr < (base + GUEST_ARENA_SIZE)) return true;
+    MEMORY_BASIC_INFORMATION mbi{};
+    return (VirtualQuery(ptr, &mbi, sizeof(mbi)) != 0 && mbi.State == MEM_COMMIT);
 }
 
 void* VirtualMemoryManager::GuestToHost(u64 guest_vaddr) const {
-    if (guest_vaddr >= GUEST_ARENA_BASE) {
+    if (!guest_vaddr) return nullptr;
+    // Check if address is already directly committed in host process address space
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (VirtualQuery(reinterpret_cast<LPCVOID>(guest_vaddr), &mbi, sizeof(mbi)) != 0 && mbi.State == MEM_COMMIT) {
         return reinterpret_cast<void*>(guest_vaddr);
     }
-    return reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(m_guest_arena_base) + guest_vaddr);
+    // Fallback: check arena-relative offset
+    if (guest_vaddr < GUEST_ARENA_SIZE) {
+        uintptr_t arena_addr = reinterpret_cast<uintptr_t>(m_guest_arena_base) + guest_vaddr;
+        if (VirtualQuery(reinterpret_cast<LPCVOID>(arena_addr), &mbi, sizeof(mbi)) != 0 && mbi.State == MEM_COMMIT) {
+            return reinterpret_cast<void*>(arena_addr);
+        }
+    }
+    return reinterpret_cast<void*>(guest_vaddr);
 }
 
 u64 VirtualMemoryManager::HostToGuest(const void* host_ptr) const {

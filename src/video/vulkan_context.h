@@ -16,7 +16,7 @@ public:
     bool Initialize(u32 width = 1920, u32 height = 1080, bool fullscreen = false, bool headless = false);
     void Shutdown();
 
-    void PresentFrame();
+    void PresentFrame(const void* frame_data = nullptr);
     bool ProcessWindowMessages();
 
     HWND GetHwnd() const { return m_hwnd; }
@@ -38,6 +38,7 @@ private:
     bool SelectPhysicalDevice();
     bool CreateLogicalDevice();
     bool CreateSwapchain();
+    bool CreateStagingResources();
 
     bool m_initialized{false};
     bool m_headless{false};
@@ -68,6 +69,13 @@ private:
     VkSemaphore m_image_available_semaphore{VK_NULL_HANDLE};
     VkSemaphore m_render_finished_semaphore{VK_NULL_HANDLE};
 
+    VkCommandPool m_cmd_pool{VK_NULL_HANDLE};
+    VkCommandBuffer m_cmd_buffer{VK_NULL_HANDLE};
+    VkBuffer m_staging_buffer{VK_NULL_HANDLE};
+    VkDeviceMemory m_staging_memory{VK_NULL_HANDLE};
+    void* m_staging_mapped_ptr{nullptr};
+    u64 m_staging_size{0};
+
     // Dynamically loaded function pointers
     PFN_vkGetInstanceProcAddr fp_vkGetInstanceProcAddr{nullptr};
     PFN_vkCreateInstance fp_vkCreateInstance{nullptr};
@@ -75,6 +83,7 @@ private:
     PFN_vkEnumeratePhysicalDevices fp_vkEnumeratePhysicalDevices{nullptr};
     PFN_vkGetPhysicalDeviceProperties fp_vkGetPhysicalDeviceProperties{nullptr};
     PFN_vkGetPhysicalDeviceQueueFamilyProperties fp_vkGetPhysicalDeviceQueueFamilyProperties{nullptr};
+    PFN_vkGetPhysicalDeviceMemoryProperties fp_vkGetPhysicalDeviceMemoryProperties{nullptr};
     PFN_vkCreateDevice fp_vkCreateDevice{nullptr};
     PFN_vkDestroyDevice fp_vkDestroyDevice{nullptr};
     PFN_vkGetDeviceQueue fp_vkGetDeviceQueue{nullptr};
@@ -84,6 +93,24 @@ private:
     // Semaphores
     PFN_vkCreateSemaphore fp_vkCreateSemaphore{nullptr};
     PFN_vkDestroySemaphore fp_vkDestroySemaphore{nullptr};
+
+    // Commands & Memory
+    PFN_vkCreateCommandPool fp_vkCreateCommandPool{nullptr};
+    PFN_vkDestroyCommandPool fp_vkDestroyCommandPool{nullptr};
+    PFN_vkAllocateCommandBuffers fp_vkAllocateCommandBuffers{nullptr};
+    PFN_vkFreeCommandBuffers fp_vkFreeCommandBuffers{nullptr};
+    PFN_vkBeginCommandBuffer fp_vkBeginCommandBuffer{nullptr};
+    PFN_vkEndCommandBuffer fp_vkEndCommandBuffer{nullptr};
+    PFN_vkCmdPipelineBarrier fp_vkCmdPipelineBarrier{nullptr};
+    PFN_vkCmdCopyBufferToImage fp_vkCmdCopyBufferToImage{nullptr};
+    PFN_vkCreateBuffer fp_vkCreateBuffer{nullptr};
+    PFN_vkDestroyBuffer fp_vkDestroyBuffer{nullptr};
+    PFN_vkGetBufferMemoryRequirements fp_vkGetBufferMemoryRequirements{nullptr};
+    PFN_vkAllocateMemory fp_vkAllocateMemory{nullptr};
+    PFN_vkFreeMemory fp_vkFreeMemory{nullptr};
+    PFN_vkBindBufferMemory fp_vkBindBufferMemory{nullptr};
+    PFN_vkMapMemory fp_vkMapMemory{nullptr};
+    PFN_vkUnmapMemory fp_vkUnmapMemory{nullptr};
 
     // Surface & Win32 KHR
     PFN_vkCreateWin32SurfaceKHR fp_vkCreateWin32SurfaceKHR{nullptr};

@@ -349,6 +349,7 @@ bool ElfLoader::ApplyRelocations(const u8* data) {
     u32 total_applied = 0;
     u32 plt_resolved = 0;
     u32 stubbed_count = 0;
+    std::vector<std::string> unbound_symbols;
 
     auto ProcessRelas = [&](u64 table_off, u64 table_sz) {
         if (table_off == 0 || table_sz == 0) return;
@@ -381,6 +382,7 @@ bool ElfLoader::ApplyRelocations(const u8* data) {
                         plt_resolved++;
                     } else {
                         stubbed_count++;
+                        unbound_symbols.push_back(nid_prefix + " (" + sym_str + ")");
                     }
                 }
             }
@@ -408,6 +410,10 @@ bool ElfLoader::ApplyRelocations(const u8* data) {
 
     ProcessRelas(rela_off, relasz);
     ProcessRelas(jmprel_off, pltrelsz);
+
+    for (const auto& sym : unbound_symbols) {
+        LOG_INFO("LOADER", "  [UNBOUND STUB] " + sym);
+    }
 
     LOG_INFO("LOADER", "Applied " + std::to_string(total_applied) + 
              " AMD64 relocations (" + std::to_string(plt_resolved) + " direct NID imports bound, " +

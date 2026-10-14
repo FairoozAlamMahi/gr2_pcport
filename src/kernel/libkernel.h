@@ -274,6 +274,7 @@ PS4_SYSV_ABI s32 sceAppContentGetAddcontInfoList(s32 a, s32 b, s32 c, u32* out_c
 PS4_SYSV_ABI s32 sceAppContentAddContIdList(const void* list);
 PS4_SYSV_ABI s32 sceAppContentMount(const void* param, void* mount_point);
 PS4_SYSV_ABI s32 sceAppContentUmount(const void* mount_point);
+PS4_SYSV_ABI s32 sceAppContentGetEntitlementKey(const void* ent_key_id, void* key_buf, usize buf_size);
 
 // PlayGo Background Streaming
 PS4_SYSV_ABI s32 scePlayGoInitialize(const void* param);

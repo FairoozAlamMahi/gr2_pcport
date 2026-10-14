@@ -210,6 +210,143 @@ PS4_SYSV_ABI s32 sceNetShutdown(s32 s, s32 how) {
     return 0;
 }
 
+static thread_local s32 t_sce_net_errno = 0;
+static std::atomic<s32> s_next_sock_fd{100};
+
+PS4_SYSV_ABI s32* sceNetErrnoLoc() {
+    return &t_sce_net_errno;
+}
+
+PS4_SYSV_ABI u16 sceNetHtons(u16 host16) {
+    return (host16 << 8) | (host16 >> 8);
+}
+
+PS4_SYSV_ABI u16 sceNetNtohs(u16 net16) {
+    return (net16 << 8) | (net16 >> 8);
+}
+
+PS4_SYSV_ABI s32 sceNetInetPton(s32 af, const char* src, void* dst) {
+    if (!src || !dst) return -1;
+    int family = (af == 2) ? AF_INET : AF_INET6;
+    int res = inet_pton(family, src, dst);
+    return res > 0 ? 1 : 0;
+}
+
+PS4_SYSV_ABI const char* sceNetInetNtop(s32 af, const void* src, char* dst, usize size) {
+    if (!src || !dst || size == 0) return nullptr;
+    int family = (af == 2) ? AF_INET : AF_INET6;
+    return inet_ntop(family, src, dst, static_cast<socklen_t>(size));
+}
+
+PS4_SYSV_ABI s32 sceNetSocket(const char* name, s32 domain, s32 type, s32 protocol) {
+    (void)name;
+    (void)domain;
+    (void)type;
+    (void)protocol;
+    s32 fd = s_next_sock_fd.fetch_add(1);
+    LOG_INFO("NET", "sceNetSocket allocated fd " + std::to_string(fd));
+    return fd;
+}
+
+PS4_SYSV_ABI s32 sceNetSocketClose(s32 s) {
+    LOG_INFO("NET", "sceNetSocketClose fd " + std::to_string(s));
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNetConnect(s32 s, const void* name, s32 namelen) {
+    (void)s;
+    (void)name;
+    (void)namelen;
+    // In offline runner mode, report connection refused so the game's PSN client
+    // cleanly falls back to offline mode without hanging.
+    t_sce_net_errno = 61; // ECONNREFUSED
+    return -1;
+}
+
+PS4_SYSV_ABI s32 sceNetSend(s32 s, const void* msg, usize len, s32 flags) {
+    (void)s;
+    (void)msg;
+    (void)flags;
+    return static_cast<s32>(len);
+}
+
+PS4_SYSV_ABI s32 sceNetRecv(s32 s, void* buf, usize len, s32 flags) {
+    (void)s;
+    (void)buf;
+    (void)len;
+    (void)flags;
+    t_sce_net_errno = 35; // EAGAIN
+    return -1;
+}
+
+PS4_SYSV_ABI s32 sceNetBind(s32 s, const void* name, s32 namelen) {
+    (void)s;
+    (void)name;
+    (void)namelen;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNetListen(s32 s, s32 backlog) {
+    (void)s;
+    (void)backlog;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNetAccept(s32 s, void* addr, s32* addrlen) {
+    (void)s;
+    (void)addr;
+    (void)addrlen;
+    t_sce_net_errno = 35; // EAGAIN
+    return -1;
+}
+
+PS4_SYSV_ABI s32 sceNetGetsockname(s32 s, void* name, s32* namelen) {
+    (void)s;
+    if (name && namelen && *namelen >= 16) {
+        std::memset(name, 0, *namelen);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNetGetpeername(s32 s, void* name, s32* namelen) {
+    (void)s;
+    if (name && namelen && *namelen >= 16) {
+        std::memset(name, 0, *namelen);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNetSetsockopt(s32 s, s32 level, s32 optname, const void* optval, s32 optlen) {
+    (void)s;
+    (void)level;
+    (void)optname;
+    (void)optval;
+    (void)optlen;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNetResolverCreate(const char* name, void* mem, usize mem_size) {
+    (void)name;
+    (void)mem;
+    (void)mem_size;
+    static std::atomic<s32> s_next_resolver{1};
+    return s_next_resolver.fetch_add(1);
+}
+
+PS4_SYSV_ABI s32 sceNetResolverAbort(s32 rid, u32 flags) {
+    (void)rid;
+    (void)flags;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNetResolverGetError(s32 rid, s32* error) {
+    (void)rid;
+    if (error) {
+        *error = 0;
+    }
+    return 0;
+}
+
 } // extern "C"
 
 } // namespace Net

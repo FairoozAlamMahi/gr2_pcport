@@ -94,6 +94,11 @@ PS4_SYSV_ABI s32 sceNpGetAccountLanguage(void* req, void* lang);
 PS4_SYSV_ABI s32 sceNpSnsFacebookCreateRequest(const void* param, void** req);
 PS4_SYSV_ABI s32 sceNpSnsFacebookDeleteRequest(void* req);
 PS4_SYSV_ABI s32 sceNpSnsFacebookGetAccessToken(void* req, void* token);
+PS4_SYSV_ABI s32 sceNpWaitAsync(s32 req_id, s32* result);
+PS4_SYSV_ABI s32 sceNpUnregisterPlusEventCallback(s32 id);
+PS4_SYSV_ABI s32 sceNpUnregisterNpReachabilityStateCallback(s32 id);
+PS4_SYSV_ABI s32 sceNpAbortRequest(s32 req_id);
+PS4_SYSV_ABI s32 sceNpGetUserIdByOnlineId(const void* online_id, void* user_id);
 
 } // extern "C"
 

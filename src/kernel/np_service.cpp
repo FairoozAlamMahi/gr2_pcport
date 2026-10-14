@@ -608,6 +608,35 @@ PS4_SYSV_ABI s32 sceNpSnsFacebookGetAccessToken(void* req, void* token) {
     return 0;
 }
 
+PS4_SYSV_ABI s32 sceNpWaitAsync(s32 req_id, s32* result) {
+    (void)req_id;
+    if (result) *result = 0;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpUnregisterPlusEventCallback(s32 id) {
+    (void)id;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpUnregisterNpReachabilityStateCallback(s32 id) {
+    (void)id;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpAbortRequest(s32 req_id) {
+    (void)req_id;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpGetUserIdByOnlineId(const void* online_id, void* user_id) {
+    (void)online_id;
+    if (user_id) {
+        *reinterpret_cast<u32*>(user_id) = 0x10000001;
+    }
+    return 0;
+}
+
 } // extern "C"
 
 } // namespace Np

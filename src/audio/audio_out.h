@@ -34,6 +34,13 @@ PS4_SYSV_ABI s32 sceAudio3dInitialize(const void* params);
 PS4_SYSV_ABI s32 sceAudio3dGetDefaultOpenParameters(void* params);
 PS4_SYSV_ABI s32 sceAudio3dPortOpen(s32 type, const void* params, s32* port_id);
 PS4_SYSV_ABI s32 sceAudio3dPortSetAttribute(s32 port, const void* attr);
+PS4_SYSV_ABI s32 sceAudio3dObjectReserve(s32 port, s32* obj_id);
+PS4_SYSV_ABI s32 sceAudio3dObjectSetAttributes(s32 port, s32 obj_id, const void* attr);
+PS4_SYSV_ABI s32 sceAudio3dObjectUnreserve(s32 port, s32 obj_id);
+PS4_SYSV_ABI s32 sceAudio3dPortAdvance(s32 port);
+PS4_SYSV_ABI s32 sceAudio3dPortClose(s32 port);
+PS4_SYSV_ABI s32 sceAudio3dPortPush(s32 port, const void* audio_data, u32 size);
+PS4_SYSV_ABI s32 sceAudio3dTerminate();
 
 // libSceNgs2
 PS4_SYSV_ABI s32 sceNgs2SystemCreateWithAllocator(const void* desc, const void* alloc, void** handle);
@@ -43,6 +50,8 @@ PS4_SYSV_ABI s32 sceNgs2RackGetVoiceHandle(void* rack, u32 voice_index, void** v
 PS4_SYSV_ABI s32 sceNgs2VoiceControl(void* voice, const void* params);
 PS4_SYSV_ABI s32 sceNgs2VoiceGetState(void* voice, void* state);
 PS4_SYSV_ABI s32 sceNgs2RackQueryBufferSize(const void* desc, usize* buffer_size);
+PS4_SYSV_ABI s32 sceNgs2SystemDestroy(void* handle);
+PS4_SYSV_ABI s32 sceNgs2RackDestroy(void* rack);
 }
 
 } // namespace Audio

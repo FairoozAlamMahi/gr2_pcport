@@ -941,6 +941,17 @@ PS4_SYSV_ABI s32 sceGnmRequestMipStatsReportAndReset(void* dcb, const void* repo
     return 0;
 }
 
+// Diagnostics & Razor Profiling Stubs
+PS4_SYSV_ABI s32 sceRazorIsLoaded() { return 0; }
+PS4_SYSV_ABI s32 sceRazorCaptureImmediate(const char* label) { (void)label; return 0; }
+PS4_SYSV_ABI s32 sceGnmDriverCaptureInProgress() { return 0; }
+PS4_SYSV_ABI s32 sceGnmDriverTraceInProgress() { return 0; }
+PS4_SYSV_ABI s32 sceGnmDriverTriggerCapture() { return 0; }
+PS4_SYSV_ABI u32 sceGnmGetEqEventType(const void* eq_event) { (void)eq_event; return 0; }
+PS4_SYSV_ABI u64 sceGnmGetEqTimeStamp(const void* eq_event) { (void)eq_event; return 0ULL; }
+PS4_SYSV_ABI u64 sceGnmGetLastWaitedAddress() { return 0ULL; }
+PS4_SYSV_ABI u64 sceGnmGetProtectionFaultTimeStamp() { return 0ULL; }
+
 } // extern "C"
 
 } // namespace GPU

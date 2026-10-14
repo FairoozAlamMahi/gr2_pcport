@@ -1472,6 +1472,15 @@ PS4_SYSV_ABI s32 sceAppContentUmount(const void* mount_point) {
     return 0;
 }
 
+PS4_SYSV_ABI s32 sceAppContentGetEntitlementKey(const void* ent_key_id, void* key_buf, usize buf_size) {
+    (void)ent_key_id;
+    if (key_buf && buf_size > 0) {
+        std::memset(key_buf, 0, buf_size);
+    }
+    LOG_INFO("APPCONTENT", "sceAppContentGetEntitlementKey called");
+    return 0;
+}
+
 PS4_SYSV_ABI s32 scePlayGoInitialize(const void* param) {
     (void)param;
     LOG_INFO("PLAYGO", "scePlayGoInitialize called");

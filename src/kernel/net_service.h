@@ -33,6 +33,25 @@ PS4_SYSV_ABI s32 sceNetEpollDestroy(s32 epoll);
 PS4_SYSV_ABI s32 sceNetEpollAbort(s32 epoll, u32 flags);
 PS4_SYSV_ABI s32 sceNetResolverStartNtoaMultipleRecords(s32 rid, const char* name, void* addrs, u32* count, u32 flags, s32 timeout, void* reserved);
 PS4_SYSV_ABI s32 sceNetShutdown(s32 s, s32 how);
+PS4_SYSV_ABI s32 sceNetSocket(const char* name, s32 domain, s32 type, s32 protocol);
+PS4_SYSV_ABI s32 sceNetSocketClose(s32 s);
+PS4_SYSV_ABI s32 sceNetConnect(s32 s, const void* name, s32 namelen);
+PS4_SYSV_ABI s32 sceNetSend(s32 s, const void* msg, usize len, s32 flags);
+PS4_SYSV_ABI s32 sceNetRecv(s32 s, void* buf, usize len, s32 flags);
+PS4_SYSV_ABI s32 sceNetBind(s32 s, const void* name, s32 namelen);
+PS4_SYSV_ABI s32 sceNetListen(s32 s, s32 backlog);
+PS4_SYSV_ABI s32 sceNetAccept(s32 s, void* addr, s32* addrlen);
+PS4_SYSV_ABI s32 sceNetGetsockname(s32 s, void* name, s32* namelen);
+PS4_SYSV_ABI s32 sceNetGetpeername(s32 s, void* name, s32* namelen);
+PS4_SYSV_ABI s32 sceNetSetsockopt(s32 s, s32 level, s32 optname, const void* optval, s32 optlen);
+PS4_SYSV_ABI u16 sceNetHtons(u16 host16);
+PS4_SYSV_ABI u16 sceNetNtohs(u16 net16);
+PS4_SYSV_ABI s32 sceNetInetPton(s32 af, const char* src, void* dst);
+PS4_SYSV_ABI const char* sceNetInetNtop(s32 af, const void* src, char* dst, usize size);
+PS4_SYSV_ABI s32* sceNetErrnoLoc();
+PS4_SYSV_ABI s32 sceNetResolverCreate(const char* name, void* mem, usize mem_size);
+PS4_SYSV_ABI s32 sceNetResolverAbort(s32 rid, u32 flags);
+PS4_SYSV_ABI s32 sceNetResolverGetError(s32 rid, s32* error);
 
 } // extern "C"
 

@@ -321,6 +321,49 @@ PS4_SYSV_ABI s32 sceAudio3dPortSetAttribute(s32 port, const void* attr) {
     return 0;
 }
 
+PS4_SYSV_ABI s32 sceAudio3dObjectReserve(s32 port, s32* obj_id) {
+    (void)port;
+    static std::atomic<s32> s_next_obj{1};
+    if (obj_id) {
+        *obj_id = s_next_obj.fetch_add(1, std::memory_order_relaxed);
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceAudio3dObjectSetAttributes(s32 port, s32 obj_id, const void* attr) {
+    (void)port;
+    (void)obj_id;
+    (void)attr;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceAudio3dObjectUnreserve(s32 port, s32 obj_id) {
+    (void)port;
+    (void)obj_id;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceAudio3dPortAdvance(s32 port) {
+    (void)port;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceAudio3dPortClose(s32 port) {
+    (void)port;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceAudio3dPortPush(s32 port, const void* audio_data, u32 size) {
+    (void)port;
+    (void)audio_data;
+    (void)size;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceAudio3dTerminate() {
+    return 0;
+}
+
 // libSceNgs2
 static u8 s_dummy_ngs2_sys[256]{};
 static u8 s_dummy_ngs2_rack[256]{};
@@ -386,6 +429,16 @@ PS4_SYSV_ABI s32 sceNgs2RackQueryBufferSize(const void* desc, usize* buffer_size
     if (buffer_size) {
         *buffer_size = 0x40000; // 256 KB safe buffer
     }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNgs2SystemDestroy(void* handle) {
+    (void)handle;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNgs2RackDestroy(void* rack) {
+    (void)rack;
     return 0;
 }
 

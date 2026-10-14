@@ -67,8 +67,8 @@ PS4_SYSV_ABI s32 sceUserServiceGetEvent(void* event) {
     if (event) {
         std::memset(event, 0, 32);
     }
-    LOG_INFO("USER", "sceUserServiceGetEvent called -> no pending events");
-    return 0;
+    // Return SCE_USER_SERVICE_ERROR_NO_EVENT (0x80960001) so the engine's event drain while-loop completes
+    return static_cast<s32>(0x80960001u);
 }
 
 } // extern "C"

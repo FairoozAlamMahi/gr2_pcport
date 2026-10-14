@@ -17,6 +17,14 @@ PS4_SYSV_ABI s32 sceNpManagerGetAccountId(void* account_id);
 PS4_SYSV_ABI s32 sceNpGetAccountId(void* arg0, void* arg1);
 PS4_SYSV_ABI s32 sceNpCheckCallback();
 PS4_SYSV_ABI s32 sceNpCheckCallbackForLib();
+PS4_SYSV_ABI s32 sceNpRegisterNpReachabilityStateCallback(const void* cb, void* arg);
+PS4_SYSV_ABI s32 sceNpRegisterStateCallbackForToolkit(const void* cb, void* arg);
+PS4_SYSV_ABI s32 sceNpUnregisterStateCallbackForToolkit(const void* cb);
+PS4_SYSV_ABI s32 sceNpCreateAsyncRequest(const void* param, s32* req_id);
+PS4_SYSV_ABI s32 sceNpCheckNpAvailability(s32 req_id);
+PS4_SYSV_ABI s32 sceNpGetParentalControlInfo(s32 req_id, void* info);
+PS4_SYSV_ABI s32 sceNpPollAsync(s32 req_id, s32* result);
+PS4_SYSV_ABI s32 sceNpDeleteRequest(s32 req_id);
 
 // libSceNpTrophy
 PS4_SYSV_ABI s32 sceNpTrophyInit(const void* opt);

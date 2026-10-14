@@ -48,6 +48,7 @@ set(SOURCES
     src/kernel/rtc_service.cpp
     src/kernel/user_service.cpp
     src/kernel/http_service.cpp
+    src/kernel/security_service.cpp
 )
 
 set(HEADERS
@@ -75,6 +76,7 @@ set(HEADERS
     src/kernel/rtc_service.h
     src/kernel/user_service.h
     src/kernel/http_service.h
+    src/kernel/security_service.h
 )
 
 add_executable(gr2_pc ${SOURCES} ${HEADERS})

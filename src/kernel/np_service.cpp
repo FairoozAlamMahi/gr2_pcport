@@ -1,6 +1,8 @@
 #include "kernel/np_service.h"
 #include "common/logger.h"
 #include <cstring>
+#include <string>
+#include <atomic>
 
 namespace Np {
 
@@ -89,6 +91,64 @@ PS4_SYSV_ABI s32 sceNpCheckCallback() {
 }
 
 PS4_SYSV_ABI s32 sceNpCheckCallbackForLib() {
+    return 0;
+}
+
+static std::atomic<s32> s_next_np_req_id{1};
+
+PS4_SYSV_ABI s32 sceNpRegisterNpReachabilityStateCallback(const void* cb, void* arg) {
+    (void)cb;
+    (void)arg;
+    LOG_INFO("NP", "sceNpRegisterNpReachabilityStateCallback: reachability callback registered");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpRegisterStateCallbackForToolkit(const void* cb, void* arg) {
+    (void)cb;
+    (void)arg;
+    LOG_INFO("NP", "sceNpRegisterStateCallbackForToolkit: toolkit state callback registered");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpUnregisterStateCallbackForToolkit(const void* cb) {
+    (void)cb;
+    LOG_INFO("NP", "sceNpUnregisterStateCallbackForToolkit: toolkit state callback unregistered");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpCreateAsyncRequest(const void* param, s32* req_id) {
+    (void)param;
+    s32 id = s_next_np_req_id.fetch_add(1, std::memory_order_relaxed);
+    if (req_id) {
+        *req_id = id;
+    }
+    LOG_INFO("NP", "sceNpCreateAsyncRequest: created async req ID " + std::to_string(id));
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpCheckNpAvailability(s32 req_id) {
+    LOG_INFO("NP", "sceNpCheckNpAvailability: req ID " + std::to_string(req_id) + " -> available");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpGetParentalControlInfo(s32 req_id, void* info) {
+    if (info) {
+        std::memset(info, 0, 64);
+    }
+    LOG_INFO("NP", "sceNpGetParentalControlInfo: req ID " + std::to_string(req_id) + " -> unrestricted");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpPollAsync(s32 req_id, s32* result) {
+    if (result) {
+        *result = 0; // Completed successfully (SCE_OK)
+    }
+    LOG_INFO("NP", "sceNpPollAsync: req ID " + std::to_string(req_id) + " -> completed (0)");
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceNpDeleteRequest(s32 req_id) {
+    LOG_INFO("NP", "sceNpDeleteRequest: req ID " + std::to_string(req_id));
     return 0;
 }
 

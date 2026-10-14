@@ -13,6 +13,7 @@
 #include "kernel/dialog_service.h"
 #include "kernel/rtc_service.h"
 #include "kernel/http_service.h"
+#include "kernel/security_service.h"
 #include "audio/audio_out.h"
 #include "gpu/gnm_driver.h"
 #include <iostream>
@@ -493,15 +494,15 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("Ik-KpLTlf7Q", reinterpret_cast<uintptr_t>(&Http::sceHttpTerm), "sceHttpTerm");
     RegisterSymbol("JBN6N-EY+3M", reinterpret_cast<uintptr_t>(&Http::sceHttpsGetSslError), "sceHttpsGetSslError");
     RegisterSymbol("htyBOoWeS58", reinterpret_cast<uintptr_t>(&Http::sceHttpsSetSslCallback), "sceHttpsSetSslCallback");
-    m_names["hMYgMP-Vuno"] = "sceLibSecureCryptographyDecrypt";
-    m_names["RsiCFJMIGHw"] = "sceLibSecureCryptographyDeleteContext";
-    m_names["aEoi0u2FOiQ"] = "sceLibSecureCryptographyEncrypt";
-    m_names["pT4ViD0o-bM"] = "sceLibSecureCryptographyGetContextSize";
-    m_names["XKDzFiGAvhU"] = "sceLibSecureCryptographyMessagePadding";
-    m_names["NpcegFLFQpg"] = "sceLibSecureCryptographyMessagePaddingSize";
-    m_names["hyfPWjJB8pI"] = "sceLibSecureCryptographySetContext";
-    m_names["t4lnn4rB+U0"] = "sceLibSecureDestroy";
-    m_names["fIqNvkKIUPQ"] = "sceLibSecureInit";
+    RegisterSymbol("fIqNvkKIUPQ", reinterpret_cast<uintptr_t>(&Security::sceLibSecureInit), "sceLibSecureInit");
+    RegisterSymbol("t4lnn4rB+U0", reinterpret_cast<uintptr_t>(&Security::sceLibSecureDestroy), "sceLibSecureDestroy");
+    RegisterSymbol("pT4ViD0o-bM", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographyGetContextSize), "sceLibSecureCryptographyGetContextSize");
+    RegisterSymbol("hyfPWjJB8pI", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographySetContext), "sceLibSecureCryptographySetContext");
+    RegisterSymbol("aEoi0u2FOiQ", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographyEncrypt), "sceLibSecureCryptographyEncrypt");
+    RegisterSymbol("hMYgMP-Vuno", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographyDecrypt), "sceLibSecureCryptographyDecrypt");
+    RegisterSymbol("RsiCFJMIGHw", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographyDeleteContext), "sceLibSecureCryptographyDeleteContext");
+    RegisterSymbol("XKDzFiGAvhU", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographyMessagePadding), "sceLibSecureCryptographyMessagePadding");
+    RegisterSymbol("NpcegFLFQpg", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographyMessagePaddingSize), "sceLibSecureCryptographyMessagePaddingSize");
     RegisterSymbol("iQw3iQPhvUQ", reinterpret_cast<uintptr_t>(&Net::sceNetCtlCheckCallback), "sceNetCtlCheckCallback");
     RegisterSymbol("0cBgduPRR+M", reinterpret_cast<uintptr_t>(&Net::sceNetCtlGetResult), "sceNetCtlGetResult");
     RegisterSymbol("uBPlr0lbuiI", reinterpret_cast<uintptr_t>(&Net::sceNetCtlGetState), "sceNetCtlGetState");
@@ -565,11 +566,11 @@ void NidTable::RegisterHostSubsystems() {
     m_names["OzKvTvg3ZYU"] = "sceNpAbortRequest";
     RegisterSymbol("3Zl8BePTh9Y", reinterpret_cast<uintptr_t>(&Np::sceNpCheckCallback), "sceNpCheckCallback");
     RegisterSymbol("JELHf4xPufo", reinterpret_cast<uintptr_t>(&Np::sceNpCheckCallbackForLib), "sceNpCheckCallbackForLib");
-    m_names["2rsFmlGWleQ"] = "sceNpCheckNpAvailability";
-    m_names["eiqMCt9UshI"] = "sceNpCreateAsyncRequest";
+    RegisterSymbol("2rsFmlGWleQ", reinterpret_cast<uintptr_t>(&Np::sceNpCheckNpAvailability), "sceNpCheckNpAvailability");
+    RegisterSymbol("eiqMCt9UshI", reinterpret_cast<uintptr_t>(&Np::sceNpCreateAsyncRequest), "sceNpCreateAsyncRequest");
     RegisterSymbol("a8R9-75u4iM", reinterpret_cast<uintptr_t>(&Np::sceNpGetAccountId), "sceNpGetAccountId");
     RegisterSymbol("p-o74CnoNzY", reinterpret_cast<uintptr_t>(&Np::sceNpGetNpId), "sceNpGetNpId");
-    m_names["ilwLM4zOmu4"] = "sceNpGetParentalControlInfo";
+    RegisterSymbol("ilwLM4zOmu4", reinterpret_cast<uintptr_t>(&Np::sceNpGetParentalControlInfo), "sceNpGetParentalControlInfo");
     RegisterSymbol("eQH7nWPcAgc", reinterpret_cast<uintptr_t>(&Np::sceNpGetState), "sceNpGetState");
     m_names["F6E4ycq9Dbg"] = "sceNpGetUserIdByOnlineId";
     m_names["s4UEa5iBJdc"] = "sceNpInGameMessageCreateHandle";
@@ -578,14 +579,14 @@ void NidTable::RegisterHostSubsystems() {
     m_names["Vh1bhUG6mSs"] = "sceNpInGameMessagePrepare";
     m_names["ON7Sf5XEMmI"] = "sceNpInGameMessageSendData";
     m_names["bMG3cVmUmuk"] = "sceNpInGameMessageTerminate";
-    m_names["uqcPJLWL08M"] = "sceNpPollAsync";
-    m_names["hw5KNqAAels"] = "sceNpRegisterNpReachabilityStateCallback";
-    m_names["0c7HbXRKUt4"] = "sceNpRegisterStateCallbackForToolkit";
+    RegisterSymbol("uqcPJLWL08M", reinterpret_cast<uintptr_t>(&Np::sceNpPollAsync), "sceNpPollAsync");
+    RegisterSymbol("hw5KNqAAels", reinterpret_cast<uintptr_t>(&Np::sceNpRegisterNpReachabilityStateCallback), "sceNpRegisterNpReachabilityStateCallback");
+    RegisterSymbol("0c7HbXRKUt4", reinterpret_cast<uintptr_t>(&Np::sceNpRegisterStateCallbackForToolkit), "sceNpRegisterStateCallbackForToolkit");
     m_names["A2CQ3kgSopQ"] = "sceNpSetContentRestriction";
     m_names["Ec63y59l9tw"] = "sceNpSetNpTitleId";
     m_names["cRILAEvn+9M"] = "sceNpUnregisterNpReachabilityStateCallback";
     m_names["xViqJdDgKl0"] = "sceNpUnregisterPlusEventCallback";
-    m_names["YIvqqvJyjEc"] = "sceNpUnregisterStateCallbackForToolkit";
+    RegisterSymbol("YIvqqvJyjEc", reinterpret_cast<uintptr_t>(&Np::sceNpUnregisterStateCallbackForToolkit), "sceNpUnregisterStateCallbackForToolkit");
     m_names["jyi5p9XWUSs"] = "sceNpWaitAsync";
 
     // ===== libSceNpWebApi.sprx.json (23 symbols) =====
@@ -988,7 +989,7 @@ void NidTable::RegisterHostSubsystems() {
 
     // ===== libSceNpEulaDialog.sprx.json (4 symbols) =====
     m_names["GpLQDNKICac"] = "sceNpCreateRequest";
-    m_names["S7QTn72PrDw"] = "sceNpDeleteRequest";
+    RegisterSymbol("S7QTn72PrDw", reinterpret_cast<uintptr_t>(&Np::sceNpDeleteRequest), "sceNpDeleteRequest");
     m_names["Ghz9iWDUtC4"] = "sceNpGetAccountCountry";
     m_names["KZ1Mj9yEGYc"] = "sceNpGetAccountLanguage";
 
@@ -1175,6 +1176,17 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("sceGnmDrawIndirect", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndirect), "sceGnmDrawIndirect");
     RegisterSymbol("sceGnmDrawIndexIndirect", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndexIndirect), "sceGnmDrawIndexIndirect");
     RegisterSymbol("sceGnmDrawIndexMultiInstanced", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndexMultiInstanced), "sceGnmDrawIndexMultiInstanced");
+
+    // ===== Security Named Registrations =====
+    RegisterSymbol("sceLibSecureInit", reinterpret_cast<uintptr_t>(&Security::sceLibSecureInit), "sceLibSecureInit");
+    RegisterSymbol("sceLibSecureDestroy", reinterpret_cast<uintptr_t>(&Security::sceLibSecureDestroy), "sceLibSecureDestroy");
+    RegisterSymbol("sceLibSecureCryptographyGetContextSize", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographyGetContextSize), "sceLibSecureCryptographyGetContextSize");
+    RegisterSymbol("sceLibSecureCryptographySetContext", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographySetContext), "sceLibSecureCryptographySetContext");
+    RegisterSymbol("sceLibSecureCryptographyEncrypt", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographyEncrypt), "sceLibSecureCryptographyEncrypt");
+    RegisterSymbol("sceLibSecureCryptographyDecrypt", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographyDecrypt), "sceLibSecureCryptographyDecrypt");
+    RegisterSymbol("sceLibSecureCryptographyDeleteContext", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographyDeleteContext), "sceLibSecureCryptographyDeleteContext");
+    RegisterSymbol("sceLibSecureCryptographyMessagePadding", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographyMessagePadding), "sceLibSecureCryptographyMessagePadding");
+    RegisterSymbol("sceLibSecureCryptographyMessagePaddingSize", reinterpret_cast<uintptr_t>(&Security::sceLibSecureCryptographyMessagePaddingSize), "sceLibSecureCryptographyMessagePaddingSize");
 
     LOG_INFO("NID", "Registered " + std::to_string(m_symbols.size()) + " native host API symbols and " +
              std::to_string(m_names.size()) + " named API stubs.");

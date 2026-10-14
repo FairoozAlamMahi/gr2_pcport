@@ -30,13 +30,18 @@ PS4_SYSV_ABI s32 sceFontMemoryTerm(void* font_memory) {
     return 0;
 }
 
+static inline bool IsValidUserPointer(void* p) {
+    uintptr_t addr = reinterpret_cast<uintptr_t>(p);
+    return (addr >= 0x10000 && addr < 0x0000800000000000ULL);
+}
+
 PS4_SYSV_ABI s32 sceFontSelectLibraryFt(void* arg0, void* arg1, void* arg2, void* arg3) {
     (void)arg2;
     (void)arg3;
-    if (arg0) {
+    if (IsValidUserPointer(arg0)) {
         *reinterpret_cast<uintptr_t*>(arg0) = 1;
     }
-    if (arg1) {
+    if (IsValidUserPointer(arg1)) {
         *reinterpret_cast<uintptr_t*>(arg1) = 1;
     }
     LOG_INFO("FONT", "sceFontSelectLibraryFt: FreeType library backend selected");
@@ -48,7 +53,7 @@ PS4_SYSV_ABI s32 sceFontCreateLibraryWithEdition(void* memory, void* selection, 
     (void)selection;
     (void)edition;
     u32 handle = s_next_handle.fetch_add(1);
-    if (pLibrary) {
+    if (IsValidUserPointer(pLibrary)) {
         *pLibrary = reinterpret_cast<void*>(static_cast<uintptr_t>(handle));
     }
     LOG_INFO("FONT", "sceFontCreateLibraryWithEdition: created font library handle " + std::to_string(handle));
@@ -56,7 +61,7 @@ PS4_SYSV_ABI s32 sceFontCreateLibraryWithEdition(void* memory, void* selection, 
 }
 
 PS4_SYSV_ABI s32 sceFontDestroyLibrary(void** pLibrary) {
-    if (pLibrary) {
+    if (IsValidUserPointer(pLibrary)) {
         *pLibrary = nullptr;
     }
     return 0;
@@ -69,13 +74,18 @@ PS4_SYSV_ABI s32 sceFontSupportExternalFonts(void* library, u32 font_max, u32 fo
 }
 
 PS4_SYSV_ABI s32 sceFontSelectRendererFt(void* arg0, void* arg1, void* arg2, void* arg3) {
+    (void)arg0;
+    (void)arg1;
     (void)arg2;
     (void)arg3;
-    if (arg0) {
+    if (IsValidUserPointer(arg0)) {
         *reinterpret_cast<uintptr_t*>(arg0) = 1;
     }
-    if (arg1) {
+    if (IsValidUserPointer(arg1)) {
         *reinterpret_cast<uintptr_t*>(arg1) = 1;
+    }
+    if (IsValidUserPointer(arg3)) {
+        *reinterpret_cast<uintptr_t*>(arg3) = 1;
     }
     LOG_INFO("FONT", "sceFontSelectRendererFt: FreeType renderer backend selected");
     return 0;
@@ -86,7 +96,7 @@ PS4_SYSV_ABI s32 sceFontCreateRendererWithEdition(void* memory, void* selection,
     (void)selection;
     (void)edition;
     u32 handle = s_next_handle.fetch_add(1);
-    if (pRenderer) {
+    if (IsValidUserPointer(pRenderer)) {
         *pRenderer = reinterpret_cast<void*>(static_cast<uintptr_t>(handle));
     }
     LOG_INFO("FONT", "sceFontCreateRendererWithEdition: created renderer handle " + std::to_string(handle));
@@ -94,23 +104,23 @@ PS4_SYSV_ABI s32 sceFontCreateRendererWithEdition(void* memory, void* selection,
 }
 
 PS4_SYSV_ABI s32 sceFontDestroyRenderer(void** pRenderer) {
-    if (pRenderer) {
+    if (IsValidUserPointer(pRenderer)) {
         *pRenderer = nullptr;
     }
     return 0;
 }
 
 PS4_SYSV_ABI s32 sceFontGetPixelResolution(void* arg0, void* arg1, void* arg2) {
-    if (arg0) {
+    if (IsValidUserPointer(arg0)) {
         float* f0 = static_cast<float*>(arg0);
         f0[0] = 72.0f;
         f0[1] = 72.0f;
     }
-    if (arg1) {
+    if (IsValidUserPointer(arg1)) {
         float* f1 = static_cast<float*>(arg1);
         f1[0] = 72.0f;
     }
-    if (arg2) {
+    if (IsValidUserPointer(arg2)) {
         float* f2 = static_cast<float*>(arg2);
         f2[0] = 72.0f;
     }
@@ -121,9 +131,9 @@ PS4_SYSV_ABI s32 sceFontOpenFontMemory(void* library, void* font_address, u32 fo
     (void)library;
     (void)font_address;
     u32 handle = s_next_handle.fetch_add(1);
-    if (pFontHandle) {
+    if (IsValidUserPointer(pFontHandle)) {
         *pFontHandle = reinterpret_cast<void*>(static_cast<uintptr_t>(handle));
-    } else if (detail) {
+    } else if (IsValidUserPointer(detail)) {
         *reinterpret_cast<uintptr_t*>(detail) = handle;
     }
     LOG_INFO("FONT", "sceFontOpenFontMemory: opened font handle " + std::to_string(handle) + 
@@ -165,7 +175,7 @@ PS4_SYSV_ABI s32 sceFontSetupRenderScalePixel(void* font_handle, float w, float 
 
 PS4_SYSV_ABI s32 sceFontGetHorizontalLayout(void* arg0, void* arg1) {
     void* target = arg1 ? arg1 : arg0;
-    if (target) {
+    if (IsValidUserPointer(target)) {
         float* f = static_cast<float*>(target);
         f[0] = 18.0f; // BaseLineY
         f[1] = 24.0f; // LineHeight
@@ -178,7 +188,7 @@ PS4_SYSV_ABI s32 sceFontGetHorizontalLayout(void* arg0, void* arg1) {
 PS4_SYSV_ABI s32 sceFontGetCharGlyphMetrics(void* font_handle, u32 code, void* metrics) {
     (void)font_handle;
     (void)code;
-    if (metrics) {
+    if (IsValidUserPointer(metrics)) {
         float* f = static_cast<float*>(metrics);
         f[0] = 16.0f; // width
         f[1] = 16.0f; // height
@@ -194,7 +204,7 @@ PS4_SYSV_ABI s32 sceFontGetRenderScaledKerning(void* font_handle, u32 pre_code, 
     (void)font_handle;
     (void)pre_code;
     (void)code;
-    if (kerning) {
+    if (IsValidUserPointer(kerning)) {
         float* f = static_cast<float*>(kerning);
         f[0] = 0.0f; // offset_x
         f[1] = 0.0f; // offset_y
@@ -219,7 +229,7 @@ PS4_SYSV_ABI s32 sceFontRenderCharGlyphImageHorizontal(void* font_handle, u32 co
     (void)surf;
     (void)x;
     (void)y;
-    if (metrics) {
+    if (IsValidUserPointer(metrics)) {
         float* f = static_cast<float*>(metrics);
         f[0] = 16.0f;
         f[1] = 16.0f;
@@ -228,7 +238,7 @@ PS4_SYSV_ABI s32 sceFontRenderCharGlyphImageHorizontal(void* font_handle, u32 co
         f[4] = 16.0f;
         f[5] = 0.0f;
     }
-    if (result) {
+    if (IsValidUserPointer(result)) {
         *reinterpret_cast<u32*>(result) = 0;
     }
     return 0;

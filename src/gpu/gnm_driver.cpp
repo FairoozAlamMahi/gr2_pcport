@@ -3,6 +3,7 @@
 #include "memory/vm.h"
 #include "common/logger.h"
 #include <mutex>
+#include <atomic>
 #include <string>
 #include <algorithm>
 #include <vector>
@@ -179,10 +180,11 @@ enum PM4Type3Opcode : u32 {
     IT_DISPATCH_INDIRECT = 0x16,
     IT_SET_PREDICATION = 0x20,
     IT_DRAW_INDEX_2 = 0x27,
-    IT_DRAW_INDEX_INDIRECT = 0x28,
+    IT_DRAW_INDEX = 0x28,
     IT_INDEX_TYPE = 0x2A,
     IT_DRAW_INDEX_AUTO = 0x2D,
     IT_DRAW_INDEX_OFFSET_2 = 0x35,
+    IT_WRITE_DATA = 0x37,
     IT_WAIT_REG_MEM = 0x3C,
     IT_INDIRECT_BUFFER = 0x3F,
     IT_EVENT_WRITE = 0x46,
@@ -211,6 +213,11 @@ static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, co
 
     MEMORY_BASIC_INFORMATION mbi{};
     if (VirtualQuery(raw_ptr, &mbi, sizeof(mbi)) == 0 || mbi.State != MEM_COMMIT) {
+        if (s_submitted_dcbs <= 20) {
+            LOG_WARN("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                     "] Buffer not committed: VA 0x" + ToHex(uaddr) + " raw=0x" + 
+                     ToHex(reinterpret_cast<uintptr_t>(raw_ptr)) + " size=" + std::to_string(size_in_bytes));
+        }
         return;
     }
 
@@ -365,8 +372,48 @@ static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, co
                     }
                     break;
                 }
-                default:
+                case IT_DRAW_INDEX: { // 0x28
+                    u32 index_count = (count >= 3) ? body[2] : ((count >= 1) ? body[0] : 0);
+                    s_stat_draw_calls++;
+                    local_draws++;
+                    LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                              "] IT_DRAW_INDEX (0x28): IndexCount: " + std::to_string(index_count));
                     break;
+                }
+                case IT_WRITE_DATA: { // 0x37
+                    if (count >= 3) {
+                        u64 dst_addr = (static_cast<u64>(body[2]) << 32) | (static_cast<u64>(body[1]) & ~0x3ULL);
+                        u32 num_words = count - 2;
+                        void* host_dest = Memory::VirtualMemoryManager::Instance().GuestToHost(dst_addr);
+                        if (host_dest) {
+                            std::memcpy(host_dest, &body[3], num_words * sizeof(u32));
+                            LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                                      "] IT_WRITE_DATA (0x37): Wrote " + std::to_string(num_words) + 
+                                      " dwords to VA 0x" + ToHex(dst_addr));
+                        }
+                    }
+                    break;
+                }
+                case IT_CLEAR_STATE: { // 0x12
+                    LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                              "] IT_CLEAR_STATE (0x12)");
+                    break;
+                }
+                case IT_ACQUIRE_MEM: { // 0x58
+                    LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                              "] IT_ACQUIRE_MEM (0x58)");
+                    break;
+                }
+                case IT_NOP: { // 0x10
+                    break;
+                }
+                default: {
+                    static std::atomic<bool> s_seen_op[256]{};
+                    if (opcode < 256 && !s_seen_op[opcode].exchange(true, std::memory_order_relaxed)) {
+                        LOG_INFO("PM4", "Encountered PM4 opcode: 0x" + ToHex(opcode) + " (count=" + std::to_string(count) + ")");
+                    }
+                    break;
+                }
             }
             idx += packet_len;
         } else if (type == 2) {
@@ -399,6 +446,10 @@ PS4_SYSV_ABI s32 sceGnmSubmitCommandBuffers(u32 count, const void* dcb_gpu_addrs
     if (dcb_gpu_addrs && dcb_sizes_in_bytes) {
         const uintptr_t* dcb_ptrs = reinterpret_cast<const uintptr_t*>(dcb_gpu_addrs);
         for (u32 i = 0; i < count; ++i) {
+            if (s_submitted_dcbs <= 20) {
+                LOG_INFO("GPU", "DCB[" + std::to_string(i) + "] addr=0x" + ToHex(dcb_ptrs[i]) + 
+                                " size=" + std::to_string(dcb_sizes_in_bytes[i]));
+            }
             DecodePM4CommandBuffer(reinterpret_cast<const void*>(dcb_ptrs[i]), dcb_sizes_in_bytes[i], "DCB", i);
         }
     }

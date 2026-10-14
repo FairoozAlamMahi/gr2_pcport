@@ -291,7 +291,6 @@ PS4_SYSV_ABI s32 scePlayGoGetLocus(s32 handle, const u32* chunk_ids, u32 num_chu
 PS4_SYSV_ABI s32 scePlayGoGetProgress(s32 handle, const u32* chunk_ids, u32 num_chunks, void* progress_array);
 
 // Save Data & Dialogs
-PS4_SYSV_ABI s32 sceSaveDataInitialize3(const void* param);
 PS4_SYSV_ABI s32 sceCommonDialogInitialize(const void* param);
 PS4_SYSV_ABI s32 sceSystemServiceHideSplashScreen();
 PS4_SYSV_ABI s32 sceAppContentInitialize(const void* param);

@@ -36,8 +36,10 @@ set(SOURCES
     src/pad/pad_handler.cpp
     src/video/video_out.cpp
     src/video/vulkan_context.cpp
+    src/video/font_service.cpp
     src/audio/audio_out.cpp
     src/gpu/gnm_driver.cpp
+    src/kernel/save_data.cpp
 )
 
 set(HEADERS
@@ -53,8 +55,10 @@ set(HEADERS
     src/pad/pad_handler.h
     src/video/video_out.h
     src/video/vulkan_context.h
+    src/video/font_service.h
     src/audio/audio_out.h
     src/gpu/gnm_driver.h
+    src/kernel/save_data.h
 )
 
 add_executable(gr2_pc ${SOURCES} ${HEADERS})

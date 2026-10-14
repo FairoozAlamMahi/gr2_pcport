@@ -46,6 +46,10 @@ static std::string ResolveGuestPath(const char* path) {
         } else if (fs::exists("game/arc0/" + sub)) {
             p = "game/arc0/" + sub;
         }
+    } else if (p.rfind("/savedata0/", 0) == 0) {
+        p = "./savedata/" + p.substr(11);
+    } else if (p.rfind("/savedata0", 0) == 0) {
+        p = "./savedata" + p.substr(10);
     } else if (p.rfind("/dev/zero", 0) == 0) {
         p = "NUL";
     }
@@ -1536,12 +1540,6 @@ PS4_SYSV_ABI s32 scePlayGoGetProgress(s32 handle, const u32* chunk_ids, u32 num_
             entries[i].installed_size = 10000000000ULL;
         }
     }
-    return 0;
-}
-
-PS4_SYSV_ABI s32 sceSaveDataInitialize3(const void* param) {
-    (void)param;
-    LOG_INFO("SAVE", "sceSaveDataInitialize3 called");
     return 0;
 }
 

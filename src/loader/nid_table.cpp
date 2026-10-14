@@ -1,8 +1,10 @@
 #include "loader/nid_table.h"
 #include "common/logger.h"
 #include "kernel/libkernel.h"
+#include "kernel/save_data.h"
 #include "pad/pad_handler.h"
 #include "video/video_out.h"
+#include "video/font_service.h"
 #include "audio/audio_out.h"
 #include "gpu/gnm_driver.h"
 #include <iostream>
@@ -159,7 +161,7 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("-RJWNMK3fC8", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoGetProgress), "scePlayGoGetProgress");
     RegisterSymbol("Uco1I0dlDi8", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoClose), "scePlayGoClose");
     RegisterSymbol("MPe0EeBGM-E", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoTerminate), "scePlayGoTerminate");
-    RegisterSymbol("TywrFKCoLGY", reinterpret_cast<uintptr_t>(&Kernel::sceSaveDataInitialize3), "sceSaveDataInitialize3");
+    RegisterSymbol("TywrFKCoLGY", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataInitialize3), "sceSaveDataInitialize3");
     RegisterSymbol("uoUpLGNkygk", reinterpret_cast<uintptr_t>(&Kernel::sceCommonDialogInitialize), "sceCommonDialogInitialize");
     RegisterSymbol("Vo5V8KAwCmk", reinterpret_cast<uintptr_t>(&Kernel::sceSystemServiceHideSplashScreen), "sceSystemServiceHideSplashScreen");
     RegisterSymbol("R9lA82OraNs", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentInitialize), "sceAppContentInitialize");
@@ -365,21 +367,21 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("GrQ9s4IrNaQ", reinterpret_cast<uintptr_t>(&Audio::sceAudioOutGetPortState), "sceAudioOutGetPortState");
     RegisterSymbol("YaaDbDwKpFM", reinterpret_cast<uintptr_t>(&Audio::sceAudio3dPortGetQueueLevel), "sceAudio3dPortGetQueueLevel");
     RegisterSymbol("i0VnXM-C9fc", reinterpret_cast<uintptr_t>(&Audio::sceNgs2SystemRender), "sceNgs2SystemRender");
-    m_names["3OdRkSjOcog"] = "sceFontBindRenderer";
-    m_names["vzHs3C8lWJk"] = "sceFontCloseFont";
-    m_names["n590hj5Oe-k"] = "sceFontCreateLibraryWithEdition";
-    m_names["WaSFJoRWXaI"] = "sceFontCreateRendererWithEdition";
-    m_names["FXP359ygujs"] = "sceFontDestroyLibrary";
-    m_names["exAxkyVLt0s"] = "sceFontDestroyRenderer";
-    m_names["imxVx8lm+KM"] = "sceFontGetHorizontalLayout";
-    m_names["whrS4oksXc4"] = "sceFontMemoryInit";
-    m_names["h6hIgxXEiEc"] = "sceFontMemoryTerm";
-    m_names["gdUCnU0gHdI"] = "sceFontRenderSurfaceInit";
-    m_names["oM+XCzVG3oM"] = "sceFontSelectLibraryFt";
-    m_names["Xx974EW-QFY"] = "sceFontSelectRendererFt";
-    m_names["6vGCkkQJOcI"] = "sceFontSetupRenderScalePixel";
-    m_names["mz2iTY0MK4A"] = "sceFontSupportExternalFonts";
-    m_names["1QjhKxrsOB8"] = "sceFontUnbindRenderer";
+    RegisterSymbol("3OdRkSjOcog", reinterpret_cast<uintptr_t>(&Font::sceFontBindRenderer), "sceFontBindRenderer");
+    RegisterSymbol("vzHs3C8lWJk", reinterpret_cast<uintptr_t>(&Font::sceFontCloseFont), "sceFontCloseFont");
+    RegisterSymbol("n590hj5Oe-k", reinterpret_cast<uintptr_t>(&Font::sceFontCreateLibraryWithEdition), "sceFontCreateLibraryWithEdition");
+    RegisterSymbol("WaSFJoRWXaI", reinterpret_cast<uintptr_t>(&Font::sceFontCreateRendererWithEdition), "sceFontCreateRendererWithEdition");
+    RegisterSymbol("FXP359ygujs", reinterpret_cast<uintptr_t>(&Font::sceFontDestroyLibrary), "sceFontDestroyLibrary");
+    RegisterSymbol("exAxkyVLt0s", reinterpret_cast<uintptr_t>(&Font::sceFontDestroyRenderer), "sceFontDestroyRenderer");
+    RegisterSymbol("imxVx8lm+KM", reinterpret_cast<uintptr_t>(&Font::sceFontGetHorizontalLayout), "sceFontGetHorizontalLayout");
+    RegisterSymbol("whrS4oksXc4", reinterpret_cast<uintptr_t>(&Font::sceFontMemoryInit), "sceFontMemoryInit");
+    RegisterSymbol("h6hIgxXEiEc", reinterpret_cast<uintptr_t>(&Font::sceFontMemoryTerm), "sceFontMemoryTerm");
+    RegisterSymbol("gdUCnU0gHdI", reinterpret_cast<uintptr_t>(&Font::sceFontRenderSurfaceInit), "sceFontRenderSurfaceInit");
+    RegisterSymbol("oM+XCzVG3oM", reinterpret_cast<uintptr_t>(&Font::sceFontSelectLibraryFt), "sceFontSelectLibraryFt");
+    RegisterSymbol("Xx974EW-QFY", reinterpret_cast<uintptr_t>(&Font::sceFontSelectRendererFt), "sceFontSelectRendererFt");
+    RegisterSymbol("6vGCkkQJOcI", reinterpret_cast<uintptr_t>(&Font::sceFontSetupRenderScalePixel), "sceFontSetupRenderScalePixel");
+    RegisterSymbol("mz2iTY0MK4A", reinterpret_cast<uintptr_t>(&Font::sceFontSupportExternalFonts), "sceFontSupportExternalFonts");
+    RegisterSymbol("1QjhKxrsOB8", reinterpret_cast<uintptr_t>(&Font::sceFontUnbindRenderer), "sceFontUnbindRenderer");
     m_names["b0xyllnVY-I"] = "sceGnmAddEqEvent";
     m_names["b08AgtPlHPg"] = "sceGnmAreSubmitsAllowed";
     m_names["ihxrbsoSKWc"] = "sceGnmBeginWorkload";
@@ -763,15 +765,15 @@ void NidTable::RegisterHostSubsystems() {
     m_names["WW1TS2iz5yc"] = "sceAudio3dTerminate";
 
     // ===== libSceSaveData.sprx.json (9 symbols) =====
-    m_names["S1GkePI17zQ"] = "sceSaveDataDelete";
-    m_names["dyIhnXq-0SM"] = "sceSaveDataDirNameSearch";
-    m_names["TywrFKCoLGY"] = "sceSaveDataInitialize3";
-    m_names["0z45PIH+SNI"] = "sceSaveDataMount2";
-    m_names["c88Yy54Mx0w"] = "sceSaveDataSaveIcon";
-    m_names["85zul--eGXs"] = "sceSaveDataSetParam";
-    m_names["yKDy8S5yLA0"] = "sceSaveDataTerminate";
-    m_names["WAzWTZm1H+I"] = "sceSaveDataTransferringMount";
-    m_names["BMR4F-Uek3E"] = "sceSaveDataUmount";
+    RegisterSymbol("S1GkePI17zQ", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataDelete), "sceSaveDataDelete");
+    RegisterSymbol("dyIhnXq-0SM", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataDirNameSearch), "sceSaveDataDirNameSearch");
+    RegisterSymbol("TywrFKCoLGY", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataInitialize3), "sceSaveDataInitialize3");
+    RegisterSymbol("0z45PIH+SNI", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataMount2), "sceSaveDataMount2");
+    RegisterSymbol("c88Yy54Mx0w", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataSaveIcon), "sceSaveDataSaveIcon");
+    RegisterSymbol("85zul--eGXs", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataSetParam), "sceSaveDataSetParam");
+    RegisterSymbol("yKDy8S5yLA0", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataTerminate), "sceSaveDataTerminate");
+    RegisterSymbol("WAzWTZm1H+I", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataTransferringMount), "sceSaveDataTransferringMount");
+    RegisterSymbol("BMR4F-Uek3E", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataUmount), "sceSaveDataUmount");
 
     // ===== libSceContentSearch.sprx.json (9 symbols) =====
     m_names["-YbpaF0XS-I"] = "sceContentSearchCloseMetadata";
@@ -796,14 +798,14 @@ void NidTable::RegisterHostSubsystems() {
     m_names["bwFjS+bX9mA"] = "sceUserServiceTerminate";
 
     // ===== libSceSaveDataDialog.sprx.json (8 symbols) =====
-    m_names["fH46Lag88XY"] = "sceSaveDataDialogClose";
-    m_names["yEiJ-qqr6Cg"] = "sceSaveDataDialogGetResult";
-    m_names["ERKzksauAJA"] = "sceSaveDataDialogGetStatus";
-    m_names["s9e3+YpRnzw"] = "sceSaveDataDialogInitialize";
-    m_names["4tPhsP6FpDI"] = "sceSaveDataDialogOpen";
-    m_names["hay1CfTmLyA"] = "sceSaveDataDialogProgressBarSetValue";
-    m_names["YuH2FA7azqQ"] = "sceSaveDataDialogTerminate";
-    m_names["KK3Bdg1RWK0"] = "sceSaveDataDialogUpdateStatus";
+    RegisterSymbol("fH46Lag88XY", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataDialogClose), "sceSaveDataDialogClose");
+    RegisterSymbol("yEiJ-qqr6Cg", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataDialogGetResult), "sceSaveDataDialogGetResult");
+    RegisterSymbol("ERKzksauAJA", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataDialogGetStatus), "sceSaveDataDialogGetStatus");
+    RegisterSymbol("s9e3+YpRnzw", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataDialogInitialize), "sceSaveDataDialogInitialize");
+    RegisterSymbol("4tPhsP6FpDI", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataDialogOpen), "sceSaveDataDialogOpen");
+    RegisterSymbol("hay1CfTmLyA", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataDialogProgressBarSetValue), "sceSaveDataDialogProgressBarSetValue");
+    RegisterSymbol("YuH2FA7azqQ", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataDialogTerminate), "sceSaveDataDialogTerminate");
+    RegisterSymbol("KK3Bdg1RWK0", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataDialogUpdateStatus), "sceSaveDataDialogUpdateStatus");
 
     // ===== libSceNet.sprx.json (8 symbols) =====
     m_names["PIWqhn9oSxc"] = "sceNetAccept";
@@ -865,12 +867,12 @@ void NidTable::RegisterHostSubsystems() {
     m_names["6fIC3XKt2k0"] = "sceMsgDialogUpdateStatus";
 
     // ===== libSceFont.sprx.json (6 symbols) =====
-    m_names["L97d+3OgMlE"] = "sceFontGetCharGlyphMetrics";
-    m_names["BozJej5T6fs"] = "sceFontGetPixelResolution";
-    m_names["ryPlnDDI3rU"] = "sceFontGetRenderScaledKerning";
-    m_names["KXUpebrFk1U"] = "sceFontOpenFontMemory";
-    m_names["kAenWy1Zw5o"] = "sceFontRenderCharGlyphImageHorizontal";
-    m_names["N1EBMeGhf7E"] = "sceFontSetScalePixel";
+    RegisterSymbol("L97d+3OgMlE", reinterpret_cast<uintptr_t>(&Font::sceFontGetCharGlyphMetrics), "sceFontGetCharGlyphMetrics");
+    RegisterSymbol("BozJej5T6fs", reinterpret_cast<uintptr_t>(&Font::sceFontGetPixelResolution), "sceFontGetPixelResolution");
+    RegisterSymbol("ryPlnDDI3rU", reinterpret_cast<uintptr_t>(&Font::sceFontGetRenderScaledKerning), "sceFontGetRenderScaledKerning");
+    RegisterSymbol("KXUpebrFk1U", reinterpret_cast<uintptr_t>(&Font::sceFontOpenFontMemory), "sceFontOpenFontMemory");
+    RegisterSymbol("kAenWy1Zw5o", reinterpret_cast<uintptr_t>(&Font::sceFontRenderCharGlyphImageHorizontal), "sceFontRenderCharGlyphImageHorizontal");
+    RegisterSymbol("N1EBMeGhf7E", reinterpret_cast<uintptr_t>(&Font::sceFontSetScalePixel), "sceFontSetScalePixel");
 
     // ===== libSceSigninDialog.sprx.json (6 symbols) =====
     m_names["M3OkENHcyiU"] = "sceSigninDialogClose";

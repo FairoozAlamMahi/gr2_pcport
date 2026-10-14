@@ -1417,15 +1417,19 @@ PS4_SYSV_ABI s32 sceSystemServiceParamGetInt(s32 param_id, s32* out_val) {
 
 PS4_SYSV_ABI s32 sceSystemServiceGetStatus(void* status) {
     if (status) {
-        std::memset(status, 0, 64); // 0 events pending
+        std::memset(status, 0, 64);
+        *reinterpret_cast<s32*>(status) = 0;
     }
+    LOG_INFO("SYS", "sceSystemServiceGetStatus called -> status 0");
     return 0;
 }
 
 PS4_SYSV_ABI s32 sceSystemServiceReceiveEvent(void* event) {
     if (event) {
         std::memset(event, 0, 64);
+        *reinterpret_cast<s32*>(event) = 0;
     }
+    LOG_INFO("SYS", "sceSystemServiceReceiveEvent called -> event 0");
     return 0;
 }
 
@@ -1443,60 +1447,22 @@ PS4_SYSV_ABI s32 sceAppContentGetAddcontInfoList(s32 a, s32 b, s32 c, u32* out_c
     return 0;
 }
 
-PS4_SYSV_ABI s32 sceUserServiceGetEvent(void* event) {
-    return static_cast<s32>(0x80960002); // SCE_USER_SERVICE_ERROR_NO_EVENT
+PS4_SYSV_ABI s32 sceAppContentAddContIdList(const void* list) {
+    (void)list;
+    LOG_INFO("APPCONTENT", "sceAppContentAddContIdList called");
+    return 0;
 }
 
-PS4_SYSV_ABI s32 sceUserServiceInitialize(const void* param) {
+PS4_SYSV_ABI s32 sceAppContentMount(const void* param, void* mount_point) {
     (void)param;
-    LOG_INFO("USER", "sceUserServiceInitialize called");
+    (void)mount_point;
+    LOG_INFO("APPCONTENT", "sceAppContentMount called");
     return 0;
 }
 
-PS4_SYSV_ABI s32 sceUserServiceTerminate() {
-    LOG_INFO("USER", "sceUserServiceTerminate called");
-    return 0;
-}
-
-PS4_SYSV_ABI s32 sceUserServiceGetInitialUser(s32* user_id) {
-    if (user_id) *user_id = 1; // Primary user ID
-    return 0;
-}
-
-PS4_SYSV_ABI s32 sceUserServiceGetLoginUserIdList(s32* user_ids) {
-    if (user_ids) {
-        user_ids[0] = 1;
-        user_ids[1] = -1;
-        user_ids[2] = -1;
-        user_ids[3] = -1;
-    }
-    return 0;
-}
-
-PS4_SYSV_ABI s32 sceUserServiceGetUserName(s32 user_id, char* name, usize size) {
-    (void)user_id;
-    if (name && size > 0) {
-        strncpy_s(name, size, "Player", _TRUNCATE);
-    }
-    return 0;
-}
-
-PS4_SYSV_ABI s32 sceRtcGetCurrentNetworkTick(void* tick_out) {
-    if (tick_out) {
-        u64 us = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
-        *reinterpret_cast<u64*>(tick_out) = us;
-    }
-    return 0;
-}
-
-PS4_SYSV_ABI s32 sceRtcGetTick(const void* time, void* tick_out) {
-    (void)time;
-    if (tick_out) {
-        u64 us = std::chrono::duration_cast<std::chrono::microseconds>(
-            std::chrono::system_clock::now().time_since_epoch()).count();
-        *reinterpret_cast<u64*>(tick_out) = us;
-    }
+PS4_SYSV_ABI s32 sceAppContentUmount(const void* mount_point) {
+    (void)mount_point;
+    LOG_INFO("APPCONTENT", "sceAppContentUmount called");
     return 0;
 }
 

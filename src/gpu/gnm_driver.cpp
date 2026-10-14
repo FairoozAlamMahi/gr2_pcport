@@ -277,6 +277,14 @@ static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, co
                               "] IT_DRAW_INDEX_2 (0x27): IndexCount: " + std::to_string(index_count));
                     break;
                 }
+                case IT_DRAW_INDEX_OFFSET_2: { // 0x35
+                    u32 index_count = (count >= 1) ? body[0] : 0;
+                    s_stat_draw_calls++;
+                    local_draws++;
+                    LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                              "] IT_DRAW_INDEX_OFFSET_2 (0x35): IndexCount: " + std::to_string(index_count));
+                    break;
+                }
                 case IT_INDEX_TYPE: { // 0x2A
                     u32 index_type = body[0] & 0x3;
                     LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
@@ -341,14 +349,6 @@ static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, co
                 case IT_WAIT_REG_MEM: { // 0x3C
                     LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
                               "] IT_WAIT_REG_MEM (0x3C)");
-                    break;
-                }
-                case IT_DRAW_INDEX_OFFSET_2: { // 0x35
-                    u32 index_count = (count >= 1) ? body[0] : 0;
-                    s_stat_draw_calls++;
-                    local_draws++;
-                    LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
-                              "] IT_DRAW_INDEX_OFFSET_2 (0x35): IndexCount: " + std::to_string(index_count));
                     break;
                 }
                 case IT_INDIRECT_BUFFER: { // 0x3F
@@ -619,6 +619,98 @@ PS4_SYSV_ABI void* sceGnmGetTheTessellationFactorRingBufferBaseAddress() {
                  ToHex(reinterpret_cast<uintptr_t>(s_tessellation_ring_buffer)));
     }
     return s_tessellation_ring_buffer;
+}
+
+PS4_SYSV_ABI s32 sceGnmAreSubmitsAllowed() {
+    return 1;
+}
+
+PS4_SYSV_ABI s32 sceGnmBeginWorkload(void* arg0, void* arg1, void* arg2) {
+    (void)arg0;
+    (void)arg1;
+    (void)arg2;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmEndWorkload(void* arg0, void* arg1, void* arg2) {
+    (void)arg0;
+    (void)arg1;
+    (void)arg2;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmAddEqEvent(void* arg0, void* arg1) {
+    (void)arg0;
+    (void)arg1;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmDeleteEqEvent(void* arg0) {
+    (void)arg0;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmGetGpuBlockStatus(void* arg0, void* arg1) {
+    (void)arg0;
+    (void)arg1;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmDrawIndex(void* dcb, u32 num_dwords, u32 index_count, const void* index_addr, u32 flags) {
+    if (dcb && num_dwords >= 4) {
+        u32* cmdbuf = static_cast<u32*>(dcb);
+        uintptr_t addr = reinterpret_cast<uintptr_t>(index_addr);
+        cmdbuf[0] = (3U << 30) | (3U << 16) | (IT_DRAW_INDEX_2 << 8); // 0x27
+        cmdbuf[1] = static_cast<u32>(addr);
+        cmdbuf[2] = static_cast<u32>(addr >> 32);
+        cmdbuf[3] = index_count;
+        if (num_dwords > 4) cmdbuf[4] = flags;
+        for (u32 i = 5; i < num_dwords; ++i) {
+            cmdbuf[i] = (3U << 30) | (0U << 16) | (IT_NOP << 8);
+        }
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmDrawIndexOffset(void* dcb, u32 num_dwords, u32 index_count, u32 offset, u32 flags) {
+    if (dcb && num_dwords >= 3) {
+        u32* cmdbuf = static_cast<u32*>(dcb);
+        cmdbuf[0] = (3U << 30) | (2U << 16) | (IT_DRAW_INDEX_OFFSET_2 << 8); // 0x35
+        cmdbuf[1] = index_count;
+        cmdbuf[2] = offset;
+        if (num_dwords > 3) cmdbuf[3] = flags;
+        for (u32 i = 4; i < num_dwords; ++i) {
+            cmdbuf[i] = (3U << 30) | (0U << 16) | (IT_NOP << 8);
+        }
+    }
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmDrawIndirect(void* dcb, u32 num_dwords, const void* arg2, const void* arg3) {
+    (void)dcb;
+    (void)num_dwords;
+    (void)arg2;
+    (void)arg3;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmDrawIndexIndirect(void* dcb, u32 num_dwords, const void* arg2, const void* arg3) {
+    (void)dcb;
+    (void)num_dwords;
+    (void)arg2;
+    (void)arg3;
+    return 0;
+}
+
+PS4_SYSV_ABI s32 sceGnmDrawIndexMultiInstanced(void* dcb, u32 num_dwords, u32 index_count, u32 instance_count, u32 first_index, u32 vertex_offset, u32 first_instance) {
+    (void)dcb;
+    (void)num_dwords;
+    (void)index_count;
+    (void)instance_count;
+    (void)first_index;
+    (void)vertex_offset;
+    (void)first_instance;
+    return 0;
 }
 
 } // extern "C"

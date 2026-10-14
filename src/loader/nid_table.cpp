@@ -4,11 +4,15 @@
 #include "kernel/save_data.h"
 #include "kernel/net_service.h"
 #include "kernel/np_service.h"
+#include "kernel/user_service.h"
 #include "pad/pad_handler.h"
 #include "video/video_out.h"
 #include "video/font_service.h"
 #include "video/image_decoder.h"
+#include "video/avplayer_service.h"
 #include "kernel/dialog_service.h"
+#include "kernel/rtc_service.h"
+#include "kernel/http_service.h"
 #include "audio/audio_out.h"
 #include "gpu/gnm_driver.h"
 #include <iostream>
@@ -151,14 +155,16 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("656LMQSrg6U", reinterpret_cast<uintptr_t>(&Kernel::sceSystemServiceReceiveEvent), "sceSystemServiceReceiveEvent");
     RegisterSymbol("99b82IKXpH4", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentAppParamGetInt), "sceAppContentAppParamGetInt");
     RegisterSymbol("xnd8BJzAxmk", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentGetAddcontInfoList), "sceAppContentGetAddcontInfoList");
-    RegisterSymbol("yH17Q6NWtVg", reinterpret_cast<uintptr_t>(&Kernel::sceUserServiceGetEvent), "sceUserServiceGetEvent");
-    RegisterSymbol("j3YMu1MVNNo", reinterpret_cast<uintptr_t>(&Kernel::sceUserServiceInitialize), "sceUserServiceInitialize");
-    RegisterSymbol("bwFjS+bX9mA", reinterpret_cast<uintptr_t>(&Kernel::sceUserServiceTerminate), "sceUserServiceTerminate");
-    RegisterSymbol("CdWp0oHWGr0", reinterpret_cast<uintptr_t>(&Kernel::sceUserServiceGetInitialUser), "sceUserServiceGetInitialUser");
-    RegisterSymbol("fPhymKNvK-A", reinterpret_cast<uintptr_t>(&Kernel::sceUserServiceGetLoginUserIdList), "sceUserServiceGetLoginUserIdList");
-    RegisterSymbol("1xxcMiGu2fo", reinterpret_cast<uintptr_t>(&Kernel::sceUserServiceGetUserName), "sceUserServiceGetUserName");
-    RegisterSymbol("zO9UL3qIINQ", reinterpret_cast<uintptr_t>(&Kernel::sceRtcGetCurrentNetworkTick), "sceRtcGetCurrentNetworkTick");
-    RegisterSymbol("8w-H19ip48I", reinterpret_cast<uintptr_t>(&Kernel::sceRtcGetTick), "sceRtcGetTick");
+    RegisterSymbol("yH17Q6NWtVg", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceGetEvent), "sceUserServiceGetEvent");
+    RegisterSymbol("j3YMu1MVNNo", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceInitialize), "sceUserServiceInitialize");
+    RegisterSymbol("bwFjS+bX9mA", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceTerminate), "sceUserServiceTerminate");
+    RegisterSymbol("CdWp0oHWGr0", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceGetInitialUser), "sceUserServiceGetInitialUser");
+    RegisterSymbol("fPhymKNvK-A", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceGetLoginUserIdList), "sceUserServiceGetLoginUserIdList");
+    RegisterSymbol("1xxcMiGu2fo", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceGetUserName), "sceUserServiceGetUserName");
+    RegisterSymbol("wuI7c7UNk0A", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceRegisterEventCallback), "sceUserServiceRegisterEventCallback");
+    RegisterSymbol("spW--yoLQ9o", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceUnregisterEventCallback), "sceUserServiceUnregisterEventCallback");
+    RegisterSymbol("zO9UL3qIINQ", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcGetCurrentNetworkTick), "sceRtcGetCurrentNetworkTick");
+    RegisterSymbol("8w-H19ip48I", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcGetTick), "sceRtcGetTick");
     RegisterSymbol("ts6GlZOKRrE", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoInitialize), "scePlayGoInitialize");
     RegisterSymbol("M1Gma1ocrGE", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoOpen), "scePlayGoOpen");
     RegisterSymbol("uWIYLFkkwqk", reinterpret_cast<uintptr_t>(&Kernel::scePlayGoGetLocus), "scePlayGoGetLocus");
@@ -386,12 +392,12 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("6vGCkkQJOcI", reinterpret_cast<uintptr_t>(&Font::sceFontSetupRenderScalePixel), "sceFontSetupRenderScalePixel");
     RegisterSymbol("mz2iTY0MK4A", reinterpret_cast<uintptr_t>(&Font::sceFontSupportExternalFonts), "sceFontSupportExternalFonts");
     RegisterSymbol("1QjhKxrsOB8", reinterpret_cast<uintptr_t>(&Font::sceFontUnbindRenderer), "sceFontUnbindRenderer");
-    m_names["b0xyllnVY-I"] = "sceGnmAddEqEvent";
-    m_names["b08AgtPlHPg"] = "sceGnmAreSubmitsAllowed";
-    m_names["ihxrbsoSKWc"] = "sceGnmBeginWorkload";
+    RegisterSymbol("b0xyllnVY-I", reinterpret_cast<uintptr_t>(&GPU::sceGnmAddEqEvent), "sceGnmAddEqEvent");
+    RegisterSymbol("b08AgtPlHPg", reinterpret_cast<uintptr_t>(&GPU::sceGnmAreSubmitsAllowed), "sceGnmAreSubmitsAllowed");
+    RegisterSymbol("ihxrbsoSKWc", reinterpret_cast<uintptr_t>(&GPU::sceGnmBeginWorkload), "sceGnmBeginWorkload");
     m_names["5udAm+6boVg"] = "sceGnmCreateWorkloadStream";
     m_names["qpGITzPE+Zc"] = "sceGnmDebugHardwareStatus";
-    m_names["PVT+fuoS9gU"] = "sceGnmDeleteEqEvent";
+    RegisterSymbol("PVT+fuoS9gU", reinterpret_cast<uintptr_t>(&GPU::sceGnmDeleteEqEvent), "sceGnmDeleteEqEvent");
     m_names["UtObDRQiGbs"] = "sceGnmDestroyWorkloadStream";
     RegisterSymbol("bX5IbRvECXk", reinterpret_cast<uintptr_t>(&GPU::sceGnmDingDong), "sceGnmDingDong");
     RegisterSymbol("byXlqupd8cE", reinterpret_cast<uintptr_t>(&GPU::sceGnmDingDong), "sceGnmDingDongForWorkload");
@@ -400,22 +406,22 @@ void NidTable::RegisterHostSubsystems() {
     m_names["Z43vKp5k7r0"] = "sceGnmDispatchIndirect";
     m_names["wED4ZXCFJT0"] = "sceGnmDispatchIndirectOnMec";
     RegisterSymbol("nF6bFRUBRAU", reinterpret_cast<uintptr_t>(&GPU::sceGnmDispatchInitDefaultHardwareState), "sceGnmDispatchInitDefaultHardwareState");
-    m_names["HlTPoZ-oY7Y"] = "sceGnmDrawIndex";
+    RegisterSymbol("HlTPoZ-oY7Y", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndex), "sceGnmDrawIndex");
     RegisterSymbol("GGsn7jMTxw4", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndexAuto), "sceGnmDrawIndexAuto");
-    m_names["ED9-Fjr8Ta4"] = "sceGnmDrawIndexIndirect";
-    m_names["jHdPvIzlpKc"] = "sceGnmDrawIndexMultiInstanced";
-    m_names["oYM+YzfCm2Y"] = "sceGnmDrawIndexOffset";
-    m_names["4v+otIIdjqg"] = "sceGnmDrawIndirect";
+    RegisterSymbol("ED9-Fjr8Ta4", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndexIndirect), "sceGnmDrawIndexIndirect");
+    RegisterSymbol("jHdPvIzlpKc", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndexMultiInstanced), "sceGnmDrawIndexMultiInstanced");
+    RegisterSymbol("oYM+YzfCm2Y", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndexOffset), "sceGnmDrawIndexOffset");
+    RegisterSymbol("4v+otIIdjqg", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndirect), "sceGnmDrawIndirect");
     RegisterSymbol("yb2cRhagD1I", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawInitDefaultHardwareState350), "sceGnmDrawInitDefaultHardwareState350");
     m_names["stDSYW2SBVM"] = "sceGnmDrawOpaqueAuto";
     m_names["TLV4mswiZ4A"] = "sceGnmDriverCaptureInProgress";
     m_names["R6z1xM3pW-w"] = "sceGnmDriverTraceInProgress";
     m_names["d88anrgNoKY"] = "sceGnmDriverTriggerCapture";
-    m_names["Fa3x75OOLRA"] = "sceGnmEndWorkload";
+    RegisterSymbol("Fa3x75OOLRA", reinterpret_cast<uintptr_t>(&GPU::sceGnmEndWorkload), "sceGnmEndWorkload");
     RegisterSymbol("iBt3Oe00Kvc", reinterpret_cast<uintptr_t>(&GPU::sceGnmFlushGarlic), "sceGnmFlushGarlic");
     m_names["UoYY0DWMC0U"] = "sceGnmGetEqEventType";
     m_names["H7-fgvEutM0"] = "sceGnmGetEqTimeStamp";
-    m_names["oL4hGI1PMpw"] = "sceGnmGetGpuBlockStatus";
+    RegisterSymbol("oL4hGI1PMpw", reinterpret_cast<uintptr_t>(&GPU::sceGnmGetGpuBlockStatus), "sceGnmGetGpuBlockStatus");
     m_names["tZCSL5ulnB4"] = "sceGnmGetGpuInfoStatus";
     m_names["iFirFzgYsvw"] = "sceGnmGetLastWaitedAddress";
     m_names["KnldROUkWJY"] = "sceGnmGetNumTcaUnits";
@@ -462,31 +468,31 @@ void NidTable::RegisterHostSubsystems() {
     m_names["GNlx+y7xPdE"] = "sceGnmUpdateHsShader";
     RegisterSymbol("mLVL7N7BVBg", reinterpret_cast<uintptr_t>(&GPU::sceGnmUpdatePsShader350), "sceGnmUpdatePsShader350");
     m_names["V31V01UiScY"] = "sceGnmUpdateVsShader";
-    m_names["hvG6GfBMXg8"] = "sceHttpAbortRequest";
-    m_names["EY28T2bkN7k"] = "sceHttpAddRequestHeader";
-    m_names["qgxDBjorUxs"] = "sceHttpCreateConnectionWithURL";
-    m_names["Aeu5wVKkF9w"] = "sceHttpCreateRequestWithURL";
-    m_names["0gYjPTR-6cY"] = "sceHttpCreateTemplate";
-    m_names["P6A3ytpsiYc"] = "sceHttpDeleteConnection";
-    m_names["qe7oZ+v4PWA"] = "sceHttpDeleteRequest";
-    m_names["4I8vEpuEhZ8"] = "sceHttpDeleteTemplate";
-    m_names["aCYPMSUIaP8"] = "sceHttpGetAllResponseHeaders";
-    m_names["0onIrKx9NIE"] = "sceHttpGetLastErrno";
-    m_names["yuO2H2Uvnos"] = "sceHttpGetResponseContentLength";
-    m_names["0a2TBNfE3BU"] = "sceHttpGetStatusCode";
-    m_names["A9cVMUtEp4Y"] = "sceHttpInit";
-    m_names["hPTXo3bICzI"] = "sceHttpParseResponseHeader";
-    m_names["P5pdoykPYTk"] = "sceHttpReadData";
-    m_names["1e2BNwI-XzE"] = "sceHttpSendRequest";
-    m_names["T-mGo9f3Pu4"] = "sceHttpSetAutoRedirect";
-    m_names["0S9tTH0uqTU"] = "sceHttpSetConnectTimeOut";
-    m_names["yigr4V0-HTM"] = "sceHttpSetRecvTimeOut";
-    m_names["K1d1LqZRQHQ"] = "sceHttpSetResolveRetry";
-    m_names["Tc-hAYDKtQc"] = "sceHttpSetResolveTimeOut";
-    m_names["xegFfZKBVlw"] = "sceHttpSetSendTimeOut";
-    m_names["Ik-KpLTlf7Q"] = "sceHttpTerm";
-    m_names["JBN6N-EY+3M"] = "sceHttpsGetSslError";
-    m_names["htyBOoWeS58"] = "sceHttpsSetSslCallback";
+    RegisterSymbol("hvG6GfBMXg8", reinterpret_cast<uintptr_t>(&Http::sceHttpAbortRequest), "sceHttpAbortRequest");
+    RegisterSymbol("EY28T2bkN7k", reinterpret_cast<uintptr_t>(&Http::sceHttpAddRequestHeader), "sceHttpAddRequestHeader");
+    RegisterSymbol("qgxDBjorUxs", reinterpret_cast<uintptr_t>(&Http::sceHttpCreateConnectionWithURL), "sceHttpCreateConnectionWithURL");
+    RegisterSymbol("Aeu5wVKkF9w", reinterpret_cast<uintptr_t>(&Http::sceHttpCreateRequestWithURL), "sceHttpCreateRequestWithURL");
+    RegisterSymbol("0gYjPTR-6cY", reinterpret_cast<uintptr_t>(&Http::sceHttpCreateTemplate), "sceHttpCreateTemplate");
+    RegisterSymbol("P6A3ytpsiYc", reinterpret_cast<uintptr_t>(&Http::sceHttpDeleteConnection), "sceHttpDeleteConnection");
+    RegisterSymbol("qe7oZ+v4PWA", reinterpret_cast<uintptr_t>(&Http::sceHttpDeleteRequest), "sceHttpDeleteRequest");
+    RegisterSymbol("4I8vEpuEhZ8", reinterpret_cast<uintptr_t>(&Http::sceHttpDeleteTemplate), "sceHttpDeleteTemplate");
+    RegisterSymbol("aCYPMSUIaP8", reinterpret_cast<uintptr_t>(&Http::sceHttpGetAllResponseHeaders), "sceHttpGetAllResponseHeaders");
+    RegisterSymbol("0onIrKx9NIE", reinterpret_cast<uintptr_t>(&Http::sceHttpGetLastErrno), "sceHttpGetLastErrno");
+    RegisterSymbol("yuO2H2Uvnos", reinterpret_cast<uintptr_t>(&Http::sceHttpGetResponseContentLength), "sceHttpGetResponseContentLength");
+    RegisterSymbol("0a2TBNfE3BU", reinterpret_cast<uintptr_t>(&Http::sceHttpGetStatusCode), "sceHttpGetStatusCode");
+    RegisterSymbol("A9cVMUtEp4Y", reinterpret_cast<uintptr_t>(&Http::sceHttpInit), "sceHttpInit");
+    RegisterSymbol("hPTXo3bICzI", reinterpret_cast<uintptr_t>(&Http::sceHttpParseResponseHeader), "sceHttpParseResponseHeader");
+    RegisterSymbol("P5pdoykPYTk", reinterpret_cast<uintptr_t>(&Http::sceHttpReadData), "sceHttpReadData");
+    RegisterSymbol("1e2BNwI-XzE", reinterpret_cast<uintptr_t>(&Http::sceHttpSendRequest), "sceHttpSendRequest");
+    RegisterSymbol("T-mGo9f3Pu4", reinterpret_cast<uintptr_t>(&Http::sceHttpSetAutoRedirect), "sceHttpSetAutoRedirect");
+    RegisterSymbol("0S9tTH0uqTU", reinterpret_cast<uintptr_t>(&Http::sceHttpSetConnectTimeOut), "sceHttpSetConnectTimeOut");
+    RegisterSymbol("yigr4V0-HTM", reinterpret_cast<uintptr_t>(&Http::sceHttpSetRecvTimeOut), "sceHttpSetRecvTimeOut");
+    RegisterSymbol("K1d1LqZRQHQ", reinterpret_cast<uintptr_t>(&Http::sceHttpSetResolveRetry), "sceHttpSetResolveRetry");
+    RegisterSymbol("Tc-hAYDKtQc", reinterpret_cast<uintptr_t>(&Http::sceHttpSetResolveTimeOut), "sceHttpSetResolveTimeOut");
+    RegisterSymbol("xegFfZKBVlw", reinterpret_cast<uintptr_t>(&Http::sceHttpSetSendTimeOut), "sceHttpSetSendTimeOut");
+    RegisterSymbol("Ik-KpLTlf7Q", reinterpret_cast<uintptr_t>(&Http::sceHttpTerm), "sceHttpTerm");
+    RegisterSymbol("JBN6N-EY+3M", reinterpret_cast<uintptr_t>(&Http::sceHttpsGetSslError), "sceHttpsGetSslError");
+    RegisterSymbol("htyBOoWeS58", reinterpret_cast<uintptr_t>(&Http::sceHttpsSetSslCallback), "sceHttpsSetSslCallback");
     m_names["hMYgMP-Vuno"] = "sceLibSecureCryptographyDecrypt";
     m_names["RsiCFJMIGHw"] = "sceLibSecureCryptographyDeleteContext";
     m_names["aEoi0u2FOiQ"] = "sceLibSecureCryptographyEncrypt";
@@ -515,9 +521,9 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("-TOuuAQ-buE", reinterpret_cast<uintptr_t>(&Audio::sceNgs2VoiceGetState), "sceNgs2VoiceGetState");
     m_names["u9YKpRRHe-M"] = "sceRazorCaptureImmediate";
     m_names["f33OrruQYbM"] = "sceRazorIsLoaded";
-    m_names["DOwXL+FQMEY"] = "sceSslGetSerialNumber";
-    m_names["hdpVEUDFW3s"] = "sceSslInit";
-    m_names["0K1yQ6Lv-Yc"] = "sceSslTerm";
+    RegisterSymbol("DOwXL+FQMEY", reinterpret_cast<uintptr_t>(&Http::sceSslGetSerialNumber), "sceSslGetSerialNumber");
+    RegisterSymbol("hdpVEUDFW3s", reinterpret_cast<uintptr_t>(&Http::sceSslInit), "sceSslInit");
+    RegisterSymbol("0K1yQ6Lv-Yc", reinterpret_cast<uintptr_t>(&Http::sceSslTerm), "sceSslTerm");
     RegisterSymbol("fMP5NHUOaMk", reinterpret_cast<uintptr_t>(&Kernel::sceSysmoduleIsLoaded), "sceSysmoduleIsLoaded");
     RegisterSymbol("g8cM39EUZ6o", reinterpret_cast<uintptr_t>(&Kernel::sceSysmoduleLoadModule), "sceSysmoduleLoadModule");
     RegisterSymbol("eR2bZFAAU0Q", reinterpret_cast<uintptr_t>(&Kernel::sceSysmoduleUnloadModule), "sceSysmoduleUnloadModule");
@@ -553,7 +559,7 @@ void NidTable::RegisterHostSubsystems() {
     m_names["twVupeaYYrk"] = "sceNpMatching2SignalingGetConnectionInfo";
     m_names["wUmwXZHaX1w"] = "sceNpMatching2SignalingGetPingInfo";
     RegisterSymbol("Mqp3lJ+sjy4", reinterpret_cast<uintptr_t>(&Np::sceNpMatching2Terminate), "sceNpMatching2Terminate");
-    m_names["-PoIzr3PEk0"] = "sceSslGetMemoryPoolStats";
+    RegisterSymbol("-PoIzr3PEk0", reinterpret_cast<uintptr_t>(&Http::sceSslGetMemoryPoolStats), "sceSslGetMemoryPoolStats");
 
     // ===== libSceNpManager.sprx.json (25 symbols) =====
     m_names["OzKvTvg3ZYU"] = "sceNpAbortRequest";
@@ -608,29 +614,29 @@ void NidTable::RegisterHostSubsystems() {
     m_names["fZo48un7LK4"] = "sceSystemServiceParamGetInt";
 
     // ===== libSceJson2.sprx.json (20 symbols) =====
-    m_names["i-XwZjw0OOY"] = "_ZN3sce4Json12MemAllocator11notifyErrorEimPv";
-    m_names["-hJRce8wn1U"] = "_ZN3sce4Json12MemAllocatorC2Ev";
-    m_names["OcAgPxcq5Vk"] = "_ZN3sce4Json12MemAllocatorD2Ev";
-    m_names["zQtLRTqceMY"] = "_ZN3sce4Json5Array9push_backERKNS0_5ValueE";
-    m_names["JP-PtKMiI1E"] = "_ZN3sce4Json5ArrayC1Ev";
-    m_names["HJ8GpRT1aiw"] = "_ZN3sce4Json5ArrayD1Ev";
-    m_names["R7FDWtcN6f8"] = "_ZN3sce4Json5Value9serializeERNS0_6StringE";
-    m_names["iZeYfOxtMRg"] = "_ZN3sce4Json5ValueC1ERKNS0_5ArrayE";
-    m_names["3xUXnmUkXfo"] = "_ZN3sce4Json5ValueC1ERKNS0_6ObjectE";
-    m_names["sZIoMRGO+jk"] = "_ZN3sce4Json5ValueC1ERKNS0_6StringE";
-    m_names["a+W7HHlwpBs"] = "_ZN3sce4Json6ObjectC1ERKS1_";
-    m_names["OJPTonqdg0I"] = "_ZN3sce4Json6ObjectC1Ev";
-    m_names["5JmzZt8twAo"] = "_ZN3sce4Json6ObjectD1Ev";
-    m_names["urOpESTBZmo"] = "_ZN3sce4Json6ObjectaSERKS1_";
-    m_names["ERuf9y0DY84"] = "_ZN3sce4Json6ObjectixERKNS0_6StringE";
-    m_names["9KUZFjI1IxA"] = "_ZN3sce4Json6StringC1EPKc";
-    m_names["qSmqLXXCPas"] = "_ZN3sce4Json6StringC1Ev";
-    m_names["cG1VE2HMl6c"] = "_ZN3sce4Json6StringD1Ev";
-    m_names["rQGJeNjOuUk"] = "_ZNK3sce4Json5Array4sizeEv";
-    m_names["L1KAkYWml-M"] = "_ZNK3sce4Json6String5c_strEv";
+    RegisterSymbol("i-XwZjw0OOY", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json12MemAllocator11notifyErrorEimPv), "_ZN3sce4Json12MemAllocator11notifyErrorEimPv");
+    RegisterSymbol("-hJRce8wn1U", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json12MemAllocatorC2Ev), "_ZN3sce4Json12MemAllocatorC2Ev");
+    RegisterSymbol("OcAgPxcq5Vk", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json12MemAllocatorD2Ev), "_ZN3sce4Json12MemAllocatorD2Ev");
+    RegisterSymbol("zQtLRTqceMY", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json5Array9push_backERKNS0_5ValueE), "_ZN3sce4Json5Array9push_backERKNS0_5ValueE");
+    RegisterSymbol("JP-PtKMiI1E", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json5ArrayC1Ev), "_ZN3sce4Json5ArrayC1Ev");
+    RegisterSymbol("HJ8GpRT1aiw", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json5ArrayD1Ev), "_ZN3sce4Json5ArrayD1Ev");
+    RegisterSymbol("R7FDWtcN6f8", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json5Value9serializeERNS0_6StringE), "_ZN3sce4Json5Value9serializeERNS0_6StringE");
+    RegisterSymbol("iZeYfOxtMRg", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json5ValueC1ERKNS0_5ArrayE), "_ZN3sce4Json5ValueC1ERKNS0_5ArrayE");
+    RegisterSymbol("3xUXnmUkXfo", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json5ValueC1ERKNS0_6ObjectE), "_ZN3sce4Json5ValueC1ERKNS0_6ObjectE");
+    RegisterSymbol("sZIoMRGO+jk", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json5ValueC1ERKNS0_6StringE), "_ZN3sce4Json5ValueC1ERKNS0_6StringE");
+    RegisterSymbol("a+W7HHlwpBs", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json6ObjectC1ERKS1_), "_ZN3sce4Json6ObjectC1ERKS1_");
+    RegisterSymbol("OJPTonqdg0I", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json6ObjectC1Ev), "_ZN3sce4Json6ObjectC1Ev");
+    RegisterSymbol("5JmzZt8twAo", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json6ObjectD1Ev), "_ZN3sce4Json6ObjectD1Ev");
+    RegisterSymbol("urOpESTBZmo", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json6ObjectaSERKS1_), "_ZN3sce4Json6ObjectaSERKS1_");
+    RegisterSymbol("ERuf9y0DY84", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json6ObjectixERKNS0_6StringE), "_ZN3sce4Json6ObjectixERKNS0_6StringE");
+    RegisterSymbol("9KUZFjI1IxA", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json6StringC1EPKc), "_ZN3sce4Json6StringC1EPKc");
+    RegisterSymbol("qSmqLXXCPas", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json6StringC1Ev), "_ZN3sce4Json6StringC1Ev");
+    RegisterSymbol("cG1VE2HMl6c", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json6StringD1Ev), "_ZN3sce4Json6StringD1Ev");
+    RegisterSymbol("rQGJeNjOuUk", reinterpret_cast<uintptr_t>(&Http::_ZNK3sce4Json5Array4sizeEv), "_ZNK3sce4Json5Array4sizeEv");
+    RegisterSymbol("L1KAkYWml-M", reinterpret_cast<uintptr_t>(&Http::_ZNK3sce4Json6String5c_strEv), "_ZNK3sce4Json6String5c_strEv");
 
     // ===== libSceHttp.sprx.json (19 symbols) =====
-    m_names["mSQCxzWTwVI"] = "sceHttpsDisableOption";
+    RegisterSymbol("mSQCxzWTwVI", reinterpret_cast<uintptr_t>(&Http::sceHttpsDisableOption), "sceHttpsDisableOption");
     m_names["OXXX4mUk3uk"] = "sceNetConnect";
     RegisterSymbol("Z4wwCFiBELQ", reinterpret_cast<uintptr_t>(&Net::sceNetCtlTerm), "sceNetCtlTerm");
     RegisterSymbol("w21YgGGNtBk", reinterpret_cast<uintptr_t>(&Net::sceNetEpollAbort), "sceNetEpollAbort");
@@ -648,7 +654,7 @@ void NidTable::RegisterHostSubsystems() {
     m_names["beRjXBn-z+o"] = "sceNetSend";
     m_names["Q4qBuN-c0ZM"] = "sceNetSocket";
     m_names["45ggEzakPJQ"] = "sceNetSocketClose";
-    m_names["07O525HgICs"] = "sceRtcTickAddSeconds";
+    RegisterSymbol("07O525HgICs", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcTickAddSeconds), "sceRtcTickAddSeconds");
 
     // ===== libSceNpScoreRanking.sprx.json (19 symbols) =====
     m_names["1i7kmKbX6hk"] = "sceNpScoreAbortRequest";
@@ -710,20 +716,20 @@ void NidTable::RegisterHostSubsystems() {
     m_names["1Cz0hTJFyh4"] = "sceNpTusSetMultiSlotVariableVUser";
 
     // ===== libSceAvPlayer.sprx.json (14 symbols) =====
-    m_names["KMcEa+rHsIo"] = "sceAvPlayerAddSource";
-    m_names["NkJwDzKmIlw"] = "sceAvPlayerClose";
-    m_names["ODJK2sn9w4A"] = "sceAvPlayerEnableStream";
-    m_names["d8FcbzfAdQw"] = "sceAvPlayerGetStreamInfo";
-    m_names["JdksQu8pNdQ"] = "sceAvPlayerGetVideoDataEx";
-    m_names["aS66RI0gGgo"] = "sceAvPlayerInit";
-    m_names["UbQoYawOsfY"] = "sceAvPlayerIsActive";
-    m_names["9y5v+fGN4Wk"] = "sceAvPlayerPause";
-    m_names["HD1YKVU26-M"] = "sceAvPlayerPostInit";
-    m_names["w5moABNwnRY"] = "sceAvPlayerResume";
-    m_names["OVths0xGfho"] = "sceAvPlayerSetLooping";
-    m_names["ET4Gr-Uu07s"] = "sceAvPlayerStart";
-    m_names["ZC17w3vB5Lo"] = "sceAvPlayerStop";
-    m_names["hdTyRzCXQeQ"] = "sceAvPlayerStreamCount";
+    RegisterSymbol("KMcEa+rHsIo", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerAddSource), "sceAvPlayerAddSource");
+    RegisterSymbol("NkJwDzKmIlw", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerClose), "sceAvPlayerClose");
+    RegisterSymbol("ODJK2sn9w4A", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerEnableStream), "sceAvPlayerEnableStream");
+    RegisterSymbol("d8FcbzfAdQw", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerGetStreamInfo), "sceAvPlayerGetStreamInfo");
+    RegisterSymbol("JdksQu8pNdQ", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerGetVideoDataEx), "sceAvPlayerGetVideoDataEx");
+    RegisterSymbol("aS66RI0gGgo", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerInit), "sceAvPlayerInit");
+    RegisterSymbol("UbQoYawOsfY", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerIsActive), "sceAvPlayerIsActive");
+    RegisterSymbol("9y5v+fGN4Wk", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerPause), "sceAvPlayerPause");
+    RegisterSymbol("HD1YKVU26-M", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerPostInit), "sceAvPlayerPostInit");
+    RegisterSymbol("w5moABNwnRY", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerResume), "sceAvPlayerResume");
+    RegisterSymbol("OVths0xGfho", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerSetLooping), "sceAvPlayerSetLooping");
+    RegisterSymbol("ET4Gr-Uu07s", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerStart), "sceAvPlayerStart");
+    RegisterSymbol("ZC17w3vB5Lo", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerStop), "sceAvPlayerStop");
+    RegisterSymbol("hdTyRzCXQeQ", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerStreamCount), "sceAvPlayerStreamCount");
 
     // ===== libSceNpTrophy.sprx.json (13 symbols) =====
     m_names["cqGkYAN-gRw"] = "sceNpTrophyCaptureScreenshot";
@@ -742,18 +748,18 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("LHuSmO3SLd8", reinterpret_cast<uintptr_t>(&Np::sceNpTrophyGetTrophyUnlockState), "sceNpTrophyGetTrophyUnlockState");
 
     // ===== libSceJson.sprx.json (12 symbols) =====
-    m_names["Cxwy7wHq4J0"] = "_ZN3sce4Json11Initializer10initializeEPKNS0_13InitParameterE";
-    m_names["PR5k1penBLM"] = "_ZN3sce4Json11Initializer9terminateEv";
-    m_names["cK6bYHf-Q5E"] = "_ZN3sce4Json11InitializerC1Ev";
-    m_names["RujUxbr3haM"] = "_ZN3sce4Json11InitializerD1Ev";
-    m_names["XL8+BUqjB1w"] = "_ZN3sce4Json5Value3setERKS1_";
-    m_names["FIjXN2TkuTs"] = "_ZN3sce4Json5Value5clearEv";
-    m_names["sOmU4vnx3s0"] = "_ZN3sce4Json5ValueC1Ed";
-    m_names["0lLK8+kDqmE"] = "_ZN3sce4Json5ValueC1El";
-    m_names["x4AUdbhpRB0"] = "_ZN3sce4Json5ValueC1Em";
-    m_names["qBMjqyBn3OM"] = "_ZN3sce4Json5ValueC1Ev";
-    m_names["WTtYf+cNnXI"] = "_ZN3sce4Json5ValueD1Ev";
-    m_names["4zrm6VrgIAw"] = "_ZN3sce4Json5ValueaSERKS1_";
+    RegisterSymbol("Cxwy7wHq4J0", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json11Initializer10initializeEPKNS0_13InitParameterE), "_ZN3sce4Json11Initializer10initializeEPKNS0_13InitParameterE");
+    RegisterSymbol("PR5k1penBLM", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json11Initializer9terminateEv), "_ZN3sce4Json11Initializer9terminateEv");
+    RegisterSymbol("cK6bYHf-Q5E", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json11InitializerC1Ev), "_ZN3sce4Json11InitializerC1Ev");
+    RegisterSymbol("RujUxbr3haM", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json11InitializerD1Ev), "_ZN3sce4Json11InitializerD1Ev");
+    RegisterSymbol("XL8+BUqjB1w", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json5Value3setERKS1_), "_ZN3sce4Json5Value3setERKS1_");
+    RegisterSymbol("FIjXN2TkuTs", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json5Value5clearEv), "_ZN3sce4Json5Value5clearEv");
+    RegisterSymbol("sOmU4vnx3s0", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json5ValueC1Ed), "_ZN3sce4Json5ValueC1Ed");
+    RegisterSymbol("0lLK8+kDqmE", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json5ValueC1El), "_ZN3sce4Json5ValueC1El");
+    RegisterSymbol("x4AUdbhpRB0", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json5ValueC1Em), "_ZN3sce4Json5ValueC1Em");
+    RegisterSymbol("qBMjqyBn3OM", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json5ValueC1Ev), "_ZN3sce4Json5ValueC1Ev");
+    RegisterSymbol("WTtYf+cNnXI", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json5ValueD1Ev), "_ZN3sce4Json5ValueD1Ev");
+    RegisterSymbol("4zrm6VrgIAw", reinterpret_cast<uintptr_t>(&Http::_ZN3sce4Json5ValueaSERKS1_), "_ZN3sce4Json5ValueaSERKS1_");
 
     // ===== libSceAudio3d.sprx.json (12 symbols) =====
     RegisterSymbol("Im+jOoa5WAI", reinterpret_cast<uintptr_t>(&Audio::sceAudio3dGetDefaultOpenParameters), "sceAudio3dGetDefaultOpenParameters");
@@ -789,7 +795,7 @@ void NidTable::RegisterHostSubsystems() {
     m_names["bjAlYWwRTJA"] = "sceContentSearchOpenMetadataByContentId";
     m_names["TEW3IKxYfXc"] = "sceContentSearchSearchContent";
     m_names["1xSZodB2geA"] = "sceContentSearchTerm";
-    m_names["CdWp0oHWGr0"] = "sceUserServiceGetInitialUser";
+    RegisterSymbol("CdWp0oHWGr0", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceGetInitialUser), "sceUserServiceGetInitialUser");
 
     // ===== libSceContentExport.sprx.json (9 symbols) =====
     m_names["tb3cZTCl8Ps"] = "sceContentExportFinish";
@@ -798,9 +804,9 @@ void NidTable::RegisterHostSubsystems() {
     m_names["FzEWeYnAFlI"] = "sceContentExportInit";
     m_names["FCygF4Ec4so"] = "sceContentExportStart";
     m_names["+KDWny9Y-6k"] = "sceContentExportTerm";
-    m_names["fPhymKNvK-A"] = "sceUserServiceGetLoginUserIdList";
-    m_names["j3YMu1MVNNo"] = "sceUserServiceInitialize";
-    m_names["bwFjS+bX9mA"] = "sceUserServiceTerminate";
+    RegisterSymbol("fPhymKNvK-A", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceGetLoginUserIdList), "sceUserServiceGetLoginUserIdList");
+    RegisterSymbol("j3YMu1MVNNo", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceInitialize), "sceUserServiceInitialize");
+    RegisterSymbol("bwFjS+bX9mA", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceTerminate), "sceUserServiceTerminate");
 
     // ===== libSceSaveDataDialog.sprx.json (8 symbols) =====
     RegisterSymbol("fH46Lag88XY", reinterpret_cast<uintptr_t>(&SaveData::sceSaveDataDialogClose), "sceSaveDataDialogClose");
@@ -823,21 +829,27 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("TSM6whtekok", reinterpret_cast<uintptr_t>(&Net::sceNetShutdown), "sceNetShutdown");
 
     // ===== libSceSsl.sprx.json (7 symbols) =====
-    m_names["RwXD8grHZHM"] = "sceSslFreeSslCertName";
-    m_names["7whYpYfHP74"] = "sceSslGetIssuerName";
-    m_names["R1ePzopYPYM"] = "sceSslGetNameEntryCount";
-    m_names["7RBSTKGrmDA"] = "sceSslGetNameEntryInfo";
-    m_names["xHpt6+2pGYk"] = "sceSslGetNotAfter";
-    m_names["Eo0S65Jy28Q"] = "sceSslGetNotBefore";
-    m_names["dQReuBX9sD8"] = "sceSslGetSubjectName";
+    RegisterSymbol("RwXD8grHZHM", reinterpret_cast<uintptr_t>(&Http::sceSslFreeSslCertName), "sceSslFreeSslCertName");
+    RegisterSymbol("7whYpYfHP74", reinterpret_cast<uintptr_t>(&Http::sceSslGetIssuerName), "sceSslGetIssuerName");
+    RegisterSymbol("R1ePzopYPYM", reinterpret_cast<uintptr_t>(&Http::sceSslGetNameEntryCount), "sceSslGetNameEntryCount");
+    RegisterSymbol("7RBSTKGrmDA", reinterpret_cast<uintptr_t>(&Http::sceSslGetNameEntryInfo), "sceSslGetNameEntryInfo");
+    RegisterSymbol("xHpt6+2pGYk", reinterpret_cast<uintptr_t>(&Http::sceSslGetNotAfter), "sceSslGetNotAfter");
+    RegisterSymbol("Eo0S65Jy28Q", reinterpret_cast<uintptr_t>(&Http::sceSslGetNotBefore), "sceSslGetNotBefore");
+    RegisterSymbol("dQReuBX9sD8", reinterpret_cast<uintptr_t>(&Http::sceSslGetSubjectName), "sceSslGetSubjectName");
 
-    // ===== libSceAppContent.sprx.json (6 symbols) =====
-    m_names["99b82IKXpH4"] = "sceAppContentAppParamGetInt";
-    m_names["xnd8BJzAxmk"] = "sceAppContentGetAddcontInfoList";
+    RegisterSymbol("99b82IKXpH4", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentAppParamGetInt), "sceAppContentAppParamGetInt");
+    RegisterSymbol("xnd8BJzAxmk", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentGetAddcontInfoList), "sceAppContentGetAddcontInfoList");
     m_names["XTWR0UXvcgs"] = "sceAppContentGetEntitlementKey";
-    m_names["R9lA82OraNs"] = "sceAppContentInitialize";
-    m_names["buYbeLOGWmA"] = "sceAppContentTemporaryDataMount2";
-    m_names["bcolXMmp6qQ"] = "sceAppContentTemporaryDataUnmount";
+    RegisterSymbol("R9lA82OraNs", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentInitialize), "sceAppContentInitialize");
+    RegisterSymbol("buYbeLOGWmA", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentMount), "sceAppContentTemporaryDataMount2");
+    RegisterSymbol("bcolXMmp6qQ", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentUmount), "sceAppContentTemporaryDataUnmount");
+    RegisterSymbol("VANhIWcqYak", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentMount), "sceAppContentAddcontMount");
+    RegisterSymbol("7bOLX66Iz-U", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentMount), "sceAppContentTemporaryDataMount");
+    RegisterSymbol("efX3lrPwdKA", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentMount), "sceAppContentAddcontMountByEntitlemetId");
+    RegisterSymbol("3rHWaV-1KC4", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentUmount), "sceAppContentAddcontUnmount");
+    RegisterSymbol("sceAppContentAddContIdList", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentAddContIdList), "sceAppContentAddContIdList");
+    RegisterSymbol("sceAppContentMount", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentMount), "sceAppContentMount");
+    RegisterSymbol("sceAppContentUmount", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentUmount), "sceAppContentUmount");
 
     // ===== libScePlayGo.sprx.json (6 symbols) =====
     m_names["Uco1I0dlDi8"] = "scePlayGoClose";
@@ -910,9 +922,9 @@ void NidTable::RegisterHostSubsystems() {
     // ===== libSceNpCommon.sprx.json (5 symbols) =====
     m_names["i8UmXTSq7N4"] = "sceNpCmpNpId";
     m_names["dj+O5aD2a0Q"] = "sceNpCmpOnlineId";
-    m_names["NR1J0N7L2xY"] = "sceRtcTickAddDays";
-    m_names["MDc5cd8HfCA"] = "sceRtcTickAddHours";
-    m_names["mn-tf4QiFzk"] = "sceRtcTickAddMinutes";
+    RegisterSymbol("NR1J0N7L2xY", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcTickAddDays), "sceRtcTickAddDays");
+    RegisterSymbol("MDc5cd8HfCA", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcTickAddHours), "sceRtcTickAddHours");
+    RegisterSymbol("mn-tf4QiFzk", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcTickAddMinutes), "sceRtcTickAddMinutes");
 
     // ===== libScePngDec.sprx.json (5 symbols) =====
     RegisterSymbol("m0uW+8pFyaw", reinterpret_cast<uintptr_t>(&ImageDecoder::scePngDecCreate), "scePngDecCreate");
@@ -963,10 +975,10 @@ void NidTable::RegisterHostSubsystems() {
     m_names["o6ZgXfFdWXQ"] = "sceJpegEncQueryMemorySize";
 
     // ===== libSceCdlgUtilServer.sprx.json (4 symbols) =====
-    m_names["WJ3rqFwymew"] = "sceRtcFormatRFC3339";
-    m_names["18B2NS1y9UU"] = "sceRtcGetCurrentTick";
+    RegisterSymbol("WJ3rqFwymew", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcFormatRfc3339), "sceRtcFormatRFC3339");
+    RegisterSymbol("18B2NS1y9UU", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcGetCurrentNetworkTick), "sceRtcGetCurrentTick");
     m_names["jMNwqYr4R-k"] = "sceRtcGetTickResolution";
-    m_names["99bMGglFW3I"] = "sceRtcParseRFC3339";
+    RegisterSymbol("99bMGglFW3I", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcParseRfc3339), "sceRtcParseRFC3339");
 
     // ===== libSceRtc.sprx.json (4 symbols) =====
     m_names["eiuobaF-hK4"] = "sceRtcFormatRFC2822";
@@ -993,7 +1005,7 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("i6-sR91Wt-4", reinterpret_cast<uintptr_t>(&Video::sceVideoOutSetBufferAttribute), "sceVideoOutSetBufferAttribute");
 
     // ===== libSceAbstractTwitter.sprx.json (3 symbols) =====
-    m_names["zO9UL3qIINQ"] = "sceRtcGetCurrentNetworkTick";
+    RegisterSymbol("zO9UL3qIINQ", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcGetCurrentNetworkTick), "sceRtcGetCurrentNetworkTick");
     m_names["BtqmpTRXHgk"] = "sceRtcGetTime_t";
     m_names["ueega6v3GUw"] = "sceRtcSetTick";
 
@@ -1023,28 +1035,28 @@ void NidTable::RegisterHostSubsystems() {
     m_names["VtyS8XLBqNE"] = "sceNpSnsFacebookGetAccessToken";
 
     // ===== libSceSystemService.sprx.json (2 symbols) =====
-    m_names["Vo5V8KAwCmk"] = "sceSystemServiceHideSplashScreen";
-    m_names["656LMQSrg6U"] = "sceSystemServiceReceiveEvent";
+    RegisterSymbol("Vo5V8KAwCmk", reinterpret_cast<uintptr_t>(&Kernel::sceSystemServiceHideSplashScreen), "sceSystemServiceHideSplashScreen");
+    RegisterSymbol("656LMQSrg6U", reinterpret_cast<uintptr_t>(&Kernel::sceSystemServiceReceiveEvent), "sceSystemServiceReceiveEvent");
 
     // ===== libSceAbstractDailymotion.sprx.json (2 symbols) =====
-    m_names["YuOW3dDAKYc"] = "sceHttpUriEscape";
-    m_names["8w-H19ip48I"] = "sceRtcGetTick";
+    RegisterSymbol("YuOW3dDAKYc", reinterpret_cast<uintptr_t>(&Http::sceHttpUriEscape), "sceHttpUriEscape");
+    RegisterSymbol("8w-H19ip48I", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcGetTick), "sceRtcGetTick");
 
     // ===== libSceGvMp4Parser.sprx.json (2 symbols) =====
-    m_names["8Yr143yEnRo"] = "sceRtcConvertLocalTimeToUtc";
-    m_names["M1TvFst-jrM"] = "sceRtcConvertUtcToLocalTime";
+    RegisterSymbol("8Yr143yEnRo", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcConvertLocalTimeToUtc), "sceRtcConvertLocalTimeToUtc");
+    RegisterSymbol("M1TvFst-jrM", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcConvertUtcToLocalTime), "sceRtcConvertUtcToLocalTime");
 
     // ===== libSceOrbisCompat.sprx.json (2 symbols) =====
     RegisterSymbol("xk0AcarP3V4", reinterpret_cast<uintptr_t>(&Pad::scePadOpen), "scePadOpen");
     RegisterSymbol("YndgXqQVV7c", reinterpret_cast<uintptr_t>(&Pad::scePadReadState), "scePadReadState");
 
     // ===== libSceAvPlayerStreaming.sprx.json (2 symbols) =====
-    m_names["qFg2SuyTJJY"] = "sceHttpSetAuthEnabled";
-    m_names["NxEI1KByvCI"] = "sceRtcParseDateTime";
+    RegisterSymbol("qFg2SuyTJJY", reinterpret_cast<uintptr_t>(&Http::sceHttpSetAuthEnabled), "sceHttpSetAuthEnabled");
+    RegisterSymbol("NxEI1KByvCI", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcParseDateTime), "sceRtcParseDateTime");
 
     // ===== libSceUserService.sprx.json (2 symbols) =====
-    m_names["yH17Q6NWtVg"] = "sceUserServiceGetEvent";
-    m_names["1xxcMiGu2fo"] = "sceUserServiceGetUserName";
+    RegisterSymbol("yH17Q6NWtVg", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceGetEvent), "sceUserServiceGetEvent");
+    RegisterSymbol("1xxcMiGu2fo", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceGetUserName), "sceUserServiceGetUserName");
 
     // ===== libSceNgs2.sprx.json (2 symbols) =====
     m_names["cLV4aiT9JpA"] = "sceNgs2RackCreate";
@@ -1062,7 +1074,7 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("uoUpLGNkygk", reinterpret_cast<uintptr_t>(&Dialog::sceCommonDialogInitialize), "sceCommonDialogInitialize");
 
     // ===== libSceGameLiveStreaming.sprx.json (1 symbols) =====
-    m_names["rPo6tV8D9bM"] = "sceSystemServiceGetStatus";
+    RegisterSymbol("rPo6tV8D9bM", reinterpret_cast<uintptr_t>(&Kernel::sceSystemServiceGetStatus), "sceSystemServiceGetStatus");
 
     // ===== libSceOrbisCompatForVideoService.sprx.json (1 symbols) =====
     RegisterSymbol("hv1luiJrqQM", reinterpret_cast<uintptr_t>(&Pad::scePadInit), "scePadInit");
@@ -1103,7 +1115,66 @@ void NidTable::RegisterHostSubsystems() {
     RegisterSymbol("sceNpMatching2Initialize", reinterpret_cast<uintptr_t>(&Np::sceNpMatching2Initialize), "sceNpMatching2Initialize");
     RegisterSymbol("sceNpMatching2Terminate", reinterpret_cast<uintptr_t>(&Np::sceNpMatching2Terminate), "sceNpMatching2Terminate");
     RegisterSymbol("sceNpScoreRankingInitialize", reinterpret_cast<uintptr_t>(&Np::sceNpScoreRankingInitialize), "sceNpScoreRankingInitialize");
-    RegisterSymbol("sceNpScoreRankingTerminate", reinterpret_cast<uintptr_t>(&Np::sceNpScoreRankingTerminate), "sceNpScoreRankingTerminate");
+    // ===== User, System Service, and AppContent Named Registrations =====
+    RegisterSymbol("sceUserServiceInitialize", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceInitialize), "sceUserServiceInitialize");
+    RegisterSymbol("sceUserServiceTerminate", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceTerminate), "sceUserServiceTerminate");
+    RegisterSymbol("sceUserServiceGetInitialUser", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceGetInitialUser), "sceUserServiceGetInitialUser");
+    RegisterSymbol("sceUserServiceGetLoginUserIdList", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceGetLoginUserIdList), "sceUserServiceGetLoginUserIdList");
+    RegisterSymbol("sceUserServiceGetUserName", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceGetUserName), "sceUserServiceGetUserName");
+    RegisterSymbol("sceUserServiceRegisterEventCallback", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceRegisterEventCallback), "sceUserServiceRegisterEventCallback");
+    RegisterSymbol("sceUserServiceUnregisterEventCallback", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceUnregisterEventCallback), "sceUserServiceUnregisterEventCallback");
+    RegisterSymbol("sceUserServiceGetEvent", reinterpret_cast<uintptr_t>(&Kernel::User::sceUserServiceGetEvent), "sceUserServiceGetEvent");
+    RegisterSymbol("sceSystemServiceGetStatus", reinterpret_cast<uintptr_t>(&Kernel::sceSystemServiceGetStatus), "sceSystemServiceGetStatus");
+    RegisterSymbol("sceSystemServiceReceiveEvent", reinterpret_cast<uintptr_t>(&Kernel::sceSystemServiceReceiveEvent), "sceSystemServiceReceiveEvent");
+    RegisterSymbol("sceSystemServiceHideSplashScreen", reinterpret_cast<uintptr_t>(&Kernel::sceSystemServiceHideSplashScreen), "sceSystemServiceHideSplashScreen");
+    RegisterSymbol("sceSystemServiceParamGetInt", reinterpret_cast<uintptr_t>(&Kernel::sceSystemServiceParamGetInt), "sceSystemServiceParamGetInt");
+    RegisterSymbol("sceAppContentAddContIdList", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentAddContIdList), "sceAppContentAddContIdList");
+    RegisterSymbol("sceAppContentMount", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentMount), "sceAppContentMount");
+    RegisterSymbol("sceAppContentUmount", reinterpret_cast<uintptr_t>(&Kernel::sceAppContentUmount), "sceAppContentUmount");
+
+    // ===== AvPlayer Named Registrations =====
+    RegisterSymbol("sceAvPlayerInit", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerInit), "sceAvPlayerInit");
+    RegisterSymbol("sceAvPlayerPostInit", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerPostInit), "sceAvPlayerPostInit");
+    RegisterSymbol("sceAvPlayerClose", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerClose), "sceAvPlayerClose");
+    RegisterSymbol("sceAvPlayerAddSource", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerAddSource), "sceAvPlayerAddSource");
+    RegisterSymbol("sceAvPlayerStart", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerStart), "sceAvPlayerStart");
+    RegisterSymbol("sceAvPlayerStop", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerStop), "sceAvPlayerStop");
+    RegisterSymbol("sceAvPlayerPause", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerPause), "sceAvPlayerPause");
+    RegisterSymbol("sceAvPlayerResume", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerResume), "sceAvPlayerResume");
+    RegisterSymbol("sceAvPlayerIsActive", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerIsActive), "sceAvPlayerIsActive");
+    RegisterSymbol("sceAvPlayerEnableStream", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerEnableStream), "sceAvPlayerEnableStream");
+    RegisterSymbol("sceAvPlayerStreamCount", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerStreamCount), "sceAvPlayerStreamCount");
+    RegisterSymbol("sceAvPlayerGetStreamInfo", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerGetStreamInfo), "sceAvPlayerGetStreamInfo");
+    RegisterSymbol("sceAvPlayerGetVideoDataEx", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerGetVideoDataEx), "sceAvPlayerGetVideoDataEx");
+    RegisterSymbol("sceAvPlayerSetLooping", reinterpret_cast<uintptr_t>(&Video::AvPlayer::sceAvPlayerSetLooping), "sceAvPlayerSetLooping");
+
+    // ===== RTC Named Registrations =====
+    RegisterSymbol("sceRtcGetCurrentNetworkTick", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcGetCurrentNetworkTick), "sceRtcGetCurrentNetworkTick");
+    RegisterSymbol("sceRtcGetTick", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcGetTick), "sceRtcGetTick");
+    RegisterSymbol("sceRtcTickAddDays", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcTickAddDays), "sceRtcTickAddDays");
+    RegisterSymbol("sceRtcTickAddHours", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcTickAddHours), "sceRtcTickAddHours");
+    RegisterSymbol("sceRtcTickAddMinutes", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcTickAddMinutes), "sceRtcTickAddMinutes");
+    RegisterSymbol("sceRtcTickAddSeconds", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcTickAddSeconds), "sceRtcTickAddSeconds");
+    RegisterSymbol("sceRtcConvertUtcToLocalTime", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcConvertUtcToLocalTime), "sceRtcConvertUtcToLocalTime");
+    RegisterSymbol("sceRtcConvertLocalTimeToUtc", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcConvertLocalTimeToUtc), "sceRtcConvertLocalTimeToUtc");
+    RegisterSymbol("sceRtcFormatRfc3339", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcFormatRfc3339), "sceRtcFormatRfc3339");
+    RegisterSymbol("sceRtcFormatRFC3339", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcFormatRFC3339), "sceRtcFormatRFC3339");
+    RegisterSymbol("sceRtcParseRfc3339", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcParseRfc3339), "sceRtcParseRfc3339");
+    RegisterSymbol("sceRtcParseRFC3339", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcParseRFC3339), "sceRtcParseRFC3339");
+    RegisterSymbol("sceRtcParseDateTime", reinterpret_cast<uintptr_t>(&Kernel::Rtc::sceRtcParseDateTime), "sceRtcParseDateTime");
+
+    // ===== GNM Named Registrations =====
+    RegisterSymbol("sceGnmAreSubmitsAllowed", reinterpret_cast<uintptr_t>(&GPU::sceGnmAreSubmitsAllowed), "sceGnmAreSubmitsAllowed");
+    RegisterSymbol("sceGnmBeginWorkload", reinterpret_cast<uintptr_t>(&GPU::sceGnmBeginWorkload), "sceGnmBeginWorkload");
+    RegisterSymbol("sceGnmEndWorkload", reinterpret_cast<uintptr_t>(&GPU::sceGnmEndWorkload), "sceGnmEndWorkload");
+    RegisterSymbol("sceGnmAddEqEvent", reinterpret_cast<uintptr_t>(&GPU::sceGnmAddEqEvent), "sceGnmAddEqEvent");
+    RegisterSymbol("sceGnmDeleteEqEvent", reinterpret_cast<uintptr_t>(&GPU::sceGnmDeleteEqEvent), "sceGnmDeleteEqEvent");
+    RegisterSymbol("sceGnmGetGpuBlockStatus", reinterpret_cast<uintptr_t>(&GPU::sceGnmGetGpuBlockStatus), "sceGnmGetGpuBlockStatus");
+    RegisterSymbol("sceGnmDrawIndex", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndex), "sceGnmDrawIndex");
+    RegisterSymbol("sceGnmDrawIndexOffset", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndexOffset), "sceGnmDrawIndexOffset");
+    RegisterSymbol("sceGnmDrawIndirect", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndirect), "sceGnmDrawIndirect");
+    RegisterSymbol("sceGnmDrawIndexIndirect", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndexIndirect), "sceGnmDrawIndexIndirect");
+    RegisterSymbol("sceGnmDrawIndexMultiInstanced", reinterpret_cast<uintptr_t>(&GPU::sceGnmDrawIndexMultiInstanced), "sceGnmDrawIndexMultiInstanced");
 
     LOG_INFO("NID", "Registered " + std::to_string(m_symbols.size()) + " native host API symbols and " +
              std::to_string(m_names.size()) + " named API stubs.");

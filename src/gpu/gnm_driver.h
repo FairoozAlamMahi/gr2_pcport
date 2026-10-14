@@ -69,6 +69,18 @@ PS4_SYSV_ABI s32 sceGnmMapComputeQueue(u32 pipe_id, u32 queue_id, const void* ri
 PS4_SYSV_ABI s32 sceGnmMapComputeQueueWithPriority(u32 pipe_id, u32 queue_id, const void* ring_base_addr, u32 ring_size_dw, void* read_ptr_addr, u32 priority);
 PS4_SYSV_ABI void* sceGnmGetTheTessellationFactorRingBufferBaseAddress();
 
+PS4_SYSV_ABI s32 sceGnmAreSubmitsAllowed();
+PS4_SYSV_ABI s32 sceGnmBeginWorkload(void* arg0, void* arg1, void* arg2);
+PS4_SYSV_ABI s32 sceGnmEndWorkload(void* arg0, void* arg1, void* arg2);
+PS4_SYSV_ABI s32 sceGnmAddEqEvent(void* arg0, void* arg1);
+PS4_SYSV_ABI s32 sceGnmDeleteEqEvent(void* arg0);
+PS4_SYSV_ABI s32 sceGnmGetGpuBlockStatus(void* arg0, void* arg1);
+PS4_SYSV_ABI s32 sceGnmDrawIndex(void* dcb, u32 num_dwords, u32 index_count, const void* index_addr, u32 flags);
+PS4_SYSV_ABI s32 sceGnmDrawIndexOffset(void* dcb, u32 num_dwords, u32 index_count, u32 offset, u32 flags);
+PS4_SYSV_ABI s32 sceGnmDrawIndirect(void* dcb, u32 num_dwords, const void* arg2, const void* arg3);
+PS4_SYSV_ABI s32 sceGnmDrawIndexIndirect(void* dcb, u32 num_dwords, const void* arg2, const void* arg3);
+PS4_SYSV_ABI s32 sceGnmDrawIndexMultiInstanced(void* dcb, u32 num_dwords, u32 index_count, u32 instance_count, u32 first_index, u32 vertex_offset, u32 first_instance);
+
 } // extern "C"
 
 } // namespace GPU

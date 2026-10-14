@@ -271,16 +271,9 @@ PS4_SYSV_ABI s32 sceSystemServiceGetStatus(void* status);
 PS4_SYSV_ABI s32 sceSystemServiceReceiveEvent(void* event);
 PS4_SYSV_ABI s32 sceAppContentAppParamGetInt(s32 param_id, s32* out_val);
 PS4_SYSV_ABI s32 sceAppContentGetAddcontInfoList(s32 a, s32 b, s32 c, u32* out_count);
-PS4_SYSV_ABI s32 sceUserServiceGetEvent(void* event);
-PS4_SYSV_ABI s32 sceUserServiceInitialize(const void* param);
-PS4_SYSV_ABI s32 sceUserServiceTerminate();
-PS4_SYSV_ABI s32 sceUserServiceGetInitialUser(s32* user_id);
-PS4_SYSV_ABI s32 sceUserServiceGetLoginUserIdList(s32* user_ids);
-PS4_SYSV_ABI s32 sceUserServiceGetUserName(s32 user_id, char* name, usize size);
-
-// RTC (Real Time Clock)
-PS4_SYSV_ABI s32 sceRtcGetCurrentNetworkTick(void* tick_out);
-PS4_SYSV_ABI s32 sceRtcGetTick(const void* time, void* tick_out);
+PS4_SYSV_ABI s32 sceAppContentAddContIdList(const void* list);
+PS4_SYSV_ABI s32 sceAppContentMount(const void* param, void* mount_point);
+PS4_SYSV_ABI s32 sceAppContentUmount(const void* mount_point);
 
 // PlayGo Background Streaming
 PS4_SYSV_ABI s32 scePlayGoInitialize(const void* param);

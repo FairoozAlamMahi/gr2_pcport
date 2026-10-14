@@ -44,6 +44,10 @@ set(SOURCES
     src/kernel/np_service.cpp
     src/video/image_decoder.cpp
     src/kernel/dialog_service.cpp
+    src/video/avplayer_service.cpp
+    src/kernel/rtc_service.cpp
+    src/kernel/user_service.cpp
+    src/kernel/http_service.cpp
 )
 
 set(HEADERS
@@ -67,6 +71,10 @@ set(HEADERS
     src/kernel/np_service.h
     src/video/image_decoder.h
     src/kernel/dialog_service.h
+    src/video/avplayer_service.h
+    src/kernel/rtc_service.h
+    src/kernel/user_service.h
+    src/kernel/http_service.h
 )
 
 add_executable(gr2_pc ${SOURCES} ${HEADERS})

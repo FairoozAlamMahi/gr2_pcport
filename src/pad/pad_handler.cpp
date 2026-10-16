@@ -3,6 +3,8 @@
 #include <xinput.h>
 #include <cmath>
 #include <chrono>
+#include <atomic>
+#include <string>
 
 namespace Pad {
 
@@ -76,6 +78,19 @@ PS4_SYSV_ABI s32 scePadReadState(s32 handle, ScePadData* data) {
     data->connectedCount = 1;
     auto now = std::chrono::steady_clock::now();
     data->timestamp = static_cast<u64>(std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch()).count());
+
+    static std::atomic<u64> s_pad_reads{0};
+    u64 reads = s_pad_reads.fetch_add(1, std::memory_order_relaxed);
+    if (reads <= 5 || reads % 180 == 0) {
+        LOG_INFO("PAD", "scePadReadState: sampling inputs (read #" + std::to_string(reads) + ")");
+    }
+
+    static bool s_auto_input_enabled = (GetEnvironmentVariableA("GR2_AUTO_INPUT", nullptr, 0) > 0);
+    if (s_auto_input_enabled) {
+        if (reads > 60 && (reads % 60 < 10)) {
+            data->buttons |= 0x4000; // Cross (Enter / A button)
+        }
+    }
 
     // 1. Read XInput Controller
     XINPUT_STATE xi_state{};

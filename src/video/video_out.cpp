@@ -1,5 +1,6 @@
 #include "video/video_out.h"
 #include "video/vulkan_context.h"
+#include "memory/vm.h"
 #include "kernel/libkernel.h"
 #include "common/logger.h"
 #include <algorithm>
@@ -168,8 +169,21 @@ PS4_SYSV_ABI s32 sceVideoOutRegisterBuffers(
         }
         for (s32 i = 0; i < bufferNum; ++i) {
             s_registered_buffers[startIndex + i] = addresses[i];
-            LOG_INFO("VIDEO", "Registered display buffer " + std::to_string(startIndex + i) + 
-                     " at VA 0x" + ToHex(reinterpret_cast<uintptr_t>(addresses[i])));
+            uintptr_t va = reinterpret_cast<uintptr_t>(addresses[i]);
+            void* host_ptr = Memory::VirtualMemoryManager::Instance().GuestToHost(va);
+            if (host_ptr) {
+                u32* px = static_cast<u32*>(host_ptr);
+                u32 total = 1920 * 1080;
+                for (u32 p = 0; p < total; ++p) {
+                    u32 y = p / 1920;
+                    u32 r = 0x14 - (y * 6 / 1080);
+                    u32 g = 0x1A - (y * 8 / 1080);
+                    u32 b = 0x24 - (y * 10 / 1080);
+                    px[p] = 0xFF000000 | (r << 16) | (g << 8) | b;
+                }
+            }
+            LOG_INFO("VIDEO", "Registered and initialized display buffer " + std::to_string(startIndex + i) + 
+                     " at VA 0x" + ToHex(va));
         }
     }
     return 0;

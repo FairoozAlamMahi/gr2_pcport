@@ -187,50 +187,68 @@ PS4_SYSV_ABI s32 sceAudioOutClose(s32 handle) {
 PS4_SYSV_ABI s32 sceAudioOutOutput(s32 handle, const void* ptr) {
     if (!ptr) return -1;
 
-    std::lock_guard<std::mutex> lock(s_audio_mutex);
-    auto it = s_ports.find(handle);
-    if (it == s_ports.end()) return -1;
+    u32 sample_len = 0;
+    u32 sample_rate = 0;
+    u64 last_hash = 0;
+    std::chrono::steady_clock::time_point last_submit{};
 
-    auto& port = it->second;
+    {
+        std::lock_guard<std::mutex> lock(s_audio_mutex);
+        auto it = s_ports.find(handle);
+        if (it == s_ports.end()) {
+            SwitchToThread();
+            return -1;
+        }
+        sample_len = it->second.sample_len;
+        sample_rate = it->second.sample_rate;
+        last_hash = it->second.last_hash;
+        last_submit = it->second.last_submit;
+    }
+
     auto now = std::chrono::steady_clock::now();
-    auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - port.last_submit).count();
+    auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(now - last_submit).count();
 
-    // Gravity Kick Audio Overlap Filter:
-    // If consecutive audio packets have identical sound hashes submitted within 80 ms,
-    // suppress buffer stacking to prevent audio loop saturation on PC audio drivers.
-    usize byte_len = port.sample_len * 2 * sizeof(s16); // Stereo 16-bit
+    usize byte_len = sample_len * 2 * sizeof(s16); // Stereo 16-bit
     u64 current_hash = ComputeAudioHash(reinterpret_cast<const u8*>(ptr), byte_len);
 
-    if (current_hash == port.last_hash && elapsed_ms < 80) {
-        // Suppress redundant overlapping sound cue
+    u32 target_block_ms = (sample_len * 1000) / (sample_rate > 0 ? sample_rate : 48000);
+    if (target_block_ms == 0) target_block_ms = 5;
+
+    if (current_hash == last_hash && elapsed_ms < 80) {
+        // Suppress redundant overlapping sound cue but maintain stream pacing
+        if (elapsed_ms < target_block_ms) {
+            DWORD wait_ms = static_cast<DWORD>(target_block_ms - elapsed_ms);
+            if (wait_ms > 0) Sleep(wait_ms);
+        }
         return 0;
     }
 
-    port.last_hash = current_hash;
-    port.last_submit = now;
+    if (elapsed_ms < target_block_ms) {
+        DWORD wait_ms = static_cast<DWORD>(target_block_ms - elapsed_ms);
+        if (wait_ms > 0) Sleep(wait_ms);
+    }
 
-    // Route audio to host playback device via WASAPI when received from port 1
-    if (handle == 1 && s_wasapi_initialized && s_render_client && s_audio_client) {
-        UINT32 padding = 0;
-        HRESULT hr = s_audio_client->GetCurrentPadding(&padding);
-        if (SUCCEEDED(hr)) {
-            UINT32 available = (s_buffer_frame_count > padding) ? (s_buffer_frame_count - padding) : 0;
-            if (available < port.sample_len) {
-                // Buffer is temporarily full; wait briefly for host audio engine to consume frames
-                for (int retry = 0; retry < 5 && available < port.sample_len; ++retry) {
-                    Sleep(1);
-                    if (SUCCEEDED(s_audio_client->GetCurrentPadding(&padding))) {
-                        available = (s_buffer_frame_count > padding) ? (s_buffer_frame_count - padding) : 0;
+    {
+        std::lock_guard<std::mutex> lock(s_audio_mutex);
+        auto it = s_ports.find(handle);
+        if (it != s_ports.end()) {
+            it->second.last_hash = current_hash;
+            it->second.last_submit = std::chrono::steady_clock::now();
+        }
+
+        // Route audio to host playback device via WASAPI when received from port 1
+        if (handle == 1 && s_wasapi_initialized && s_render_client && s_audio_client) {
+            UINT32 padding = 0;
+            HRESULT hr = s_audio_client->GetCurrentPadding(&padding);
+            if (SUCCEEDED(hr)) {
+                UINT32 available = (s_buffer_frame_count > padding) ? (s_buffer_frame_count - padding) : 0;
+                if (available >= sample_len) {
+                    BYTE* pData = nullptr;
+                    hr = s_render_client->GetBuffer(sample_len, &pData);
+                    if (SUCCEEDED(hr) && pData) {
+                        std::memcpy(pData, ptr, byte_len);
+                        s_render_client->ReleaseBuffer(sample_len, 0);
                     }
-                }
-            }
-
-            if (available >= port.sample_len) {
-                BYTE* pData = nullptr;
-                hr = s_render_client->GetBuffer(port.sample_len, &pData);
-                if (SUCCEEDED(hr) && pData) {
-                    std::memcpy(pData, ptr, byte_len);
-                    s_render_client->ReleaseBuffer(port.sample_len, 0);
                 }
             }
         }

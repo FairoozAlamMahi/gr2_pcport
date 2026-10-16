@@ -33,9 +33,16 @@ public:
     bool FreeFlexibleMemory(void* vaddr, u64 size);
 
     // Virtual address translation & bounds checking
-    bool IsGuestAddress(const void* ptr) const;
-    void* GuestToHost(u64 guest_vaddr) const;
-    u64 HostToGuest(const void* host_ptr) const;
+    inline bool IsGuestAddress(const void* ptr) const {
+        return (reinterpret_cast<uintptr_t>(ptr) >= 0x10000ULL);
+    }
+    inline void* GuestToHost(u64 guest_vaddr) const {
+        if (guest_vaddr < 0x10000ULL) return nullptr;
+        return reinterpret_cast<void*>(guest_vaddr);
+    }
+    inline u64 HostToGuest(const void* host_ptr) const {
+        return reinterpret_cast<u64>(host_ptr);
+    }
 
     // Helpers
     u64 GetTotalDirectMemorySize() const { return TOTAL_DMEM_POOL_SIZE; }

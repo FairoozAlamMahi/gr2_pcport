@@ -33,6 +33,10 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPara
         return 0;
     case WM_ACTIVATE:
         VulkanContext::Instance().SetFocus(LOWORD(wParam) != WA_INACTIVE);
+    case WM_LBUTTONDOWN:
+    case WM_RBUTTONDOWN:
+    case WM_MBUTTONDOWN:
+        SetFocus(hwnd);
         return 0;
     case WM_SYSCOMMAND:
         if ((wParam & 0xFFF0) == SC_SCREENSAVE || (wParam & 0xFFF0) == SC_MONITORPOWER) {
@@ -123,18 +127,27 @@ bool VulkanContext::Initialize(u32 width, u32 height, bool fullscreen, bool head
         return false;
     }
 
-    if (m_vk_device && fp_vkCreateSemaphore) {
+    if (m_vk_device && fp_vkCreateSemaphore && fp_vkCreateFence) {
         VkSemaphoreCreateInfo sci{};
         sci.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-        if (fp_vkCreateSemaphore(m_vk_device, &sci, nullptr, &m_image_available_semaphore) != VK_SUCCESS) {
-            LOG_ERROR("VULKAN", "Failed to create image-available semaphore.");
-            return false;
+
+        VkFenceCreateInfo fci{};
+        fci.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fci.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+        m_image_available_semaphores.resize(MAX_FRAMES_IN_FLIGHT, VK_NULL_HANDLE);
+        m_render_finished_semaphores.resize(MAX_FRAMES_IN_FLIGHT, VK_NULL_HANDLE);
+        m_in_flight_fences.resize(MAX_FRAMES_IN_FLIGHT, VK_NULL_HANDLE);
+
+        for (u32 i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+            if (fp_vkCreateSemaphore(m_vk_device, &sci, nullptr, &m_image_available_semaphores[i]) != VK_SUCCESS ||
+                fp_vkCreateSemaphore(m_vk_device, &sci, nullptr, &m_render_finished_semaphores[i]) != VK_SUCCESS ||
+                fp_vkCreateFence(m_vk_device, &fci, nullptr, &m_in_flight_fences[i]) != VK_SUCCESS) {
+                LOG_ERROR("VULKAN", "Failed to create presentation synchronization objects for frame " + std::to_string(i));
+                return false;
+            }
         }
-        if (fp_vkCreateSemaphore(m_vk_device, &sci, nullptr, &m_render_finished_semaphore) != VK_SUCCESS) {
-            LOG_ERROR("VULKAN", "Failed to create render-finished semaphore.");
-            return false;
-        }
-        LOG_INFO("VULKAN", "Vulkan presentation synchronization semaphores created successfully.");
+        LOG_INFO("VULKAN", "Vulkan triple-buffered presentation semaphores and fences created successfully.");
     }
 
     if (!m_headless && m_vk_surface) {
@@ -177,15 +190,20 @@ void VulkanContext::Shutdown() {
         m_cmd_pool = VK_NULL_HANDLE;
     }
 
-    if (m_render_finished_semaphore && fp_vkDestroySemaphore) {
-        fp_vkDestroySemaphore(m_vk_device, m_render_finished_semaphore, nullptr);
-        m_render_finished_semaphore = VK_NULL_HANDLE;
+    for (auto fence : m_in_flight_fences) {
+        if (fence && fp_vkDestroyFence) fp_vkDestroyFence(m_vk_device, fence, nullptr);
     }
+    m_in_flight_fences.clear();
 
-    if (m_image_available_semaphore && fp_vkDestroySemaphore) {
-        fp_vkDestroySemaphore(m_vk_device, m_image_available_semaphore, nullptr);
-        m_image_available_semaphore = VK_NULL_HANDLE;
+    for (auto sem : m_render_finished_semaphores) {
+        if (sem && fp_vkDestroySemaphore) fp_vkDestroySemaphore(m_vk_device, sem, nullptr);
     }
+    m_render_finished_semaphores.clear();
+
+    for (auto sem : m_image_available_semaphores) {
+        if (sem && fp_vkDestroySemaphore) fp_vkDestroySemaphore(m_vk_device, sem, nullptr);
+    }
+    m_image_available_semaphores.clear();
 
     for (auto iv : m_swapchain_image_views) {
         if (iv && fp_vkDestroyImageView) fp_vkDestroyImageView(m_vk_device, iv, nullptr);
@@ -256,22 +274,48 @@ bool VulkanContext::CreateAppWindow() {
     wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
     wc.lpszClassName = L"GravityRush2_WindowClass";
 
+    // Set Per-Monitor DPI Awareness so Windows does not stretch or virtualize client rect
+    typedef BOOL(WINAPI * PFN_SetProcessDpiAwarenessContext)(DPI_AWARENESS_CONTEXT);
+    auto pfn_set_dpi = reinterpret_cast<PFN_SetProcessDpiAwarenessContext>(
+        GetProcAddress(GetModuleHandleW(L"user32.dll"), "SetProcessDpiAwarenessContext"));
+    if (pfn_set_dpi) {
+        pfn_set_dpi(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+    } else {
+        SetProcessDPIAware();
+    }
+
+    DisableProcessWindowsGhosting();
     RegisterClassExW(&wc);
 
-    RECT r = {0, 0, static_cast<LONG>(m_width), static_cast<LONG>(m_height)};
+    int screen_w = GetSystemMetrics(SM_CXSCREEN);
+    int screen_h = GetSystemMetrics(SM_CYSCREEN);
+
     DWORD style = WS_OVERLAPPEDWINDOW;
-    if (m_fullscreen) {
+    int win_x = CW_USEDEFAULT;
+    int win_y = CW_USEDEFAULT;
+    int win_w = 0;
+    int win_h = 0;
+
+    if (m_fullscreen || (m_width >= static_cast<u32>(screen_w) && m_height >= static_cast<u32>(screen_h))) {
         style = WS_POPUP;
+        win_x = 0;
+        win_y = 0;
+        win_w = screen_w;
+        win_h = screen_h;
+    } else {
+        RECT r = {0, 0, static_cast<LONG>(m_width), static_cast<LONG>(m_height)};
+        AdjustWindowRect(&r, style, FALSE);
+        win_w = r.right - r.left;
+        win_h = r.bottom - r.top;
     }
-    AdjustWindowRect(&r, style, FALSE);
 
     m_hwnd = CreateWindowExW(
         0,
         wc.lpszClassName,
         L"Gravity Rush 2 (PC Port) — 60 FPS [Argon Engine]",
         style,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        r.right - r.left, r.bottom - r.top,
+        win_x, win_y,
+        win_w, win_h,
         nullptr, nullptr, m_hinstance, nullptr
     );
 
@@ -302,7 +346,7 @@ void VulkanContext::WindowThreadLoop() {
             TranslateMessage(&msg);
             DispatchMessageW(&msg);
         }
-        MsgWaitForMultipleObjects(0, nullptr, FALSE, 10, QS_ALLINPUT);
+        Sleep(1);
     }
 
     if (m_hwnd) {
@@ -479,6 +523,12 @@ bool VulkanContext::CreateLogicalDevice() {
     LOAD_DEV(vkBindBufferMemory);
     LOAD_DEV(vkMapMemory);
     LOAD_DEV(vkUnmapMemory);
+    LOAD_DEV(vkQueueWaitIdle);
+    LOAD_DEV(vkDeviceWaitIdle);
+    LOAD_DEV(vkCreateFence);
+    LOAD_DEV(vkDestroyFence);
+    LOAD_DEV(vkWaitForFences);
+    LOAD_DEV(vkResetFences);
     #undef LOAD_DEV
 
     LOG_INFO("VULKAN", "Vulkan Logical Device and Queues created successfully.");
@@ -486,8 +536,21 @@ bool VulkanContext::CreateLogicalDevice() {
 }
 
 bool VulkanContext::CreateSwapchain() {
-    VkSurfaceCapabilitiesKHR caps;
-    fp_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_vk_physical_device, m_vk_surface, &caps);
+    VkSurfaceCapabilitiesKHR caps{};
+    if (fp_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_vk_physical_device, m_vk_surface, &caps) != VK_SUCCESS) {
+        LOG_WARN("VULKAN", "Failed to query physical device surface capabilities.");
+        return false;
+    }
+
+    VkExtent2D actual_extent = {m_width, m_height};
+    if (caps.currentExtent.width != UINT32_MAX && caps.currentExtent.width > 0 && caps.currentExtent.height > 0) {
+        actual_extent = caps.currentExtent;
+    } else {
+        actual_extent.width = std::clamp(actual_extent.width, caps.minImageExtent.width, caps.maxImageExtent.width);
+        actual_extent.height = std::clamp(actual_extent.height, caps.minImageExtent.height, caps.maxImageExtent.height);
+    }
+    m_swapchain_width = actual_extent.width;
+    m_swapchain_height = actual_extent.height;
 
     u32 image_count = caps.minImageCount + 1;
     if (caps.maxImageCount > 0 && image_count > caps.maxImageCount) {
@@ -500,18 +563,48 @@ bool VulkanContext::CreateSwapchain() {
     sci.minImageCount = image_count;
     sci.imageFormat = m_swapchain_format;
     sci.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-    sci.imageExtent = {m_width, m_height};
+    sci.imageExtent = actual_extent;
     sci.imageArrayLayers = 1;
     sci.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     sci.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    sci.oldSwapchain = m_vk_swapchain;
+
+    VkPresentModeKHR selected_mode = VK_PRESENT_MODE_FIFO_KHR;
+    if (fp_vkGetPhysicalDeviceSurfacePresentModesKHR) {
+        u32 mode_count = 0;
+        fp_vkGetPhysicalDeviceSurfacePresentModesKHR(m_vk_physical_device, m_vk_surface, &mode_count, nullptr);
+        std::vector<VkPresentModeKHR> modes(mode_count);
+        fp_vkGetPhysicalDeviceSurfacePresentModesKHR(m_vk_physical_device, m_vk_surface, &mode_count, modes.data());
+        for (auto m : modes) {
+            if (m == VK_PRESENT_MODE_MAILBOX_KHR) {
+                selected_mode = VK_PRESENT_MODE_MAILBOX_KHR;
+                break;
+            }
+        }
+    }
     sci.preTransform = caps.currentTransform;
     sci.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    sci.presentMode = VK_PRESENT_MODE_FIFO_KHR; // VSync / 60 FPS lockstep
+    sci.presentMode = selected_mode;
     sci.clipped = VK_TRUE;
 
-    if (fp_vkCreateSwapchainKHR(m_vk_device, &sci, nullptr, &m_vk_swapchain) != VK_SUCCESS) {
+    VkSwapchainKHR new_swapchain = VK_NULL_HANDLE;
+    if (fp_vkCreateSwapchainKHR(m_vk_device, &sci, nullptr, &new_swapchain) != VK_SUCCESS) {
+        LOG_WARN("VULKAN", "Failed to create Vulkan swapchain.");
         return false;
     }
+
+    // Clean up old image views and old swapchain
+    for (auto iv : m_swapchain_image_views) {
+        if (iv && fp_vkDestroyImageView) {
+            fp_vkDestroyImageView(m_vk_device, iv, nullptr);
+        }
+    }
+    m_swapchain_image_views.clear();
+
+    if (m_vk_swapchain && fp_vkDestroySwapchainKHR) {
+        fp_vkDestroySwapchainKHR(m_vk_device, m_vk_swapchain, nullptr);
+    }
+    m_vk_swapchain = new_swapchain;
 
     u32 actual_img_count = 0;
     fp_vkGetSwapchainImagesKHR(m_vk_device, m_vk_swapchain, &actual_img_count, nullptr);
@@ -536,8 +629,28 @@ bool VulkanContext::CreateSwapchain() {
 
     LOG_INFO("VULKAN", "Vulkan Swapchain configured with " + 
              std::to_string(actual_img_count) + " presentation buffers (" + 
-             std::to_string(m_width) + "x" + std::to_string(m_height) + ").");
+             std::to_string(m_swapchain_width) + "x" + std::to_string(m_swapchain_height) + ").");
     return true;
+}
+
+bool VulkanContext::RecreateSwapchain() {
+    if (!m_initialized || !m_vk_device || !m_vk_surface) return false;
+
+    // Check if window is minimized
+    VkSurfaceCapabilitiesKHR caps{};
+    if (fp_vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_vk_physical_device, m_vk_surface, &caps) != VK_SUCCESS) {
+        return false;
+    }
+    if (caps.currentExtent.width == 0 || caps.currentExtent.height == 0) {
+        // Minimized window, skip until restored
+        return false;
+    }
+
+    if (fp_vkDeviceWaitIdle) {
+        fp_vkDeviceWaitIdle(m_vk_device);
+    }
+
+    return CreateSwapchain();
 }
 
 bool VulkanContext::CreateStagingResources() {
@@ -553,19 +666,20 @@ bool VulkanContext::CreateStagingResources() {
         return false;
     }
 
-    // 2. Allocate Primary Command Buffer
+    // 2. Allocate Primary Command Buffers (one per frame in flight)
+    m_cmd_buffers.resize(MAX_FRAMES_IN_FLIGHT, VK_NULL_HANDLE);
     VkCommandBufferAllocateInfo cbai{};
     cbai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     cbai.commandPool = m_cmd_pool;
     cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    cbai.commandBufferCount = 1;
-    if (!fp_vkAllocateCommandBuffers || fp_vkAllocateCommandBuffers(m_vk_device, &cbai, &m_cmd_buffer) != VK_SUCCESS) {
-        LOG_WARN("VULKAN", "Failed to allocate Vulkan command buffer.");
+    cbai.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
+    if (!fp_vkAllocateCommandBuffers || fp_vkAllocateCommandBuffers(m_vk_device, &cbai, m_cmd_buffers.data()) != VK_SUCCESS) {
+        LOG_WARN("VULKAN", "Failed to allocate Vulkan command buffers.");
         return false;
     }
 
-    // 3. Create Host-Visible Staging Buffer for Frame Blit
-    m_staging_size = static_cast<u64>(m_width) * m_height * 4;
+    // 3. Create Host-Visible Staging Buffer for Frame Blit (triple-buffered: one slot per frame in flight)
+    m_staging_size = static_cast<u64>(m_width) * m_height * 4 * MAX_FRAMES_IN_FLIGHT;
     VkBufferCreateInfo bci{};
     bci.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bci.size = m_staging_size;
@@ -610,42 +724,76 @@ bool VulkanContext::CreateStagingResources() {
 
     fp_vkBindBufferMemory(m_vk_device, m_staging_buffer, m_staging_memory, 0);
     fp_vkMapMemory(m_vk_device, m_staging_memory, 0, m_staging_size, 0, &m_staging_mapped_ptr);
+    m_current_frame_index = 0;
 
-    LOG_INFO("VULKAN", "Staging frame buffer initialized (" + std::to_string(m_staging_size) + " bytes).");
+    LOG_INFO("VULKAN", "Staging frame buffer initialized (" + std::to_string(m_staging_size) + " bytes, " +
+             std::to_string(MAX_FRAMES_IN_FLIGHT) + " frame slots).");
     return true;
 }
 
 void VulkanContext::PresentFrame(const void* frame_data) {
     if (!m_initialized || !m_vk_swapchain || !fp_vkQueuePresentKHR || !m_vk_device) return;
 
+    u32 frame_idx = m_current_frame_index;
+
+    // 1. Wait for previous submission on this frame slot to complete
+    if (fp_vkWaitForFences && !m_in_flight_fences.empty() && m_in_flight_fences[frame_idx]) {
+        fp_vkWaitForFences(m_vk_device, 1, &m_in_flight_fences[frame_idx], VK_TRUE, UINT64_MAX);
+        fp_vkResetFences(m_vk_device, 1, &m_in_flight_fences[frame_idx]);
+    }
+
+    // 2. Acquire next swapchain image
     u32 image_index = 0;
-    if (fp_vkAcquireNextImageKHR && m_image_available_semaphore) {
+    VkSemaphore img_avail_sem = m_image_available_semaphores.empty() ? VK_NULL_HANDLE : m_image_available_semaphores[frame_idx];
+    if (fp_vkAcquireNextImageKHR && img_avail_sem) {
         VkResult res = fp_vkAcquireNextImageKHR(
             m_vk_device,
             m_vk_swapchain,
             UINT64_MAX,
-            m_image_available_semaphore,
+            img_avail_sem,
             VK_NULL_HANDLE,
             &image_index
         );
-        if (res == VK_ERROR_OUT_OF_DATE_KHR) {
-            return;
-        } else if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR) {
+        if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR) {
+            LOG_INFO("VULKAN", "vkAcquireNextImageKHR returned OUT_OF_DATE/SUBOPTIMAL (" + std::to_string(res) + "), recreating swapchain...");
+            if (RecreateSwapchain()) {
+                res = fp_vkAcquireNextImageKHR(
+                    m_vk_device,
+                    m_vk_swapchain,
+                    UINT64_MAX,
+                    img_avail_sem,
+                    VK_NULL_HANDLE,
+                    &image_index
+                );
+            }
+        }
+        if (res != VK_SUCCESS && res != VK_SUBOPTIMAL_KHR) {
+            static int s_logged_acq_err = 0;
+            if (s_logged_acq_err++ < 10) {
+                LOG_WARN("VULKAN", "vkAcquireNextImageKHR returned error: " + std::to_string(res));
+            }
             return;
         }
         m_current_image_index = image_index;
     }
 
-    // If game frame data is provided and staging resources exist, blit frame into swapchain image!
-    if (frame_data && m_staging_mapped_ptr && m_cmd_buffer && fp_vkBeginCommandBuffer) {
+    // 3. If game frame data is provided and staging resources exist, blit frame into swapchain image!
+    VkCommandBuffer cmd_buf = (frame_idx < m_cmd_buffers.size()) ? m_cmd_buffers[frame_idx] : VK_NULL_HANDLE;
+    VkSemaphore rnd_done_sem = (frame_idx < m_render_finished_semaphores.size()) ? m_render_finished_semaphores[frame_idx] : VK_NULL_HANDLE;
+    VkFence flight_fence = (frame_idx < m_in_flight_fences.size()) ? m_in_flight_fences[frame_idx] : VK_NULL_HANDLE;
+
+    if (frame_data && m_staging_mapped_ptr && cmd_buf && fp_vkBeginCommandBuffer) {
         const void* src_pixels = frame_data;
         if (Memory::VirtualMemoryManager::Instance().IsGuestAddress(frame_data)) {
             src_pixels = Memory::VirtualMemoryManager::Instance().GuestToHost(reinterpret_cast<uintptr_t>(frame_data));
         }
 
-        MEMORY_BASIC_INFORMATION mbi{};
-        if (src_pixels && VirtualQuery(src_pixels, &mbi, sizeof(mbi)) != 0 && mbi.State == MEM_COMMIT) {
-            std::memcpy(m_staging_mapped_ptr, src_pixels, m_staging_size);
+        u64 single_frame_bytes = static_cast<u64>(m_width) * m_height * 4;
+        u64 slot_offset = static_cast<u64>(frame_idx) * single_frame_bytes;
+        u8* slot_dst = static_cast<u8*>(m_staging_mapped_ptr) + slot_offset;
+
+        if (src_pixels) {
+            std::memcpy(slot_dst, src_pixels, single_frame_bytes);
 
             static u64 s_frame_check_counter = 0;
             if (++s_frame_check_counter <= 10 || s_frame_check_counter % 60 == 0) {
@@ -665,7 +813,7 @@ void VulkanContext::PresentFrame(const void* frame_data) {
         VkCommandBufferBeginInfo bi{};
         bi.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         bi.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-        fp_vkBeginCommandBuffer(m_cmd_buffer, &bi);
+        fp_vkBeginCommandBuffer(cmd_buf, &bi);
 
         VkImage target_image = m_swapchain_images[m_current_image_index];
 
@@ -684,7 +832,7 @@ void VulkanContext::PresentFrame(const void* frame_data) {
         barrier1.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 
         fp_vkCmdPipelineBarrier(
-            m_cmd_buffer,
+            cmd_buf,
             VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
             VK_PIPELINE_STAGE_TRANSFER_BIT,
             0,
@@ -693,17 +841,20 @@ void VulkanContext::PresentFrame(const void* frame_data) {
             1, &barrier1
         );
 
-        // Copy staging buffer to swapchain image
+        // Copy staging buffer slot to swapchain image (clamped to swapchain extent)
+        u32 copy_w = std::min(m_width, m_swapchain_width);
+        u32 copy_h = std::min(m_height, m_swapchain_height);
+
         VkBufferImageCopy region{};
-        region.bufferOffset = 0;
+        region.bufferOffset = slot_offset;
         region.bufferRowLength = m_width;
         region.bufferImageHeight = m_height;
         region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         region.imageSubresource.layerCount = 1;
-        region.imageExtent = {m_width, m_height, 1};
+        region.imageExtent = {copy_w, copy_h, 1};
 
         fp_vkCmdCopyBufferToImage(
-            m_cmd_buffer,
+            cmd_buf,
             m_staging_buffer,
             target_image,
             VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -726,7 +877,7 @@ void VulkanContext::PresentFrame(const void* frame_data) {
         barrier2.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 
         fp_vkCmdPipelineBarrier(
-            m_cmd_buffer,
+            cmd_buf,
             VK_PIPELINE_STAGE_TRANSFER_BIT,
             VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
             0,
@@ -735,66 +886,68 @@ void VulkanContext::PresentFrame(const void* frame_data) {
             1, &barrier2
         );
 
-        fp_vkEndCommandBuffer(m_cmd_buffer);
+        fp_vkEndCommandBuffer(cmd_buf);
 
-        // Submit with semaphores
+        // Submit with semaphores and fence
         VkPipelineStageFlags wait_stages = VK_PIPELINE_STAGE_TRANSFER_BIT;
         VkSubmitInfo si{};
         si.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         si.waitSemaphoreCount = 1;
-        si.pWaitSemaphores = &m_image_available_semaphore;
+        si.pWaitSemaphores = &img_avail_sem;
         si.pWaitDstStageMask = &wait_stages;
         si.commandBufferCount = 1;
-        si.pCommandBuffers = &m_cmd_buffer;
+        si.pCommandBuffers = &cmd_buf;
         si.signalSemaphoreCount = 1;
-        si.pSignalSemaphores = &m_render_finished_semaphore;
-        fp_vkQueueSubmit(m_graphics_queue, 1, &si, VK_NULL_HANDLE);
+        si.pSignalSemaphores = &rnd_done_sem;
+        fp_vkQueueSubmit(m_graphics_queue, 1, &si, flight_fence);
 
         VkPresentInfoKHR pi{};
         pi.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         pi.waitSemaphoreCount = 1;
-        pi.pWaitSemaphores = &m_render_finished_semaphore;
+        pi.pWaitSemaphores = &rnd_done_sem;
         pi.swapchainCount = 1;
         pi.pSwapchains = &m_vk_swapchain;
         pi.pImageIndices = &m_current_image_index;
 
-        fp_vkQueuePresentKHR(m_present_queue, &pi);
+        VkResult pres_res = fp_vkQueuePresentKHR(m_present_queue, &pi);
+        if (pres_res == VK_ERROR_OUT_OF_DATE_KHR || pres_res == VK_SUBOPTIMAL_KHR) {
+            LOG_INFO("VULKAN", "fp_vkQueuePresentKHR returned OUT_OF_DATE/SUBOPTIMAL (" + std::to_string(pres_res) + "), recreating swapchain...");
+            RecreateSwapchain();
+        } else if (pres_res != VK_SUCCESS) {
+            static int s_logged_pres_err = 0;
+            if (s_logged_pres_err++ < 10) {
+                LOG_WARN("VULKAN", "fp_vkQueuePresentKHR returned: " + std::to_string(pres_res));
+            }
+        }
     } else {
         // Fallback present
-        if (fp_vkQueueSubmit && m_render_finished_semaphore && m_image_available_semaphore) {
+        if (fp_vkQueueSubmit && rnd_done_sem && img_avail_sem) {
             VkPipelineStageFlags wait_stages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
             VkSubmitInfo si{};
             si.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
             si.waitSemaphoreCount = 1;
-            si.pWaitSemaphores = &m_image_available_semaphore;
+            si.pWaitSemaphores = &img_avail_sem;
             si.pWaitDstStageMask = &wait_stages;
             si.signalSemaphoreCount = 1;
-            si.pSignalSemaphores = &m_render_finished_semaphore;
-            fp_vkQueueSubmit(m_graphics_queue, 1, &si, VK_NULL_HANDLE);
+            si.pSignalSemaphores = &rnd_done_sem;
+            fp_vkQueueSubmit(m_graphics_queue, 1, &si, flight_fence);
 
             VkPresentInfoKHR pi{};
             pi.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
             pi.waitSemaphoreCount = 1;
-            pi.pWaitSemaphores = &m_render_finished_semaphore;
+            pi.pWaitSemaphores = &rnd_done_sem;
             pi.swapchainCount = 1;
             pi.pSwapchains = &m_vk_swapchain;
             pi.pImageIndices = &m_current_image_index;
 
-            fp_vkQueuePresentKHR(m_present_queue, &pi);
-        } else {
-            VkPresentInfoKHR pi{};
-            pi.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-            if (m_image_available_semaphore) {
-                pi.waitSemaphoreCount = 1;
-                pi.pWaitSemaphores = &m_image_available_semaphore;
+            VkResult pres_res = fp_vkQueuePresentKHR(m_present_queue, &pi);
+            if (pres_res == VK_ERROR_OUT_OF_DATE_KHR || pres_res == VK_SUBOPTIMAL_KHR) {
+                RecreateSwapchain();
             }
-            pi.swapchainCount = 1;
-            pi.pSwapchains = &m_vk_swapchain;
-            pi.pImageIndices = &m_current_image_index;
-
-            fp_vkQueuePresentKHR(m_present_queue, &pi);
         }
     }
+
+    m_current_frame_index = (m_current_frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 bool VulkanContext::ProcessWindowMessages() {

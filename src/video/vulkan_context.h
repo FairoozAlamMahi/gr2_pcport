@@ -27,8 +27,14 @@ public:
     bool IsInitialized() const { return m_initialized; }
     bool HasFocus() const { return m_has_focus; }
     void SetFocus(bool focus) { m_has_focus = focus; }
-    VkSemaphore GetImageAvailableSemaphore() const { return m_image_available_semaphore; }
-    VkSemaphore GetRenderFinishedSemaphore() const { return m_render_finished_semaphore; }
+    static constexpr u32 MAX_FRAMES_IN_FLIGHT = 3;
+
+    VkSemaphore GetImageAvailableSemaphore() const {
+        return m_image_available_semaphores.empty() ? VK_NULL_HANDLE : m_image_available_semaphores[m_current_frame_index];
+    }
+    VkSemaphore GetRenderFinishedSemaphore() const {
+        return m_render_finished_semaphores.empty() ? VK_NULL_HANDLE : m_render_finished_semaphores[m_current_frame_index];
+    }
 
 private:
     VulkanContext() = default;
@@ -41,6 +47,7 @@ private:
     bool SelectPhysicalDevice();
     bool CreateLogicalDevice();
     bool CreateSwapchain();
+    bool RecreateSwapchain();
     bool CreateStagingResources();
 
     bool m_initialized{false};
@@ -66,17 +73,22 @@ private:
     u32 m_present_queue_family{0};
 
     VkSwapchainKHR m_vk_swapchain{VK_NULL_HANDLE};
+    u32 m_swapchain_width{1920};
+    u32 m_swapchain_height{1080};
     VkFormat m_swapchain_format{VK_FORMAT_B8G8R8A8_UNORM};
     std::vector<VkImage> m_swapchain_images;
     std::vector<VkImageView> m_swapchain_image_views;
     u32 m_current_image_index{0};
 
     bool m_has_focus{true};
-    VkSemaphore m_image_available_semaphore{VK_NULL_HANDLE};
-    VkSemaphore m_render_finished_semaphore{VK_NULL_HANDLE};
+    std::vector<VkSemaphore> m_image_available_semaphores;
+    std::vector<VkSemaphore> m_render_finished_semaphores;
+    std::vector<VkFence> m_in_flight_fences;
 
     VkCommandPool m_cmd_pool{VK_NULL_HANDLE};
-    VkCommandBuffer m_cmd_buffer{VK_NULL_HANDLE};
+    std::vector<VkCommandBuffer> m_cmd_buffers;
+    u32 m_current_frame_index{0};
+
     VkBuffer m_staging_buffer{VK_NULL_HANDLE};
     VkDeviceMemory m_staging_memory{VK_NULL_HANDLE};
     void* m_staging_mapped_ptr{nullptr};
@@ -134,6 +146,11 @@ private:
     PFN_vkQueuePresentKHR fp_vkQueuePresentKHR{nullptr};
     PFN_vkCreateImageView fp_vkCreateImageView{nullptr};
     PFN_vkDestroyImageView fp_vkDestroyImageView{nullptr};
+    PFN_vkQueueWaitIdle fp_vkQueueWaitIdle{nullptr};
+    PFN_vkCreateFence fp_vkCreateFence{nullptr};
+    PFN_vkDestroyFence fp_vkDestroyFence{nullptr};
+    PFN_vkWaitForFences fp_vkWaitForFences{nullptr};
+    PFN_vkResetFences fp_vkResetFences{nullptr};
 };
 
 } // namespace Video

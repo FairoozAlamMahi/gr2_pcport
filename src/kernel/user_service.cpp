@@ -1,6 +1,7 @@
 #include "kernel/user_service.h"
 #include "common/logger.h"
 #include <cstring>
+#include <atomic>
 
 namespace Kernel::User {
 
@@ -27,13 +28,9 @@ PS4_SYSV_ABI s32 sceUserServiceGetInitialUser(s32* user_id) {
 
 PS4_SYSV_ABI s32 sceUserServiceGetLoginUserIdList(void* id_list) {
     if (id_list) {
-        // Struct SceUserServiceLoginUserIdList:
-        // Setting index 0 and 1 to 1 guarantees:
-        // - if parsed as struct { u32 count; s32 userId[4]; }, count = 1 and userId[0] = 1
-        // - if parsed as struct { s32 userId[4]; }, userId[0] = 1
         s32* ids = reinterpret_cast<s32*>(id_list);
-        ids[0] = 1;
-        ids[1] = 1;
+        ids[0] = 1;  // Primary user ID 1
+        ids[1] = -1; // SCE_USER_SERVICE_USER_ID_INVALID
         ids[2] = -1;
         ids[3] = -1;
     }
@@ -64,6 +61,17 @@ PS4_SYSV_ABI s32 sceUserServiceUnregisterEventCallback(const void* callback) {
 }
 
 PS4_SYSV_ABI s32 sceUserServiceGetEvent(void* event) {
+    static std::atomic<bool> s_login_dispatched{false};
+    if (!s_login_dispatched.exchange(true)) {
+        if (event) {
+            std::memset(event, 0, 32);
+            u32* ev = reinterpret_cast<u32*>(event);
+            ev[0] = 0; // SCE_USER_SERVICE_EVENT_TYPE_LOGIN
+            ev[1] = 1; // SceUserServiceUserId = 1
+        }
+        LOG_INFO("USER", "sceUserServiceGetEvent dispatched SCE_USER_SERVICE_EVENT_TYPE_LOGIN for user ID 1");
+        return 0; // SCE_OK
+    }
     if (event) {
         std::memset(event, 0, 32);
     }

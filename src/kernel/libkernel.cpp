@@ -18,6 +18,7 @@ namespace Kernel {
 
 namespace fs = std::filesystem;
 static std::string s_app0_root = "../gr2_packages/merged_game";
+static DWORD s_main_thread_id = 0;
 
 static inline std::string ToHex(u64 val) {
     char buf[32];
@@ -26,6 +27,7 @@ static inline std::string ToHex(u64 val) {
 }
 
 void Initialize() {
+    s_main_thread_id = GetCurrentThreadId();
     if (fs::exists("../gr2_packages/merged_game")) {
         s_app0_root = "../gr2_packages/merged_game";
     } else if (fs::exists("game/Gravite2_Chunk0.psarc")) {
@@ -701,7 +703,7 @@ PS4_SYSV_ABI s32 scePthreadMutexLock(void** mutex) {
 PS4_SYSV_ABI s32 scePthreadMutexTrylock(void** mutex) {
     auto* m = GetOrAllocMutex(mutex, true);
     if (!m) return -1;
-    return TryEnterCriticalSection(&m->cs) ? 0 : -1;
+    return TryEnterCriticalSection(&m->cs) ? 0 : 16; // 16 is EBUSY
 }
 
 PS4_SYSV_ABI s32 scePthreadMutexUnlock(void** mutex) {
@@ -806,7 +808,14 @@ PS4_SYSV_ABI s32 scePthreadCondWait(void** cond, void** mutex) {
     auto* c = GetOrAllocCond(cond, true);
     auto* m = GetOrAllocMutex(mutex, true);
     if (!c || !m) return -1;
-    return SleepConditionVariableCS(&c->cv, &m->cs, INFINITE) ? 0 : -1;
+    if (GetCurrentThreadId() == s_main_thread_id) {
+        LOG_INFO("SYNC", "Main thread waiting on CondVar 0x" + ToHex(reinterpret_cast<uintptr_t>(cond)));
+    }
+    BOOL res = SleepConditionVariableCS(&c->cv, &m->cs, INFINITE);
+    if (GetCurrentThreadId() == s_main_thread_id) {
+        LOG_INFO("SYNC", "Main thread woke from CondVar 0x" + ToHex(reinterpret_cast<uintptr_t>(cond)));
+    }
+    return res ? 0 : -1;
 }
 
 PS4_SYSV_ABI s32 scePthreadCondTimedwait(void** cond, void** mutex, u64 usec) {
@@ -814,7 +823,14 @@ PS4_SYSV_ABI s32 scePthreadCondTimedwait(void** cond, void** mutex, u64 usec) {
     auto* m = GetOrAllocMutex(mutex, true);
     if (!c || !m) return -1;
     DWORD ms = static_cast<DWORD>((usec + 999) / 1000);
-    return SleepConditionVariableCS(&c->cv, &m->cs, ms) ? 0 : -1;
+    if (ms == 0 && usec > 0) ms = 1;
+    if (SleepConditionVariableCS(&c->cv, &m->cs, ms)) {
+        return 0;
+    }
+    if (ms == 0) {
+        SwitchToThread();
+    }
+    return (GetLastError() == ERROR_TIMEOUT) ? 0x8002000B : -1;
 }
 
 PS4_SYSV_ABI s32 pthread_cond_timedwait(void** cond, void** mutex, const OrbisTimespec* abstime) {
@@ -830,7 +846,13 @@ PS4_SYSV_ABI s32 pthread_cond_timedwait(void** cond, void** mutex, const OrbisTi
         s64 total_ms = (diff_sec * 1000) + (diff_nsec / 1000000);
         ms = (total_ms > 0) ? static_cast<DWORD>(total_ms) : 0;
     }
-    return SleepConditionVariableCS(&c->cv, &m->cs, ms) ? 0 : -1;
+    if (SleepConditionVariableCS(&c->cv, &m->cs, ms)) {
+        return 0;
+    }
+    if (ms == 0) {
+        SwitchToThread();
+    }
+    return (GetLastError() == ERROR_TIMEOUT) ? 60 : -1; // 60 is ETIMEDOUT on FreeBSD/Orbis
 }
 
 // Pthread Read-Write Locks
@@ -933,7 +955,23 @@ PS4_SYSV_ABI s32 sceKernelWaitSema(void* sema, s32 need, void* timeout) {
         u32 usec = *reinterpret_cast<const u32*>(timeout);
         wait_ms = usec / 1000;
     }
+    static std::atomic<int> s_logged_wait_sema{0};
+    bool do_log = (s_logged_wait_sema.fetch_add(1, std::memory_order_relaxed) < 20);
+    if (do_log) {
+        void* caller = __builtin_return_address(0);
+        char cbuf[32];
+        std::snprintf(cbuf, sizeof(cbuf), "%p", caller);
+        LOG_INFO("SYNC", "Thread " + std::to_string(GetCurrentThreadId()) + 
+                         " waiting on Sema 0x" + ToHex(reinterpret_cast<uintptr_t>(sema)) + 
+                         " caller=" + std::string(cbuf) + 
+                         " (timeout_ms=" + (timeout ? std::to_string(wait_ms) : "INFINITE") + ")");
+    }
     DWORD res = WaitForSingleObject(reinterpret_cast<HANDLE>(sema), wait_ms);
+    if (do_log || (res != WAIT_OBJECT_0 && res != WAIT_TIMEOUT)) {
+        LOG_INFO("SYNC", "Thread " + std::to_string(GetCurrentThreadId()) + 
+                         " woke from Sema 0x" + ToHex(reinterpret_cast<uintptr_t>(sema)) + 
+                         " (res=" + std::to_string(res) + ")");
+    }
     return (res == WAIT_OBJECT_0) ? 0 : ((res == WAIT_TIMEOUT) ? 0x8002000B : -1);
 }
 
@@ -1008,21 +1046,37 @@ PS4_SYSV_ABI s32 sceKernelWaitEventFlag(void* flag, u64 bits, u32 wait_mode, u64
     EnterCriticalSection(&ef->cs);
     bool wait_all = (wait_mode & 0x01);
     bool clear = (wait_mode & 0x10);
+    DWORD ms = INFINITE;
+    if (timeout) {
+        u32 usec = *reinterpret_cast<const u32*>(timeout);
+        ms = usec / 1000;
+    }
+    if (GetCurrentThreadId() == s_main_thread_id) {
+        static int s_logged_wait_ef = 0;
+        if (s_logged_wait_ef++ < 10) {
+            LOG_INFO("SYNC", "Main thread waiting on EventFlag '" + ef->name + "' (bits=0x" + ToHex(bits) + 
+                             ", cur=0x" + ToHex(ef->pattern) + ", timeout_ms=" + (timeout ? std::to_string(ms) : "INFINITE") + ")");
+        }
+    }
     while (true) {
         bool matched = wait_all ? ((ef->pattern & bits) == bits) : ((ef->pattern & bits) != 0);
         if (matched) {
             if (out_bits) *out_bits = ef->pattern;
             if (clear) ef->pattern &= ~bits;
             LeaveCriticalSection(&ef->cs);
+            if (GetCurrentThreadId() == s_main_thread_id) {
+                static int s_logged_match_ef = 0;
+                if (s_logged_match_ef++ < 10) {
+                    LOG_INFO("SYNC", "Main thread matched EventFlag '" + ef->name + "'");
+                }
+            }
             return 0;
-        }
-        DWORD ms = INFINITE;
-        if (timeout) {
-            u32 usec = *reinterpret_cast<const u32*>(timeout);
-            ms = usec / 1000;
         }
         if (!SleepConditionVariableCS(&ef->cv, &ef->cs, ms)) {
             LeaveCriticalSection(&ef->cs);
+            if (GetCurrentThreadId() == s_main_thread_id) {
+                LOG_INFO("SYNC", "Main thread timed out on EventFlag '" + ef->name + "'");
+            }
             return (GetLastError() == ERROR_TIMEOUT) ? 0x8002000B : -1;
         }
     }
@@ -1042,6 +1096,7 @@ PS4_SYSV_ABI s32 sceKernelPollEventFlag(void* flag, u64 bits, u32 wait_mode, u64
         return 0;
     }
     LeaveCriticalSection(&ef->cs);
+    SwitchToThread();
     return -1;
 }
 
@@ -1096,7 +1151,18 @@ PS4_SYSV_ABI s32 sceKernelWaitEqueue(void* eq, void* events, s32 num_events, s32
         u32 usec = *reinterpret_cast<const u32*>(timeout);
         ms = usec / 1000;
     }
+    if (GetCurrentThreadId() == s_main_thread_id) {
+        static int s_logged_wait_eq = 0;
+        if (s_logged_wait_eq++ < 10 || ms == INFINITE) {
+            LOG_INFO("SYNC", "Main thread waiting on Equeue 0x" + ToHex(reinterpret_cast<uintptr_t>(eq)) + 
+                             " (timeout_ms=" + (timeout ? std::to_string(ms) : "INFINITE") + ")");
+        }
+    }
     DWORD res = WaitForSingleObject(reinterpret_cast<HANDLE>(eq), ms);
+    if (GetCurrentThreadId() == s_main_thread_id && (res != WAIT_OBJECT_0 || ms == INFINITE)) {
+        LOG_INFO("SYNC", "Main thread woke from Equeue 0x" + ToHex(reinterpret_cast<uintptr_t>(eq)) + 
+                         " (res=" + std::to_string(res) + ")");
+    }
     if (res == WAIT_OBJECT_0) {
         if (out_events) *out_events = 1;
         if (events && num_events > 0) {
@@ -1211,8 +1277,16 @@ PS4_SYSV_ABI u64 sceKernelReadTsc() {
 }
 
 PS4_SYSV_ABI s32 sceKernelUsleep(u32 useconds) {
+    if (useconds == 0) {
+        Sleep(0);
+        return 0;
+    }
     DWORD ms = useconds / 1000;
-    Sleep(ms == 0 ? 1 : ms);
+    if (ms == 0) {
+        _mm_pause();
+    } else {
+        Sleep(ms);
+    }
     return 0;
 }
 
@@ -1224,7 +1298,11 @@ PS4_SYSV_ABI s32 sceKernelSleep(u32 seconds) {
 PS4_SYSV_ABI s32 ps4_nanosleep(const OrbisTimespec* req, OrbisTimespec* rem) {
     if (!req) return -1;
     DWORD ms = static_cast<DWORD>((req->tv_sec * 1000) + (req->tv_nsec / 1000000));
-    Sleep(ms == 0 ? 1 : ms);
+    if (ms == 0) {
+        _mm_pause();
+    } else {
+        Sleep(ms);
+    }
     return 0;
 }
 

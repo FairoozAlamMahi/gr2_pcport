@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <mutex>
 #include <string>
+#include <vector>
 
 namespace Fiber {
 
@@ -21,7 +22,11 @@ struct HostFiber {
 static std::mutex s_fiber_mutex;
 static std::unordered_map<void*, HostFiber*> s_fibers;
 static thread_local void* t_thread_as_fiber = nullptr;
-static thread_local HostFiber* t_current_host_fiber = nullptr;
+static thread_local std::vector<HostFiber*> t_fiber_stack;
+
+static inline HostFiber* GetCurrentHostFiber() {
+    return t_fiber_stack.empty() ? nullptr : t_fiber_stack.back();
+}
 
 static void EnsureThreadIsFiber() {
     if (!t_thread_as_fiber) {
@@ -34,14 +39,19 @@ static void EnsureThreadIsFiber() {
 
 static VOID CALLBACK WinFiberProc(PVOID lpParameter) {
     auto* hf = static_cast<HostFiber*>(lpParameter);
-    t_current_host_fiber = hf;
+    t_fiber_stack.push_back(hf);
+
     using PS4FiberEntry = void (PS4_SYSV_ABI *)(u64 init_arg, u64 run_arg);
     auto entry_fn = reinterpret_cast<PS4FiberEntry>(hf->entry);
     if (entry_fn) {
         entry_fn(hf->init_arg, hf->run_arg);
     }
     hf->completed = true;
-    t_current_host_fiber = nullptr;
+
+    if (!t_fiber_stack.empty() && t_fiber_stack.back() == hf) {
+        t_fiber_stack.pop_back();
+    }
+
     if (hf->caller_fiber) {
         SwitchToFiber(hf->caller_fiber);
     }
@@ -88,9 +98,13 @@ PS4_SYSV_ABI s32 sceFiberRun(void* fiber, u64 argOnRun, u64* argOnReturn) {
 
     hf->caller_fiber = GetCurrentFiber();
     hf->run_arg = argOnRun;
-    t_current_host_fiber = hf;
+    t_fiber_stack.push_back(hf);
 
     SwitchToFiber(hf->win_fiber);
+
+    if (!t_fiber_stack.empty() && t_fiber_stack.back() == hf) {
+        t_fiber_stack.pop_back();
+    }
 
     if (argOnReturn) {
         *argOnReturn = hf->ret_arg;
@@ -104,12 +118,12 @@ PS4_SYSV_ABI s32 sceFiberSwitch(void* fiber, u64 argOnRun, u64* argOnReturn) {
 
 PS4_SYSV_ABI s32 sceFiberReturnToThread(u64 argOnReturn, const void* params) {
     (void)params;
-    HostFiber* hf = t_current_host_fiber;
+    HostFiber* hf = GetCurrentHostFiber();
     if (!hf || !hf->caller_fiber) return -1;
 
     hf->ret_arg = argOnReturn;
-    t_current_host_fiber = nullptr;
-    SwitchToFiber(hf->caller_fiber);
+    void* caller = hf->caller_fiber;
+    SwitchToFiber(caller);
     return 0;
 }
 

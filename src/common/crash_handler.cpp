@@ -45,14 +45,7 @@ LONG WINAPI CrashHandler::ExceptionHandler(PEXCEPTION_POINTERS pExceptionInfo) {
         }
     }
 
-    // If it's an access violation write in guest arena, let GPU VEH handle page fault
-    if (code == EXCEPTION_ACCESS_VIOLATION) {
-        ULONG_PTR is_write = pExceptionInfo->ExceptionRecord->ExceptionInformation[0];
-        ULONG_PTR fault_addr = pExceptionInfo->ExceptionRecord->ExceptionInformation[1];
-        if (is_write == 1 && fault_addr >= GUEST_ARENA_BASE && fault_addr < (GUEST_ARENA_BASE + GUEST_ARENA_SIZE)) {
-            return EXCEPTION_CONTINUE_SEARCH; // Pass to GpuMemoryExceptionHandler
-        }
-    }
+
 
     // VEH Dynamic Hot-Patch Guards:
     // 1. Bypass GDB2 database lookup null dereference when GDB2 table is not loaded (rbx == 0 or r12 == 0)

@@ -2,6 +2,7 @@
 
 #include "common/types.h"
 #include <windows.h>
+#include <cstddef>
 
 namespace Pad {
 
@@ -15,45 +16,60 @@ struct SceFQuaternion {
 };
 
 struct ScePadTouch {
-    u16 x;
-    u16 y;
-    u8 id;
-    u8 reserve[3];
+    uint16_t x;
+    uint16_t y;
+    uint8_t  id;
+    uint8_t  reserve[3];
 };
 
 struct ScePadTouchData {
-    u8 touchNum;
-    u8 reserve[7];
+    uint8_t     touchNum;
+    uint8_t     reserve[7];
     ScePadTouch touch[2];
 };
 
 struct ScePadData {
-    u32 buttons;
-    u8 leftStickX;
-    u8 leftStickY;
-    u8 rightStickX;
-    u8 rightStickY;
-    u8 padding[12];
-    SceFVector3 angularVelocity;
-    SceFVector3 acceleration;
-    SceFQuaternion orientation;
-    ScePadTouchData touchData;
-    u8 connected;
-    u64 timestamp;
-    u8 extensionData[16];
-    u8 connectedCount;
-    u8 reserve[2];
+    uint32_t        buttons;          // 0x00
+    uint8_t         leftStickX;       // 0x04
+    uint8_t         leftStickY;       // 0x05
+    uint8_t         rightStickX;      // 0x06
+    uint8_t         rightStickY;      // 0x07
+    uint8_t         analogButtons[2]; // 0x08 (0: L2, 1: R2)
+    uint8_t         padding[2];       // 0x0A
+    SceFQuaternion  orientation;      // 0x0C (16 bytes)
+    SceFVector3     acceleration;     // 0x1C (12 bytes)
+    SceFVector3     angularVelocity;  // 0x28 (12 bytes)
+    ScePadTouchData touchData;        // 0x34 (24 bytes)
+    uint8_t         connected;        // 0x4C (1 byte)
+    uint8_t         padding2[3];      // 0x4D (3 bytes)
+    uint64_t        timestamp;        // 0x50 (8 bytes)
+    uint8_t         extensionData[16];// 0x58 (16 bytes)
+    uint8_t         connectedCount;   // 0x68 (1 byte)
+    uint8_t         reserve[2];       // 0x69 (2 bytes)
+    uint8_t         deviceUniqueData[12]; // 0x6B (12 bytes)
 };
 
+static_assert(offsetof(ScePadData, buttons) == 0x00, "buttons offset mismatch");
+static_assert(offsetof(ScePadData, leftStickX) == 0x04, "leftStickX offset mismatch");
+static_assert(offsetof(ScePadData, rightStickX) == 0x06, "rightStickX offset mismatch");
+static_assert(offsetof(ScePadData, analogButtons) == 0x08, "analogButtons offset mismatch");
+static_assert(offsetof(ScePadData, orientation) == 0x0C, "orientation offset mismatch");
+static_assert(offsetof(ScePadData, acceleration) == 0x1C, "acceleration offset mismatch");
+static_assert(offsetof(ScePadData, angularVelocity) == 0x28, "angularVelocity offset mismatch");
+static_assert(offsetof(ScePadData, touchData) == 0x34, "touchData offset mismatch");
+static_assert(offsetof(ScePadData, connected) == 0x4C, "connected offset mismatch");
+static_assert(offsetof(ScePadData, timestamp) == 0x50, "timestamp offset mismatch");
+
 struct ScePadControllerInformation {
-    float touchPixelDensity;
+    float    touchPixelDensity;
     uint16_t touchResolutionX;
     uint16_t touchResolutionY;
-    uint8_t connected;
-    uint8_t connectionType;
-    uint8_t connectedCount;
-    uint8_t deviceClass;
-    uint8_t reserve[8];
+    uint8_t  stickInfo[4];
+    uint8_t  connected;
+    uint8_t  connectionType;
+    uint8_t  connectedCount;
+    uint8_t  deviceClass;
+    uint8_t  reserve[8];
 };
 
 struct ScePadVibrationParam {

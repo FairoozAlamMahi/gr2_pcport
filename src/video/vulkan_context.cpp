@@ -557,6 +557,21 @@ bool VulkanContext::CreateSwapchain() {
         image_count = caps.maxImageCount;
     }
 
+    if (fp_vkGetPhysicalDeviceSurfaceFormatsKHR) {
+        u32 format_count = 0;
+        fp_vkGetPhysicalDeviceSurfaceFormatsKHR(m_vk_physical_device, m_vk_surface, &format_count, nullptr);
+        if (format_count > 0) {
+            std::vector<VkSurfaceFormatKHR> formats(format_count);
+            fp_vkGetPhysicalDeviceSurfaceFormatsKHR(m_vk_physical_device, m_vk_surface, &format_count, formats.data());
+            for (const auto& f : formats) {
+                if (f.format == VK_FORMAT_B8G8R8A8_UNORM) {
+                    m_swapchain_format = f.format;
+                    break;
+                }
+            }
+        }
+    }
+
     VkSwapchainCreateInfoKHR sci{};
     sci.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     sci.surface = m_vk_surface;
@@ -874,7 +889,7 @@ void VulkanContext::PresentFrame(const void* frame_data) {
         barrier2.subresourceRange.levelCount = 1;
         barrier2.subresourceRange.layerCount = 1;
         barrier2.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier2.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        barrier2.dstAccessMask = 0;
 
         fp_vkCmdPipelineBarrier(
             cmd_buf,

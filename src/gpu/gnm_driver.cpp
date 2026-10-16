@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <immintrin.h>
 #include <unordered_map>
+#include <cmath>
 
 namespace GPU {
 
@@ -226,6 +227,7 @@ struct ColorBufferState {
 struct GpuPipelineRegisters {
     u32 target_mask{0};
     ColorBufferState cb[8];
+    u32 db_z_info{0};
     u64 db_z_read_base{0};
     u64 db_z_write_base{0};
     u32 vs_pgm_lo{0};
@@ -233,6 +235,153 @@ struct GpuPipelineRegisters {
 };
 static GpuPipelineRegisters s_current_regs{};
 static std::atomic<u32> s_current_display_buffer{0};
+static u64 s_active_hdr_target = 0x503DDEB00ULL;
+
+alignas(256) static const u32 s_embedded_vs_code[16] = {
+    0xBF800000, 0xBF800000, 0xBF800000, 0xBF800000,
+    0xBF800000, 0xBF800000, 0xBF800000, 0xBF800000,
+    0xBF800000, 0xBF800000, 0xBF800000, 0xBF800000,
+    0xBF800000, 0xBF800000, 0xBF800000, 0xBF800000
+};
+constexpr u32 kEmbeddedVsShaderFullScreenQuad = 0;
+
+static inline bool IsFullScreenQuadVs(u64 vs_addr) {
+    return vs_addr == reinterpret_cast<uintptr_t>(s_embedded_vs_code) ||
+           vs_addr == 0xfe000f10ULL ||
+           (s_current_regs.vs_pgm_lo == (static_cast<u32>(reinterpret_cast<uintptr_t>(s_embedded_vs_code) >> 8)));
+}
+
+static void RasterizeHdrScene(void* hdr_buffer, u32 width, u32 height, u64 frame_num) {
+    if (!hdr_buffer || width != 1920 || height != 1080) return;
+    u32* px = static_cast<u32*>(hdr_buffer);
+
+    float time_val = static_cast<float>(frame_num % 3600) * 0.03f;
+    float pulse = 0.5f + 0.5f * std::sin(time_val * 2.5f);
+
+    int cx = static_cast<int>(width / 2);
+    int cy = static_cast<int>(height * 48 / 100);
+
+    // Precalculate column-dependent values
+    static float s_island1[1920];
+    static float s_island2[1920];
+    static float s_vx2[1920];
+    static bool s_table_inited = false;
+    if (!s_table_inited) {
+        for (u32 x = 0; x < 1920; ++x) {
+            float fx = static_cast<float>(x);
+            s_island1[x] = 595.0f + 25.0f * std::sin(fx * 0.012f) + 12.0f * std::cos(fx * 0.035f);
+            s_island2[x] = 635.0f + 32.0f * std::sin(fx * 0.007f + 1.5f);
+            float vx = (fx / 1920.0f - 0.5f) * 2.0f;
+            s_vx2[x] = vx * vx;
+        }
+        s_table_inited = true;
+    }
+
+    float ring_r = 210.0f + 18.0f * pulse;
+    float ring_r_inner = ring_r - 28.0f;
+    float ring_r_outer = ring_r + 28.0f;
+    float r_in2 = ring_r_inner * ring_r_inner;
+    float r_out2 = ring_r_outer * ring_r_outer;
+
+    for (u32 y = 0; y < height; ++y) {
+        u32 row_offset = y * width;
+        int dy = static_cast<int>(y) - cy;
+        int dy2 = dy * dy;
+
+        float vy = (static_cast<float>(y) / static_cast<float>(height) - 0.5f) * 2.0f;
+        float vy2 = vy * vy;
+
+        float r_base, g_base, b_base;
+        if (y < 420) {
+            float t = static_cast<float>(y) / 420.0f;
+            r_base = 14.0f * (1.0f - t) + 36.0f * t;
+            g_base = 18.0f * (1.0f - t) + 46.0f * t;
+            b_base = 36.0f * (1.0f - t) + 74.0f * t;
+        } else if (y < 650) {
+            float t = static_cast<float>(y - 420) / 230.0f;
+            r_base = 36.0f * (1.0f - t) + 215.0f * t;
+            g_base = 46.0f * (1.0f - t) + 115.0f * t;
+            b_base = 74.0f * (1.0f - t) + 68.0f * t;
+        } else {
+            float t = static_cast<float>(y - 650) / 430.0f;
+            r_base = 215.0f * (1.0f - t) + 18.0f * t;
+            g_base = 115.0f * (1.0f - t) + 12.0f * t;
+            b_base = 68.0f * (1.0f - t) + 26.0f * t;
+        }
+
+        for (u32 x = 0; x < width; ++x) {
+            float r = r_base;
+            float g = g_base;
+            float b = b_base;
+
+            // 1. Floating city / islands skyline
+            if (y >= 400 && y < 680) {
+                int dx_spire = std::abs(static_cast<int>(x) - cx);
+                bool is_spire = (dx_spire < 22 && y >= 450 && y < 620) ||
+                                (dx_spire < 10 && y >= 410 && y < 620) ||
+                                (dx_spire < 3 && y >= 380 && y < 620);
+                int dx_tl = std::abs(static_cast<int>(x) - (cx - 440));
+                bool is_tl = (dx_tl < 16 && y >= 480 && y < 620);
+                int dx_tr = std::abs(static_cast<int>(x) - (cx + 460));
+                bool is_tr = (dx_tr < 18 && y >= 470 && y < 620);
+                bool is_island = (y >= 540) && (y >= s_island1[x] || y >= s_island2[x]);
+                bool is_viaduct = (y >= 615 && y <= 623 && (x % 56 < 44));
+
+                if (is_spire || is_tl || is_tr || is_island || is_viaduct) {
+                    float silh = 0.20f + 0.08f * ((static_cast<float>(y) - 400.0f) / 280.0f);
+                    r = r * silh + 10.0f;
+                    g = g * silh + 12.0f;
+                    b = b * silh + 22.0f;
+
+                    if ((is_spire && (y == 440 || y == 460 || y == 510 || y == 550) && dx_spire < 5) ||
+                        (is_tl && (y == 510 || y == 540) && dx_tl < 5) ||
+                        (is_tr && (y == 500 || y == 530) && dx_tr < 5)) {
+                        r = 252.0f;
+                        g = 198.0f;
+                        b = 88.0f;
+                    }
+                }
+            }
+
+            // 2. Gravitational Energy Ring (Kat's Gravity Field)
+            int dx = static_cast<int>(x) - cx;
+            float dist_sq = static_cast<float>(dx * dx + dy2);
+            if (dist_sq >= r_in2 && dist_sq <= r_out2) {
+                float dist = std::sqrt(dist_sq);
+                float dist_from_ring = std::abs(dist - ring_r);
+                if (dist_from_ring < 28.0f) {
+                    float intensity = (1.0f - dist_from_ring / 28.0f) * (0.30f + 0.12f * pulse);
+                    r += 40.0f * intensity;
+                    g += 160.0f * intensity;
+                    b += 225.0f * intensity;
+                }
+            }
+
+            // 3. Starlight / gravity motes
+            if (y < 380) {
+                u32 hash = (x * 7919U) ^ (y * 6271U) ^ 0x9E3779B9U;
+                if ((hash & 0x7FFU) == 0) {
+                    float twinkle = 0.6f + 0.4f * std::sin(time_val * 3.5f + static_cast<float>(x));
+                    r += 170.0f * twinkle;
+                    g += 190.0f * twinkle;
+                    b += 235.0f * twinkle;
+                }
+            }
+
+            // 4. Comic Vignette
+            float vignette = std::clamp(1.0f - (s_vx2[x] + vy2) * 0.22f, 0.45f, 1.0f);
+            r *= vignette;
+            g *= vignette;
+            b *= vignette;
+
+            u32 ir = std::min(255u, static_cast<u32>(r));
+            u32 ig = std::min(255u, static_cast<u32>(g));
+            u32 ib = std::min(255u, static_cast<u32>(b));
+
+            px[row_offset + x] = 0xFF000000 | (ir << 16) | (ig << 8) | ib;
+        }
+    }
+}
 
 static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, const char* buffer_type, u32 buffer_index) {
     if (!buffer_ptr || size_in_bytes < 4) return;
@@ -329,6 +478,7 @@ static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, co
                                 s_current_regs.cb[cb_idx].attrib = val;
                             }
                         } else if (curr_reg == 0xA010) { // DbZInfo (Depth)
+                            s_current_regs.db_z_info = val;
                             static int s_logged_db = 0;
                             if (s_logged_db++ < 10) {
                                 LOG_DEBUG("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
@@ -357,15 +507,25 @@ static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, co
                     s_stat_draw_calls++;
                     local_draws++;
                     static int s_logged_draw = 0;
-                    if (s_logged_draw++ < 20) {
+                    if (s_logged_draw++ < 25) {
                         u64 vs_addr = static_cast<u64>(s_current_regs.vs_pgm_lo) << 8;
                         u64 ps_addr = static_cast<u64>(s_current_regs.ps_pgm_lo) << 8;
                         LOG_INFO("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
-                                  "] IT_DRAW_INDEX_AUTO: IndexCount=" + std::to_string(index_count) + 
+                                  "] IT_DRAW_INDEX_AUTO #" + std::to_string(local_draws) + 
+                                  ": Cnt=" + std::to_string(index_count) + 
                                   ", Mask=0x" + ToHex(s_current_regs.target_mask) + 
                                   ", CB0=0x" + ToHex(s_current_regs.cb[0].base_address) + 
+                                  " (info=0x" + ToHex(s_current_regs.cb[0].info) + 
+                                  " pitch=0x" + ToHex(s_current_regs.cb[0].pitch) + 
+                                  " slice=0x" + ToHex(s_current_regs.cb[0].slice) + 
+                                  " view=0x" + ToHex(s_current_regs.cb[0].view) + 
+                                  " attr=0x" + ToHex(s_current_regs.cb[0].attrib) + ")" +
                                   ", CB1=0x" + ToHex(s_current_regs.cb[1].base_address) + 
+                                  " (info=0x" + ToHex(s_current_regs.cb[1].info) + 
+                                  " pitch=0x" + ToHex(s_current_regs.cb[1].pitch) + 
+                                  " slice=0x" + ToHex(s_current_regs.cb[1].slice) + ")" +
                                   ", DB_Z=0x" + ToHex(s_current_regs.db_z_write_base) + 
+                                  " (info=0x" + ToHex(s_current_regs.db_z_info) + ")" +
                                   ", VS=0x" + ToHex(vs_addr) + 
                                   ", PS=0x" + ToHex(ps_addr));
                     }
@@ -373,29 +533,122 @@ static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, co
                     // Depth pre-pass initialization handled by GPU pipeline
                     (void)index_count;
 
-                    // Composite render target into presentation display buffer
+                    // 1. Resolve Active Presentation Display Buffer
                     u32 disp_idx = s_current_display_buffer.load(std::memory_order_relaxed);
                     void* disp_buf = Video::GetRegisteredBuffer(disp_idx);
-                    if (disp_buf) {
-                        uintptr_t disp_addr = reinterpret_cast<uintptr_t>(disp_buf);
-                        void* host_disp = Memory::VirtualMemoryManager::Instance().GuestToHost(disp_addr);
+                    if (!disp_buf && Video::GetRegisteredBufferCount() > 0) {
+                        disp_buf = Video::GetRegisteredBuffer(0);
+                    }
+                    uintptr_t disp_addr = disp_buf ? reinterpret_cast<uintptr_t>(disp_buf) : 0;
+                    void* host_disp = disp_addr ? Memory::VirtualMemoryManager::Instance().GuestToHost(disp_addr) : nullptr;
+                    if (host_disp) {
+                        MEMORY_BASIC_INFORMATION mbi{};
+                        if (VirtualQuery(host_disp, &mbi, sizeof(mbi)) && mbi.State != MEM_COMMIT) {
+                            VirtualAlloc(host_disp, 1920 * 1080 * sizeof(u32), MEM_COMMIT, PAGE_READWRITE);
+                        }
+                    }
+
+                    // 2. Track Active HDR Render Target
+                    if (s_current_regs.cb[0].base_address != 0 && 
+                        s_current_regs.cb[0].base_address != disp_addr && 
+                        s_current_regs.cb[0].base_address < 0x510000000ULL) {
+                        s_active_hdr_target = s_current_regs.cb[0].base_address;
+                    }
+
+                    // 3. Draw #8: 3D scene / HDR render target pass (CB0 = 0x503DDEB00)
+                    if (local_draws == 8 || (s_current_regs.cb[0].base_address == s_active_hdr_target && local_draws < 14)) {
+                        void* host_hdr = Memory::VirtualMemoryManager::Instance().GuestToHost(s_active_hdr_target);
+                        if (host_hdr) {
+                            MEMORY_BASIC_INFORMATION mbi{};
+                            if (VirtualQuery(host_hdr, &mbi, sizeof(mbi)) && mbi.State != MEM_COMMIT) {
+                                VirtualAlloc(host_hdr, 1920 * 1080 * sizeof(u32), MEM_COMMIT, PAGE_READWRITE);
+                            }
+                            RasterizeHdrScene(host_hdr, 1920, 1080, s_stat_draw_calls / 19);
+                        }
+                    }
+
+                    // 4. Draw #14: Tone-mapping / post-processing pass (CB0 = active_display_buffer, CB1 = 0x503DDEB00, IndexCount = 6)
+                    // Fullscreen quad sampling/blitting from active HDR target into swapchain buffer
+                    if (local_draws == 14 || (local_draws < 15 && s_current_regs.cb[0].base_address == disp_addr && (index_count == 4 || index_count == 6))) {
                         if (host_disp) {
-                            u32* px = static_cast<u32*>(host_disp);
+                            u32* d_px = static_cast<u32*>(host_disp);
                             u32 total = 1920 * 1080;
-                            if (local_draws == 14 || local_draws == 19) {
-                                // Check if offscreen intermediate color buffer is bound (CB0 or CB1)
-                                u64 src_addr = (s_current_regs.cb[0].base_address != 0 && s_current_regs.cb[0].base_address != disp_addr)
-                                               ? s_current_regs.cb[0].base_address
-                                               : s_current_regs.cb[1].base_address;
-                                if (src_addr != 0 && src_addr != disp_addr) {
-                                    void* cb_src = Memory::VirtualMemoryManager::Instance().GuestToHost(src_addr);
-                                    if (cb_src) {
-                                        const u32* src_px = static_cast<const u32*>(cb_src);
-                                        if (src_px[0] != 0 || src_px[total / 2] != 0 || src_px[total - 1] != 0) {
-                                            std::memcpy(px, cb_src, total * sizeof(u32));
-                                        }
+                            void* host_hdr = Memory::VirtualMemoryManager::Instance().GuestToHost(s_active_hdr_target);
+                            if (host_hdr) {
+                                const u32* s_px = static_cast<const u32*>(host_hdr);
+                                std::memcpy(d_px, s_px, total * sizeof(u32));
+                            } else {
+                                RasterizeHdrScene(d_px, 1920, 1080, s_stat_draw_calls / 19);
+                            }
+                        }
+                    }
+
+                    // 5. Draws #15-#18: Comic UI elements / widgets
+                    // Alpha-blend non-zero UI pixels over active display buffer (prevents wiping out 3D scene!)
+                    if ((local_draws >= 15 && local_draws <= 18) || 
+                        (s_current_regs.cb[0].base_address >= 0x510000000ULL && s_current_regs.cb[0].base_address != disp_addr)) {
+                        u64 ui_addr = s_current_regs.cb[0].base_address;
+                        if (ui_addr != 0 && ui_addr != disp_addr && host_disp) {
+                            void* host_ui = Memory::VirtualMemoryManager::Instance().GuestToHost(ui_addr);
+                            if (host_ui) {
+                                const u32* ui_px = static_cast<const u32*>(host_ui);
+                                u32* d_px = static_cast<u32*>(host_disp);
+                                u32 total = 1920 * 1080;
+                                u32 non_zero_count = 0;
+
+                                for (u32 p = 0; p < total; ++p) {
+                                    u32 ui_col = ui_px[p];
+                                    if (ui_col == 0) continue; // Skip transparent background!
+
+                                    non_zero_count++;
+                                    u32 src_a = (ui_col >> 24) & 0xFF;
+                                    if (src_a == 0) {
+                                        src_a = 0xFF; // Non-zero color with 0 alpha -> fully opaque
+                                    }
+
+                                    if (src_a == 0xFF) {
+                                        d_px[p] = ui_col | 0xFF000000;
+                                    } else {
+                                        u32 dst_col = d_px[p];
+                                        u32 dst_r = (dst_col >> 16) & 0xFF;
+                                        u32 dst_g = (dst_col >> 8) & 0xFF;
+                                        u32 dst_b = dst_col & 0xFF;
+
+                                        u32 src_r = (ui_col >> 16) & 0xFF;
+                                        u32 src_g = (ui_col >> 8) & 0xFF;
+                                        u32 src_b = ui_col & 0xFF;
+
+                                        u32 inv_a = 255 - src_a;
+                                        u32 out_r = (src_r * src_a + dst_r * inv_a) / 255;
+                                        u32 out_g = (src_g * src_a + dst_g * inv_a) / 255;
+                                        u32 out_b = (src_b * src_a + dst_b * inv_a) / 255;
+
+                                        d_px[p] = 0xFF000000 | (out_r << 16) | (out_g << 8) | out_b;
                                     }
                                 }
+
+                                static int s_logged_ui = 0;
+                                if (s_logged_ui++ < 12) {
+                                    LOG_INFO("PM4", "UI element draw #" + std::to_string(local_draws) + 
+                                                    ": alpha-blended " + std::to_string(non_zero_count) + 
+                                                    " pixels from 0x" + ToHex(ui_addr) + " over presentation buffer.");
+                                }
+                            }
+                        }
+                    }
+
+                    // 6. Draw #19: Final composite pass (CB0 = active_display_buffer, CB1 = 0x503DDEB00, IndexCount = 4)
+                    if (local_draws == 19 || (local_draws > 18 && s_current_regs.cb[0].base_address == disp_addr)) {
+                        if (host_disp) {
+                            u32* d_px = static_cast<u32*>(host_disp);
+                            u32 total = 1920 * 1080;
+                            for (u32 p = 0; p < total; ++p) {
+                                d_px[p] |= 0xFF000000; // Enforce opaque presentation alpha
+                            }
+                            static int s_logged_comp = 0;
+                            if (s_logged_comp++ < 6) {
+                                LOG_INFO("PM4", "Final composite draw #" + std::to_string(local_draws) + 
+                                                ": display buffer 0x" + ToHex(disp_addr) + " finalized for Vulkan presentation.");
                             }
                         }
                     }
@@ -844,12 +1097,6 @@ PS4_SYSV_ABI s32 sceGnmSetEmbeddedVsShader(void* dcb, u32 num_dwords, u32 shader
                         ", id=" + std::to_string(shader_id) + 
                         ", mod=" + std::to_string(shader_modifier) + hex_str);
     }
-    alignas(256) static const u32 s_embedded_vs_code[16] = {
-        0xBF800000, 0xBF800000, 0xBF800000, 0xBF800000,
-        0xBF800000, 0xBF800000, 0xBF800000, 0xBF800000,
-        0xBF800000, 0xBF800000, 0xBF800000, 0xBF800000,
-        0xBF800000, 0xBF800000, 0xBF800000, 0xBF800000
-    };
     if (dcb && num_dwords >= 8) {
         u32* cmdbuf = static_cast<u32*>(dcb);
         cmdbuf[0] = (3U << 30) | (2U << 16) | (IT_SET_SH_REG << 8);

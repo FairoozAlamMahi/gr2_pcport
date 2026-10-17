@@ -750,6 +750,10 @@ namespace GravityRush2Launcher {
                 MessageBox.Show("Failed to launch game process:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
+
+        public void LaunchDirect() {
+            BtnLaunch_Click(this, EventArgs.Empty);
+        }
     }
 
     static class Program {
@@ -757,7 +761,12 @@ namespace GravityRush2Launcher {
         static void Main(string[] args) {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new ControlPanelForm(false, null));
+            bool autoLaunch = (args.Length > 0 && (args[0] == "--direct" || args[0] == "-launch" || args[0] == "--start" || args[0] == "-g"));
+            ControlPanelForm form = new ControlPanelForm(false, null);
+            if (autoLaunch) {
+                form.Shown += (s, e) => form.LaunchDirect();
+            }
+            Application.Run(form);
         }
     }
 }

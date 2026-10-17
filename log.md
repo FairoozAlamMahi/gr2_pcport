@@ -668,5 +668,36 @@ During intensive shader translation or synchronous file streaming, running the W
 | **7** | **Vulkan 3D Graphics & Presentation** | GCN-to-Vulkan 1.3 recompiler on RTX 4060 Ti, Mailbox presentation, 60 FPS flip | **100%** | ~4,500 draws/interval; uncorrupted `.text` |
 | **8** | **In-Game State & Playability** | Retail engine progression, seeded savedata, DLC requirement bypass | **100%** | Playable state ready via 1-click launcher |
 
+---
+
+## 35. Standalone Distribution Architecture, OpenAL Audio Restoration & Anti-Stutter Optimization
+
+* **Dedicated Native GUI Launcher (`GravityRush2.exe`):**
+  - Built a zero-overhead native Win32 GUI program with embedded high-resolution Kat & Dusty icon (`icon.ico`, 256x256 multi-layer).
+  - Eliminates all command-line prompts and console windows; spawns the headless Vulkan translation runtime silently.
+  - Implements intelligent multi-candidate path resolution for game files (`game/eboot.bin`, `merged_game/eboot.bin`) and core binaries.
+  - Provides native GUI prompts directing first-time users to `Install_Game_PKG.bat` if game assets have not yet been installed.
+
+* **Audio Subsystem Restoration (OpenAL Soft & Dynamic Headset/Speaker Tracking):**
+  - Transitioned primary audio backend from SDL WASAPI device contention to embedded **OpenAL Soft (`audio_backend: 1`)**.
+  - Configured 8-channel spatial downmixing (`AL_EXT_FLOAT32`) across concurrent ports (`Main`, `Bgm`, `Audio3d`, `PadSpk`), completely resolving silent audio.
+  - Bound audio endpoint to `"Default Device"`, allowing seamless dynamic switching between headphones and desktop speakers in real time without needing to restart the game.
+
+* **Anti-Stutter & High-Refresh Performance Optimization:**
+  - **Eliminated Synchronous Disk I/O:** Changed `"sync": false` in logging configuration, eliminating millisecond-long render thread pauses on file writes.
+  - **Persistent Vulkan Pipeline Cache:** Enabled `"pipeline_cache_archived": true`, caching compiled SPIR-V pipelines to disk to permanently eliminate shader compilation hitching on repeat visits.
+  - **Draw Queue Throttling:** Tuned `flush_draw_interval = 256` and `ring_drain_flush_draws = 32` for NVIDIA Ada Lovelace queue depths.
+  - **High-Refresh Presentation:** Configured `present_mode = "Mailbox"` and `vblank_frequency = 0` for unlocked 60/120/144 FPS presentation on high-refresh gaming displays with automatic clamp during cutscenes.
+
+* **1-Click Game Ingestion Tool (`Install_Game_PKG.bat`):**
+  - Integrated standalone `pkg_extractor.exe` toolchain requiring zero Python/Java dependencies.
+  - Automatically identifies, extracts, and merges Base PKG + Update v1.11 into `game/` using NTFS zero-copy hardlinks.
+
+* **Portable Release Packaging (`GravityRush2_PC_Port_v1.0.zip`):**
+  - Assembled clean standalone distribution package (34.1 MB) containing `GravityRush2.exe`, `Install_Game_PKG.bat`, `README.md`, pre-configured `core/`, and `tools/`.
+  - Created official desktop shortcut (`Gravity Rush 2.lnk`) with high-resolution Kat & Dusty icon.
+  - Completely populated GitHub repository README with playability matrix, architecture blueprint, system requirements, and controls guide.
+
+
 
 

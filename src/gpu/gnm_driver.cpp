@@ -1,6 +1,5 @@
 #include "gpu/gnm_driver.h"
 #include "video/video_out.h"
-#include "ui/ui_overlay.h"
 #include "memory/vm.h"
 #include "common/logger.h"
 #include <mutex>
@@ -163,7 +162,6 @@ void Initialize(const std::string& vendor_override) {
     LOG_INFO("GPU", "Subgroup Execution: " + std::to_string(s_caps.subgroup_size) + "-thread lockstep (" + 
              (s_caps.native_wave64 ? "Native Wave64" : "Warp Split Adaptation Active") + ")");
 
-    UiOverlay::Initialize();
     EnsureHdrBackgroundCached();
 }
 
@@ -580,16 +578,18 @@ static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, co
                         }
                     }
 
-                    // 4. Draw #19: Final composite & Interactive UI Presentation
+                    // 4. Draw #19: Final composite pass (CB0 = active_display_buffer, CB1 = 0x503DDEB00, IndexCount = 4)
                     if (local_draws == 19 || (local_draws > 18 && s_current_regs.cb[0].base_address == disp_addr)) {
                         if (host_disp) {
                             u32* d_px = static_cast<u32*>(host_disp);
-                            // Render interactive title & menu overlay directly onto active presentation buffer
-                            UiOverlay::Render(d_px, 1920, 1080);
+                            u32 total = 1920 * 1080;
+                            for (u32 p = 0; p < total; ++p) {
+                                d_px[p] |= 0xFF000000; // Enforce opaque presentation alpha
+                            }
                             static int s_logged_comp = 0;
                             if (s_logged_comp++ < 6) {
                                 LOG_INFO("PM4", "Final composite draw #" + std::to_string(local_draws) + 
-                                                ": display buffer 0x" + ToHex(disp_addr) + " finalized with UI overlay.");
+                                                ": display buffer 0x" + ToHex(disp_addr) + " finalized for presentation.");
                             }
                         }
                     }

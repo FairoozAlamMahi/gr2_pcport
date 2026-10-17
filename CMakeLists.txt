@@ -51,7 +51,6 @@ set(SOURCES
     src/kernel/security_service.cpp
     src/kernel/content_service.cpp
     src/kernel/fiber_service.cpp
-    src/ui/ui_overlay.cpp
 )
 
 set(HEADERS
@@ -82,8 +81,6 @@ set(HEADERS
     src/kernel/security_service.h
     src/kernel/content_service.h
     src/kernel/fiber_service.h
-    src/ui/ui_overlay.h
-    src/ui/font8x8.h
 )
 
 add_executable(gr2_pc ${SOURCES} ${HEADERS})

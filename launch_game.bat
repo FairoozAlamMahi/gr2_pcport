@@ -19,7 +19,12 @@ echo   - Square / X (in air): Gravity Kick
 echo   - LB + D-Pad Up (or 1): Lunar Style
 echo   - LB + D-Pad Down (or 2): Jupiter Style
 echo   - LB + D-Pad Left/Right (or 3): Normal Style
-echo.
-echo Launching...
-build\bin\gr2_pc.exe --launch
-pause
+echo Launching Retail Game Engine (Direct Vulkan 60 FPS)...
+echo ===============================================================
+
+if exist "..\launch_game.bat" (
+    call "..\launch_game.bat"
+) else (
+    echo [ERROR] Could not find root launcher at ..\launch_game.bat!
+    pause
+)

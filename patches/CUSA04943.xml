@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+    <TitleID>
+        <ID>CUSA00547</ID>
+        <ID>CUSA03694</ID>
+        <ID>CUSA04934</ID>
+        <ID>CUSA04943</ID>
+    </TitleID>
+
+    <!-- Verified Stable 60 FPS Mode for Gravity Rush 2 Update v1.11 -->
+    <Metadata Title="Gravity Rush 2 (Gravity Daze 2)"
+              Name="60 FPS (Native Engine Mode)"
+              Author="illusion, EXODUS, Argon"
+              PatchVer="5.2"
+              AppVer="01.11"
+              AppElf="eboot.bin"
+              isEnabled="true">
+        <PatchList>
+            <!-- 1. Boot game in native 60 FPS mode (disable 30 FPS mode flag at VA 0x00454ac5) -->
+            <Line Type="bytes" Address="0x00854ac5" Value="c605bc656a0100"/>
+
+            <!-- 2. Set Video Flip Rate to 0 (60 Hz flip at VA 0x00446980) -->
+            <Line Type="bytes" Address="0x00846980" Value="be00000000"/>
+
+            <!-- 3. Bypass Render Thread 30ms usleep throttle at VA 0x0044dda4 (jump 0x0F bytes to 0x44ddb8 + 15 NOPs) -->
+            <Line Type="bytes" Address="0x0084dda4" Value="e90f000000909090909090909090909090909090"/>
+
+            <!-- 4. Half-rate Enemy motion frame rate at VA 0x018c7374 (30.0f) -->
+            <Line Type="bytes32" Address="0x01cc7374" Value="0x41f00000"/>
+
+            <!-- 5. Bypass Uninitialized Secondary Heap Manager list registration at VA 0x00fb0e51 -->
+            <Line Type="bytes" Address="0x013b0e51" Value="e9b40000009090"/>
+        </PatchList>
+    </Metadata>
+
+    <!-- Remove DLC Requirement for loading save data (Clean 5-byte NOP at VA 0x0095de96) -->
+    <Metadata Title="Gravity Rush 2 (Gravity Daze 2)"
+              Name="Remove DLC Requirement for loading save data"
+              Note="Removes CE-33678-7 error message when loading save that used DLC previously."
+              Author="illusion"
+              PatchVer="1.2"
+              AppVer="01.11"
+              AppElf="eboot.bin"
+              isEnabled="true">
+        <PatchList>
+            <Line Type="bytes" Address="0x00d5de96" Value="9090909090"/>
+        </PatchList>
+    </Metadata>
+</Patch>

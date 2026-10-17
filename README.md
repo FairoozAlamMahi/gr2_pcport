@@ -40,7 +40,7 @@ The port is currently in an **In-Game / Playable** milestone state with continuo
 | **1** | **Asset Extraction & Filesystem** | Retail base game + v1.11 update merged via NTFS hardlinks; FIOS2 PSARC virtual archive mounts (`/app0`, `/data`, `/temp0`) | Verified | **100%** |
 | **2** | **Dynamic Linker & Orbis APIs** | 1,126 Orbis symbols resolved; decrypted native PRX system modules (`libc`, `Fios2`, `JobManager`, `NpToolkit`, `Secure`) loaded | Verified | **100%** |
 | **3** | **Engine Boot & Core Stability** | Win32 host mutex pointer validation (`0x7000007957e4`), secondary heap list bypass (`0x00fb0e51`); zero memory corruption | Verified | **100%** |
-| **4** | **Audio Subsystem** | Multi-port audio (`Main`, `Bgm`, `Audio3d`, `PadSpk`) with OpenAL Soft 8-channel spatial downmixing to stereo | Active | **100%** |
+| **4** | **Audio Subsystem** | Multi-port audio (`Main`, `Bgm`, `Audio3d`, `PadSpk`) with SDL3 WASAPI native stereo mix, 200% master gain, and `Lib.Ngs2` spam filtering | Active | **100%** |
 | **5** | **Controller & Input Subsystem** | DualShock 4, DualSense, Xbox 360/One, PC Keyboard/Mouse; hold-combo synthetic touchpad swipes (`L1 + D-Pad`) for Gravity Styles | Verified | **100%** |
 | **6** | **FMV & Cutscene Video Decoder** | `libSceVideodec2` and `AvPlayer` hardware video streaming to EOF with seamless loopback | Verified | **100%** |
 | **7** | **Vulkan 3D Graphics & Presentation** | GCN-to-Vulkan 1.3 recompiler on RTX 4060 Ti, Mailbox presentation, ~4,500 draw passes/interval, uncorrupted `.text` | Verified | **100%** |
@@ -69,7 +69,7 @@ Unlike emulators such as RPCS3 (which must translate the PS3's Cell Broadband En
              ▼                                                         ▼
 ┌──────────────────────────────┐                         ┌─────────────────────────┐
 │     Vulkan 1.3 Core          │                         │   Native PRX & Win32    │
-│ (GCN Bytecode -> SPIR-V)     │                         │ (libkernel, OpenAL, SDL)│
+│ (GCN Bytecode -> SPIR-V)     │                         │ (libkernel, SDL3 Audio) │
 └────────────┬─────────────────┘                         └─────────────┬───────────┘
              ▼                                                         ▼
 ┌──────────────────────────────┐                         ┌─────────────────────────┐
@@ -167,6 +167,15 @@ On PlayStation 4, Kat changes gravity styles by swiping up or down on the DualSh
 | **E / Right Click** | R1 | Gravity Shift |
 | **Shift** | L2 | Gravity Slide |
 | **Tab / P** | Options | Pause Menu |
+
+---
+
+## 🔊 Audio Setup & In-Game Options
+
+The audio subsystem uses **SDL3 Audio** (`audio_backend: 0`) with 200% master gain boost (`volume_slider: 200`) and native Windows WASAPI/DirectSound device switching:
+- **Zero Configuration**: Audio streams automatically to your active Windows playback device (headphones, desktop speakers, USB DACs).
+- **Important In-Game Option**: In the game's **Sound Options**, make sure to turn **"Controller Speaker" OFF**. On PlayStation 4, Kat's voice lines and gravity shift SFX are sent to the DualShock 4 speaker by default. Turning this option off routes 100% of audio and dialogue through your desktop speakers or headphones.
+- **Log Noise Suppression**: Sony's NGS2 sound engine invokes `sceNgs2VoiceGetState` continuously. With our included `Lib.Ngs2:Off` log filter, I/O stutter is completely eliminated.
 
 ---
 

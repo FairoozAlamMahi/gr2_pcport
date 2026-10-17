@@ -710,7 +710,7 @@ namespace GravityRush2Launcher {
             psi.Arguments = args;
             psi.WorkingDirectory = coreWorkingDir;
             psi.UseShellExecute = false;
-            psi.CreateNoWindow = true;
+            psi.CreateNoWindow = false;
 
             try {
                 this.Hide();

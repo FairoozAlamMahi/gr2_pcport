@@ -120,12 +120,17 @@ namespace GravityRush2Launcher {
             foreach (var t in targets) {
                 try {
                     if (!Directory.Exists(t)) Directory.CreateDirectory(t);
-                    foreach (var f in Directory.GetFiles(templateDir, "*.*", SearchOption.AllDirectories)) {
-                        string rel = f.Substring(templateDir.Length + 1);
-                        string dest = Path.Combine(t, rel);
-                        string destDir = Path.GetDirectoryName(dest);
-                        if (!Directory.Exists(destDir)) Directory.CreateDirectory(destDir);
+                    foreach (var f in Directory.GetFiles(templateDir, "*.*", SearchOption.TopDirectoryOnly)) {
+                        string dest = Path.Combine(t, Path.GetFileName(f));
                         File.Copy(f, dest, true);
+                    }
+                    string sceSysDir = Path.Combine(templateDir, "sce_sys");
+                    if (Directory.Exists(sceSysDir)) {
+                        string destSceSys = Path.Combine(t, "sce_sys");
+                        if (!Directory.Exists(destSceSys)) Directory.CreateDirectory(destSceSys);
+                        foreach (var f in Directory.GetFiles(sceSysDir, "*.*", SearchOption.TopDirectoryOnly)) {
+                            File.Copy(f, Path.Combine(destSceSys, Path.GetFileName(f)), true);
+                        }
                     }
                 } catch { }
             }

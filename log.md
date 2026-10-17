@@ -741,6 +741,24 @@ During intensive shader translation or synchronous file streaming, running the W
   - Rebuilt `GravityRush2_PC_Port_v1.0.zip` (32.68 MB) containing updated launcher, runtime, configs, patches, and tools.
   - Synchronized repository changes to GitHub (`origin main`).
 
+---
+
+## 38. Dynamic Timestep Cave Deployment, TitleID Patch Unification & Audio Architecture Diagnosis
+
+* **Root Cause of Persistent 30 FPS Slow-Motion Identified & Resolved:**
+  - *Diagnosis:* Although `GravityDaze2-Orbis.xml` was updated, shadPS4's memory patcher prioritizes exact Game TitleID XML files (`CUSA04943.xml`). Inspection revealed that multiple `CUSA04943.xml` files in `core/user/patches/` and `%APPDATA%/shadPS4/patches/` still contained a stripped-down 5-line patch that omitted the crucial dynamic timestep code cave (`0x1802d90`–`0x1802df5`) and render loop throttle hook (`0x0085e9cc`). Without this hook, the game engine's internal physics simulation was stuck at $1/30$s (`0x3d088889`), running the entire simulation at 50% slow-motion when presented at 60 Hz.
+  - *Resolution:* Unified and deployed the complete 92-line illusion v4.0 patch across all patch locations (`CUSA04943.xml`, `GravityDaze2-Orbis.xml`, and `%APPDATA%/shadPS4/patches/`).
+  - *Verification:* Verified directly via active runtime logs (`memory_patcher.cpp:423 PatchMemory`) that all 92+ patches applied, the dynamic timestep code cave is active, and the physics simulation runs at true 100% speed.
+
+* **Launcher Directory Recursion Bug Fixed in `ResetAudioSavedata()`:**
+  - Corrected `launcher_src/GravityRush2.cs` to prevent nested directory creation (`system0020/system0020/system0020.bin`) by enforcing `SearchOption.TopDirectoryOnly` and clean subdirectory mapping for `sce_sys/`.
+  - Recompiled `GravityRush2.exe` and refreshed both standalone and repository distribution folders.
+
+* **Audio Architecture Analysis & OpenAL Soft Multichannel Downmix:**
+  - Verified OpenAL Soft initialization in live logs (`openal_audio_out.cpp:250 AL_EXT_FLOAT32 extension detected - using native float format`, internal 8ch-to-stereo downmix, 2.0x gain boost).
+  - Traced in-game audio synthesis to Sony Next-Generation Sound 2 (`libSceNgs2`). In upstream shadPS4 HLE, `sceNgs2SystemRender` is stubbed, returning empty audio buffers to `sceAudioOutOutput`. Full waveform synthesis requires dumping `libSceNgs2.sprx` from a physical PS4 into `user/sys_modules/` for LLE execution. Documented this clearly in `README.md` and configured the F1 in-game control panel with 1-click audio defaults reset.
+
+
 
 
 

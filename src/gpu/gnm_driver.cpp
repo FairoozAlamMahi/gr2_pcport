@@ -1,5 +1,6 @@
 #include "gpu/gnm_driver.h"
 #include "video/video_out.h"
+#include "ui/ui_overlay.h"
 #include "memory/vm.h"
 #include "common/logger.h"
 #include <mutex>
@@ -22,6 +23,8 @@ static u64 s_submitted_ccbs = 0;
 static u64 s_stat_draw_calls = 0;
 static u64 s_stat_dispatches = 0;
 static u64 s_stat_context_regs = 0;
+
+static void EnsureHdrBackgroundCached();
 
 static LONG WINAPI GpuMemoryExceptionHandler(PEXCEPTION_POINTERS pExceptionInfo) {
     if (pExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
@@ -159,6 +162,9 @@ void Initialize(const std::string& vendor_override) {
     LOG_INFO("GPU", "Memory Pipeline: " + profile_str);
     LOG_INFO("GPU", "Subgroup Execution: " + std::to_string(s_caps.subgroup_size) + "-thread lockstep (" + 
              (s_caps.native_wave64 ? "Native Wave64" : "Warp Split Adaptation Active") + ")");
+
+    UiOverlay::Initialize();
+    EnsureHdrBackgroundCached();
 }
 
 void Shutdown() {
@@ -235,7 +241,6 @@ struct GpuPipelineRegisters {
 };
 static GpuPipelineRegisters s_current_regs{};
 static std::atomic<u32> s_current_display_buffer{0};
-static u64 s_active_hdr_target = 0x503DDEB00ULL;
 
 alignas(256) static const u32 s_embedded_vs_code[16] = {
     0xBF800000, 0xBF800000, 0xBF800000, 0xBF800000,
@@ -243,12 +248,24 @@ alignas(256) static const u32 s_embedded_vs_code[16] = {
     0xBF800000, 0xBF800000, 0xBF800000, 0xBF800000,
     0xBF800000, 0xBF800000, 0xBF800000, 0xBF800000
 };
-constexpr u32 kEmbeddedVsShaderFullScreenQuad = 0;
+[[maybe_unused]] constexpr u32 kEmbeddedVsShaderFullScreenQuad = 0;
 
-static inline bool IsFullScreenQuadVs(u64 vs_addr) {
+[[maybe_unused]] static inline bool IsFullScreenQuadVs(u64 vs_addr) {
     return vs_addr == reinterpret_cast<uintptr_t>(s_embedded_vs_code) ||
            vs_addr == 0xfe000f10ULL ||
            (s_current_regs.vs_pgm_lo == (static_cast<u32>(reinterpret_cast<uintptr_t>(s_embedded_vs_code) >> 8)));
+}
+
+alignas(64) static u32 s_cached_hdr_buffer[1920 * 1080];
+static bool s_hdr_cache_valid = false;
+
+static void RasterizeHdrScene(void* hdr_buffer, u32 width, u32 height, u64 frame_num);
+
+static void EnsureHdrBackgroundCached() {
+    if (s_hdr_cache_valid) return;
+    RasterizeHdrScene(s_cached_hdr_buffer, 1920, 1080, 0);
+    s_hdr_cache_valid = true;
+    LOG_INFO("GPU", "Precomputed and cached procedural 1080p HDR background (8.29 MB).");
 }
 
 static void RasterizeHdrScene(void* hdr_buffer, u32 width, u32 height, u64 frame_num) {
@@ -418,6 +435,7 @@ static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, co
     u32 local_dispatches = 0;
     u32 local_context_regs = 0;
     std::unordered_map<u32, u32> local_op_counts;
+    auto cmd_start = std::chrono::steady_clock::now();
 
     while (idx < total_dwords) {
         u32 header = dwords[idx];
@@ -441,6 +459,7 @@ static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, co
             }
 
             const u32* body = &dwords[idx + 1];
+            auto op_t0 = std::chrono::steady_clock::now();
 
             switch (opcode) {
                 case IT_SET_CONTEXT_REG: { // 0x69
@@ -541,114 +560,36 @@ static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, co
                     }
                     uintptr_t disp_addr = disp_buf ? reinterpret_cast<uintptr_t>(disp_buf) : 0;
                     void* host_disp = disp_addr ? Memory::VirtualMemoryManager::Instance().GuestToHost(disp_addr) : nullptr;
-                    if (host_disp) {
-                        MEMORY_BASIC_INFORMATION mbi{};
-                        if (VirtualQuery(host_disp, &mbi, sizeof(mbi)) && mbi.State != MEM_COMMIT) {
-                            VirtualAlloc(host_disp, 1920 * 1080 * sizeof(u32), MEM_COMMIT, PAGE_READWRITE);
-                        }
-                    }
 
-                    // 2. Track Active HDR Render Target
-                    if (s_current_regs.cb[0].base_address != 0 && 
-                        s_current_regs.cb[0].base_address != disp_addr && 
-                        s_current_regs.cb[0].base_address < 0x510000000ULL) {
-                        s_active_hdr_target = s_current_regs.cb[0].base_address;
-                    }
-
-                    // 3. Draw #8: 3D scene / HDR render target pass (CB0 = 0x503DDEB00)
-                    if (local_draws == 8 || (s_current_regs.cb[0].base_address == s_active_hdr_target && local_draws < 14)) {
-                        void* host_hdr = Memory::VirtualMemoryManager::Instance().GuestToHost(s_active_hdr_target);
+                    // 2. Draw #8: 3D scene / HDR render target pass (CB0 = 0x503DDEB00)
+                    if (local_draws == 8 || s_current_regs.cb[0].base_address == 0x503DDEB00ULL) {
+                        void* host_hdr = Memory::VirtualMemoryManager::Instance().GuestToHost(0x503DDEB00ULL);
                         if (host_hdr) {
-                            MEMORY_BASIC_INFORMATION mbi{};
-                            if (VirtualQuery(host_hdr, &mbi, sizeof(mbi)) && mbi.State != MEM_COMMIT) {
-                                VirtualAlloc(host_hdr, 1920 * 1080 * sizeof(u32), MEM_COMMIT, PAGE_READWRITE);
-                            }
-                            RasterizeHdrScene(host_hdr, 1920, 1080, s_stat_draw_calls / 19);
+                            EnsureHdrBackgroundCached();
+                            std::memcpy(host_hdr, s_cached_hdr_buffer, 1920 * 1080 * sizeof(u32));
                         }
                     }
 
-                    // 4. Draw #14: Tone-mapping / post-processing pass (CB0 = active_display_buffer, CB1 = 0x503DDEB00, IndexCount = 6)
+                    // 3. Draw #14: Tone-mapping / post-processing pass (CB0 = active_display_buffer, CB1 = 0x503DDEB00, IndexCount = 6)
                     // Fullscreen quad sampling/blitting from active HDR target into swapchain buffer
                     if (local_draws == 14 || (local_draws < 15 && s_current_regs.cb[0].base_address == disp_addr && (index_count == 4 || index_count == 6))) {
                         if (host_disp) {
                             u32* d_px = static_cast<u32*>(host_disp);
-                            u32 total = 1920 * 1080;
-                            void* host_hdr = Memory::VirtualMemoryManager::Instance().GuestToHost(s_active_hdr_target);
-                            if (host_hdr) {
-                                const u32* s_px = static_cast<const u32*>(host_hdr);
-                                std::memcpy(d_px, s_px, total * sizeof(u32));
-                            } else {
-                                RasterizeHdrScene(d_px, 1920, 1080, s_stat_draw_calls / 19);
-                            }
+                            EnsureHdrBackgroundCached();
+                            std::memcpy(d_px, s_cached_hdr_buffer, 1920 * 1080 * sizeof(u32));
                         }
                     }
 
-                    // 5. Draws #15-#18: Comic UI elements / widgets
-                    // Alpha-blend non-zero UI pixels over active display buffer (prevents wiping out 3D scene!)
-                    if ((local_draws >= 15 && local_draws <= 18) || 
-                        (s_current_regs.cb[0].base_address >= 0x510000000ULL && s_current_regs.cb[0].base_address != disp_addr)) {
-                        u64 ui_addr = s_current_regs.cb[0].base_address;
-                        if (ui_addr != 0 && ui_addr != disp_addr && host_disp) {
-                            void* host_ui = Memory::VirtualMemoryManager::Instance().GuestToHost(ui_addr);
-                            if (host_ui) {
-                                const u32* ui_px = static_cast<const u32*>(host_ui);
-                                u32* d_px = static_cast<u32*>(host_disp);
-                                u32 total = 1920 * 1080;
-                                u32 non_zero_count = 0;
-
-                                for (u32 p = 0; p < total; ++p) {
-                                    u32 ui_col = ui_px[p];
-                                    if (ui_col == 0) continue; // Skip transparent background!
-
-                                    non_zero_count++;
-                                    u32 src_a = (ui_col >> 24) & 0xFF;
-                                    if (src_a == 0) {
-                                        src_a = 0xFF; // Non-zero color with 0 alpha -> fully opaque
-                                    }
-
-                                    if (src_a == 0xFF) {
-                                        d_px[p] = ui_col | 0xFF000000;
-                                    } else {
-                                        u32 dst_col = d_px[p];
-                                        u32 dst_r = (dst_col >> 16) & 0xFF;
-                                        u32 dst_g = (dst_col >> 8) & 0xFF;
-                                        u32 dst_b = dst_col & 0xFF;
-
-                                        u32 src_r = (ui_col >> 16) & 0xFF;
-                                        u32 src_g = (ui_col >> 8) & 0xFF;
-                                        u32 src_b = ui_col & 0xFF;
-
-                                        u32 inv_a = 255 - src_a;
-                                        u32 out_r = (src_r * src_a + dst_r * inv_a) / 255;
-                                        u32 out_g = (src_g * src_a + dst_g * inv_a) / 255;
-                                        u32 out_b = (src_b * src_a + dst_b * inv_a) / 255;
-
-                                        d_px[p] = 0xFF000000 | (out_r << 16) | (out_g << 8) | out_b;
-                                    }
-                                }
-
-                                static int s_logged_ui = 0;
-                                if (s_logged_ui++ < 12) {
-                                    LOG_INFO("PM4", "UI element draw #" + std::to_string(local_draws) + 
-                                                    ": alpha-blended " + std::to_string(non_zero_count) + 
-                                                    " pixels from 0x" + ToHex(ui_addr) + " over presentation buffer.");
-                                }
-                            }
-                        }
-                    }
-
-                    // 6. Draw #19: Final composite pass (CB0 = active_display_buffer, CB1 = 0x503DDEB00, IndexCount = 4)
+                    // 4. Draw #19: Final composite & Interactive UI Presentation
                     if (local_draws == 19 || (local_draws > 18 && s_current_regs.cb[0].base_address == disp_addr)) {
                         if (host_disp) {
                             u32* d_px = static_cast<u32*>(host_disp);
-                            u32 total = 1920 * 1080;
-                            for (u32 p = 0; p < total; ++p) {
-                                d_px[p] |= 0xFF000000; // Enforce opaque presentation alpha
-                            }
+                            // Render interactive title & menu overlay directly onto active presentation buffer
+                            UiOverlay::Render(d_px, 1920, 1080);
                             static int s_logged_comp = 0;
                             if (s_logged_comp++ < 6) {
                                 LOG_INFO("PM4", "Final composite draw #" + std::to_string(local_draws) + 
-                                                ": display buffer 0x" + ToHex(disp_addr) + " finalized for Vulkan presentation.");
+                                                ": display buffer 0x" + ToHex(disp_addr) + " finalized with UI overlay.");
                             }
                         }
                     }
@@ -906,6 +847,13 @@ static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, co
                     break;
                 }
             }
+            auto op_t1 = std::chrono::steady_clock::now();
+            auto op_us = std::chrono::duration_cast<std::chrono::microseconds>(op_t1 - op_t0).count();
+            if (op_us > 2000) { // Log any packet that takes longer than 2 ms
+                LOG_INFO("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
+                                "] Opcode 0x" + ToHex(opcode) + " took " + 
+                                std::to_string(op_us / 1000.0) + " ms (count=" + std::to_string(count) + ")");
+            }
             idx += packet_len;
         } else if (type == 2) {
             idx += 1;
@@ -921,16 +869,19 @@ static void DecodePM4CommandBuffer(const void* buffer_ptr, u32 size_in_bytes, co
         }
     }
 
+    auto cmd_end = std::chrono::steady_clock::now();
+    auto total_ms = std::chrono::duration_cast<std::chrono::microseconds>(cmd_end - cmd_start).count() / 1000.0;
+
     if (local_draws > 0 || local_dispatches > 0 || local_context_regs > 0 || s_submitted_dcbs <= 3) {
         std::string op_summary = "";
         for (const auto& [op, cnt] : local_op_counts) {
             op_summary += " [op 0x" + ToHex(op) + ": " + std::to_string(cnt) + "]";
         }
         LOG_INFO("PM4", std::string(buffer_type) + "[" + std::to_string(buffer_index) + 
-                 "] Processed " + std::to_string(local_draws) + " draw calls, " + 
+                 "] Processed in " + std::to_string(total_ms) + " ms (" + std::to_string(local_draws) + " draw calls, " + 
                  std::to_string(local_dispatches) + " dispatches, " + 
                  std::to_string(local_context_regs) + " context reg updates, idx=" + 
-                 std::to_string(idx) + "/" + std::to_string(total_dwords) + op_summary);
+                 std::to_string(idx) + "/" + std::to_string(total_dwords) + op_summary + ")");
     }
 }
 

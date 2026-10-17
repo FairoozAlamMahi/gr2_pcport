@@ -15,6 +15,7 @@ scratch/
 # Game binaries & dumps (Keep outside repo or ignored)
 *.pkg
 *.bin
+!savedata/**
 *.elf
 *.self
 *.dump

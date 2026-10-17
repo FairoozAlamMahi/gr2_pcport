@@ -80,6 +80,10 @@ struct ScePadVibrationParam {
 
 void Initialize();
 void UpdateInput();
+void InjectButtonPress(u32 buttons, int duration_frames = 6);
+u32 GetCurrentButtons();
+bool IsGamepadConnected();
+int GetActiveGamepadSlot();
 
 // Exported libScePad functions
 extern "C" {

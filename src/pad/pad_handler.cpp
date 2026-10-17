@@ -29,6 +29,36 @@ static bool s_has_mouse_init = false;
 static float s_mouse_delta_x = 0.0f;
 static float s_mouse_delta_y = 0.0f;
 
+static std::atomic<u32> s_injected_buttons{0};
+static std::atomic<int> s_injected_frames{0};
+static std::atomic<u32> s_current_buttons{0};
+static std::atomic<bool> s_gamepad_connected{false};
+static std::atomic<int> s_gamepad_slot{-1};
+
+static inline std::string ToHex(u64 val) {
+    char buf[32];
+    std::snprintf(buf, sizeof(buf), "%llX", static_cast<unsigned long long>(val));
+    return std::string(buf);
+}
+
+void InjectButtonPress(u32 buttons, int duration_frames) {
+    s_injected_buttons.store(buttons, std::memory_order_relaxed);
+    s_injected_frames.store(duration_frames, std::memory_order_relaxed);
+    LOG_INFO("PAD", "Injected button press 0x" + ToHex(buttons) + " for " + std::to_string(duration_frames) + " frames.");
+}
+
+u32 GetCurrentButtons() {
+    return s_current_buttons.load(std::memory_order_relaxed);
+}
+
+bool IsGamepadConnected() {
+    return s_gamepad_connected.load(std::memory_order_relaxed);
+}
+
+int GetActiveGamepadSlot() {
+    return s_gamepad_slot.load(std::memory_order_relaxed);
+}
+
 void Initialize() {
     LOG_INFO("PAD", "Initializing Gamepad & Synthetic Touchpad Swipe Engine...");
     GetCursorPos(&s_last_mouse_pos);
@@ -86,6 +116,13 @@ PS4_SYSV_ABI s32 scePadReadState(s32 handle, ScePadData* data) {
     u64 reads = s_pad_reads.fetch_add(1, std::memory_order_relaxed);
     if (reads <= 5 || reads % 180 == 0) {
         LOG_INFO("PAD", "scePadReadState: sampling inputs (read #" + std::to_string(reads) + ")");
+    }
+
+    // Apply injected programmatic buttons (from UI overlay selection)
+    int inj_frames = s_injected_frames.load(std::memory_order_relaxed);
+    if (inj_frames > 0) {
+        data->buttons |= s_injected_buttons.load(std::memory_order_relaxed);
+        s_injected_frames.fetch_sub(1, std::memory_order_relaxed);
     }
 
     static bool s_auto_input_enabled = (GetEnvironmentVariableA("GR2_AUTO_INPUT", nullptr, 0) > 0);
@@ -361,6 +398,22 @@ PS4_SYSV_ABI s32 scePadReadState(s32 handle, ScePadData* data) {
 
     // Gravity vector in acceleration
     data->acceleration.y = -1.0f;
+
+    // Record atomic state for UI and systems
+    s_current_buttons.store(data->buttons, std::memory_order_relaxed);
+    s_gamepad_connected.store(dwResult == ERROR_SUCCESS, std::memory_order_relaxed);
+    s_gamepad_slot.store(current_slot, std::memory_order_relaxed);
+
+    static u32 s_last_logged_btn = 0;
+    if (data->buttons != 0 && data->buttons != s_last_logged_btn) {
+        LOG_INFO("PAD", "Input detected: 0x" + ToHex(data->buttons) + 
+                 ((data->buttons & ORBIS_PAD_CROSS) ? " [CROSS / A]" : "") +
+                 ((data->buttons & ORBIS_PAD_CIRCLE) ? " [CIRCLE / B]" : "") +
+                 ((data->buttons & ORBIS_PAD_OPTIONS) ? " [OPTIONS / START]" : ""));
+        s_last_logged_btn = data->buttons;
+    } else if (data->buttons == 0) {
+        s_last_logged_btn = 0;
+    }
 
     return 0;
 }

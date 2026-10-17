@@ -40,11 +40,11 @@ The port is currently in an **In-Game / Playable** milestone state with continuo
 | **1** | **Asset Extraction & Filesystem** | Retail base game + v1.11 update merged via NTFS hardlinks; FIOS2 PSARC virtual archive mounts (`/app0`, `/data`, `/temp0`) | Verified | **100%** |
 | **2** | **Dynamic Linker & Orbis APIs** | 1,126 Orbis symbols resolved; decrypted native PRX system modules (`libc`, `Fios2`, `JobManager`, `NpToolkit`, `Secure`) loaded | Verified | **100%** |
 | **3** | **Engine Boot & Core Stability** | Win32 host mutex pointer validation (`0x7000007957e4`), secondary heap list bypass (`0x00fb0e51`); zero memory corruption | Verified | **100%** |
-| **4** | **Audio Subsystem** | Multi-port audio (`Main`, `Bgm`, `Audio3d`, `PadSpk`) with SDL3 WASAPI native stereo mix, 200% master gain, and `Lib.Ngs2` spam filtering | Active | **100%** |
+| **4** | **Audio Subsystem** | Clean-room C `libSceNgs2` DSP mixer (`runtime_ngs2.c`) synthesizing voice, combat SFX, world audio, and BGM over WASAPI/SDL3; dynamic Headset & Multi-Device auto-routing (`IPolicyConfig`) | Active | **100%** |
 | **5** | **Controller & Input Subsystem** | DualShock 4, DualSense, Xbox 360/One, PC Keyboard/Mouse; hold-combo synthetic touchpad swipes (`L1 + D-Pad`) for Gravity Styles | Verified | **100%** |
 | **6** | **FMV & Cutscene Video Decoder** | `libSceVideodec2` and `AvPlayer` hardware video streaming to EOF with seamless loopback | Verified | **100%** |
-| **7** | **Vulkan 3D Graphics & Presentation** | GCN-to-Vulkan 1.3 recompiler on RTX 4060 Ti, Mailbox presentation, ~4,500 draw passes/interval, uncorrupted `.text` | Verified | **100%** |
-| **8** | **In-Game State & Playability** | Retail engine progression, seeded savedata (`data0000`, `system0020`), DLC requirement bypass | Playable | **100%** |
+| **7** | **Vulkan 3D Graphics & Presentation** | GCN-to-Vulkan 1.3 recompiler on RTX 4060 Ti, Mailbox presentation, ~4,500 draw passes/interval, background 6-thread pipeline prewarming (0 stutter) | Verified | **100%** |
+| **8** | **In-Game State & Playability** | Retail engine progression, seeded savedata (`data0000`, `system0020`), rock-solid 60.0 FPS locked dynamic timestep, DLC requirement bypass | Playable | **100%** |
 
 ---
 
@@ -172,10 +172,16 @@ On PlayStation 4, Kat changes gravity styles by swiping up or down on the DualSh
 
 ## 🔊 Audio Setup & In-Game Options
 
-The audio subsystem uses **SDL3 Audio** (`audio_backend: 0`) with 200% master gain boost (`volume_slider: 200`) and native Windows WASAPI/DirectSound device switching:
-- **Zero Configuration**: Audio streams automatically to your active Windows playback device (headphones, desktop speakers, USB DACs).
-- **Important In-Game Option**: In the game's **Sound Options**, make sure to turn **"Controller Speaker" OFF**. On PlayStation 4, Kat's voice lines and gravity shift SFX are sent to the DualShock 4 speaker by default. Turning this option off routes 100% of audio and dialogue through your desktop speakers or headphones.
-- **Log Noise Suppression**: Sony's NGS2 sound engine invokes `sceNgs2VoiceGetState` continuously. With our included `Lib.Ngs2:Off` log filter, I/O stutter is completely eliminated.
+The port features a complete clean-room C implementation of Sony's Next-Generation Sound 2 (`libSceNgs2`) DSP engine ([`src/audio/runtime_ngs2.c`](src/audio/runtime_ngs2.c)):
+- **Authentic Real-Time Synthesis**: Voices, combat hits, gravity shift SFX, city soundscapes, and Kohei Tanaka's orchestral soundtrack are decoded (ATRAC9 via LibAtrac9, PCM, VAG/HEVAG) and rendered dynamically.
+- **Dynamic Headset / Speaker Auto-Routing**:
+  Windows WASAPI and SDL3 audio streams are managed via the COM `IPolicyConfig` endpoint switcher. The launcher automatically detects your active gaming headset (or monitor / TV speakers) and routes all in-game sound directly to your headphones without needing Windows restarts.
+- **In-Game Sound Options Tip**:
+  In the game's Options menu (`Sound Options`), turn **"Controller Speaker" OFF**. On PlayStation 4, Kat's voice lines and gravity alerts route to the DualShock 4 speaker by default. Setting this option to OFF sends all voice lines directly to your headphones/main speakers.
+- **Live In-Game Control Panel (`F1`)**:
+  Press **`F1`** at any time during gameplay to open the live Control Panel. You can switch audio playback devices, toggle display modes, check frame pacing, or click **"🔧 One-Click Sound Slider & Audio Reset"** to restore pristine volume slider defaults immediately.
+- **In-Game FPS Counter (`F10`) & Port Menu (`Insert` / `R3 + L2`)**:
+  Press **`F10`** in-game to toggle the real-time frame rate counter and hardware telemetry overlay. Press **`Insert`** (or press controller **`R3 + L2`**) to open the native port configuration menu.
 
 ---
 

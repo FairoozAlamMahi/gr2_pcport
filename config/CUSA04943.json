@@ -1,6 +1,6 @@
 {
   "Audio": {
-    "audio_backend": 0,
+    "audio_backend": 1,
     "openal_hrtf": 0,
     "openal_main_output_device": "Default Device",
     "openal_mic_device": "Default Device",
@@ -99,7 +99,7 @@
     "texture_view_memo": true,
     "tracker_lock_spin_rounds": 32,
     "userfaultfd": false,
-    "vblank_frequency": 0,
+    "vblank_frequency": 60,
     "vertex_layout_memo": true,
     "window_height": 1080,
     "window_width": 1920

@@ -1,6 +1,6 @@
 {
   "Audio": {
-    "audio_backend": 0,
+    "audio_backend": 1,
     "openal_hrtf": 0,
     "openal_main_output_device": "Default Device",
     "openal_mic_device": "Default Device",
@@ -11,7 +11,7 @@
     "sdl_padSpk_output_device": "Default Device"
   },
   "Debug": {
-    "config_version": "2e21a0626e710a5808cdfe138bcce558eae554b2",
+    "config_version": "a27b91a6dd3afcd9f0c28c1aabfd8cd0bc4ea41b",
     "debug_dump": false,
     "shader_collect": false
   },
@@ -99,7 +99,7 @@
     "texture_view_memo": true,
     "tracker_lock_spin_rounds": 32,
     "userfaultfd": false,
-    "vblank_frequency": 0,
+    "vblank_frequency": 60,
     "vertex_layout_memo": true,
     "window_height": 1080,
     "window_width": 1920

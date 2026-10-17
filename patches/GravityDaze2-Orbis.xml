@@ -46,4 +46,17 @@
             <Line Type="bytes" Address="0x00d5de96" Value="9090909090"/>
         </PatchList>
     </Metadata>
+
+    <!-- Photo Gallery & Photo Mode Crash Guard -->
+    <Metadata Title="Gravity Rush 2 (Gravity Daze 2)"
+              Name="Unlock All Photo Items & Gallery Crash Guard"
+              Author="illusion"
+              PatchVer="1.0"
+              AppVer="01.11"
+              AppElf="eboot.bin"
+              isEnabled="true">
+        <PatchList>
+            <Line Type="bytes" Address="0x014e87e0" Value="b001c3"/>
+        </PatchList>
+    </Metadata>
 </Patch>

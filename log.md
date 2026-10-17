@@ -716,6 +716,32 @@ During intensive shader translation or synchronous file streaming, running the W
   - Integrated latest `GR2fork-EXODUS-win64-sdl` release with buffer cache offload optimizations, class-constant readback windows, and host read barriers (`vk_scheduler`).
   - Verified 100% stable 60 FPS presentation, ~3,800 draw passes per interval, and zero crashes on NVIDIA GeForce RTX 4060 Ti under Vulkan 1.3.
 
+---
+
+## 37. Slow-Motion Elimination (60 FPS VBlank Lock), Authentic Audio Restoration & In-Game Control Panel
+
+* **Slow-Motion (30 FPS Lock) Root Cause & Resolution:**
+  - *Root Cause Analysis:* Discovered that when `vblank_frequency` was set to `0` in `config.json` and `CUSA04943.json`, shadPS4 defaulted to the PS4's hardware refresh rate of 30 Hz (`vblankFrequency: 30`). Because the 60 FPS physics patch was active in the game's executable, the engine was executing 60 simulation steps per second while the swapchain was only presenting 30 frames per second, running the game at half speed (50% slow motion).
+  - *Fix:* Explicitly set `"vblank_frequency": 60` across both base `config.json` and `custom_configs/CUSA04943.json`. Verified in live telemetry: `emulator.cpp:566 Run: GPU vblankFrequency: 60`, fully unlocking locked 60 FPS and returning gameplay physics to 100% normal speed.
+
+* **Authentic In-Game Audio Sliders & Sound Engine Restoration:**
+  - *Authentic Savedata Generation:* Allowed the genuine retail engine to initialize a clean, authentic `system0020.bin` (165,842 bytes), removing previous manually edited byte offsets that caused the UI slider coordinates to exceed valid bounds. Sliders now display 100% authentic, cleanly aligned positions.
+  - *OpenAL Soft Verification:* Re-engaged `"audio_backend": 1` (OpenAL Soft), confirming in runtime logs that shadPS4 statically bundles OpenAL Soft and successfully bound to the user's active headset (`'OpenAL Soft on Speakers (2- Rapoo Gaming Headset)'`) with `AL_EXT_FLOAT32` native floating-point downmixing.
+
+* **In-Game Live Control Panel & Master Launcher (`GravityRush2.exe`):**
+  - Engineered a full GUI Launcher & In-Game Control Panel overlay in `src/launcher/GravityRush2.cs`.
+  - Registered a global Windows hotkey (**`F1`**): pressing `F1` at any time during gameplay brings up a sleek, semi-transparent in-game control panel overlay directly over the game window.
+  - Controls:
+    1. **Framerate Selector**: 60 FPS (Recommended), 120 FPS, 144 FPS, 30 FPS.
+    2. **Audio Settings**: OpenAL Soft vs SDL3 toggle, Volume Gain Boost (100% to 300%), and 1-Click Audio Slider Reset.
+    3. **Display Modes**: Borderless Fullscreen, Windowed (1080p), Exclusive Fullscreen, Resolution (1080p, 1440p, 4K), and RCAS Sharpening (Off, 150, 250, 400).
+  - Recompiled `GravityRush2.exe` with embedded Kat & Dusty icon (`icon.ico`).
+
+* **Standalone Release Package & Git Synchronization:**
+  - Rebuilt `GravityRush2_PC_Port_v1.0.zip` (32.68 MB) containing updated launcher, runtime, configs, patches, and tools.
+  - Synchronized repository changes to GitHub (`origin main`).
+
+
 
 
 

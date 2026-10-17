@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
 using System.Collections.Generic;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace GravityRush2Launcher {
@@ -105,11 +106,16 @@ namespace GravityRush2Launcher {
         }
 
         public static void ResetAudioSavedata() {
-            string templateDir = Path.Combine(BaseDir, "core", "user", "home", "1000", "savedata", "CUSA04943", "system0020");
+            string templateDir = Path.Combine(BaseDir, "core", "user", "home", "1000", "savedata", "CUSA04943", "system0020.orig");
+            if (!Directory.Exists(templateDir)) {
+                templateDir = Path.Combine(BaseDir, "exodus_core", "user", "home", "1000", "savedata", "CUSA04943", "system0020.orig");
+            }
+            if (!Directory.Exists(templateDir)) {
+                templateDir = Path.Combine(BaseDir, "core", "user", "home", "1000", "savedata", "CUSA04943", "system0020");
+            }
             if (!Directory.Exists(templateDir)) {
                 templateDir = Path.Combine(BaseDir, "exodus_core", "user", "home", "1000", "savedata", "CUSA04943", "system0020");
             }
-            if (!Directory.Exists(templateDir)) return;
 
             string[] targets = new string[] {
                 Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "shadPS4", "home", "1000", "savedata", "CUSA04943", "system0020"),
@@ -119,21 +125,216 @@ namespace GravityRush2Launcher {
 
             foreach (var t in targets) {
                 try {
-                    if (!Directory.Exists(t)) Directory.CreateDirectory(t);
-                    foreach (var f in Directory.GetFiles(templateDir, "*.*", SearchOption.TopDirectoryOnly)) {
-                        string dest = Path.Combine(t, Path.GetFileName(f));
-                        File.Copy(f, dest, true);
-                    }
-                    string sceSysDir = Path.Combine(templateDir, "sce_sys");
-                    if (Directory.Exists(sceSysDir)) {
-                        string destSceSys = Path.Combine(t, "sce_sys");
-                        if (!Directory.Exists(destSceSys)) Directory.CreateDirectory(destSceSys);
-                        foreach (var f in Directory.GetFiles(sceSysDir, "*.*", SearchOption.TopDirectoryOnly)) {
-                            File.Copy(f, Path.Combine(destSceSys, Path.GetFileName(f)), true);
+                    if (Directory.Exists(templateDir)) {
+                        if (!Directory.Exists(t)) Directory.CreateDirectory(t);
+                        foreach (var f in Directory.GetFiles(templateDir, "*.*", SearchOption.TopDirectoryOnly)) {
+                            string dest = Path.Combine(t, Path.GetFileName(f));
+                            File.Copy(f, dest, true);
                         }
+                        string sceSysDir = Path.Combine(templateDir, "sce_sys");
+                        if (Directory.Exists(sceSysDir)) {
+                            string destSceSys = Path.Combine(t, "sce_sys");
+                            if (!Directory.Exists(destSceSys)) Directory.CreateDirectory(destSceSys);
+                            foreach (var f in Directory.GetFiles(sceSysDir, "*.*", SearchOption.TopDirectoryOnly)) {
+                                File.Copy(f, Path.Combine(destSceSys, Path.GetFileName(f)), true);
+                            }
+                        }
+                    } else if (Directory.Exists(t)) {
+                        Directory.Delete(t, true);
                     }
                 } catch { }
             }
+        }
+    }
+
+    public static class BgmPlayer {
+        [DllImport("winmm.dll")]
+        public static extern int waveOutGetNumDevs();
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WAVEFORMATEX {
+            public ushort wFormatTag;
+            public ushort nChannels;
+            public uint nSamplesPerSec;
+            public uint nAvgBytesPerSec;
+            public ushort nBlockAlign;
+            public ushort wBitsPerSample;
+            public ushort cbSize;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct WAVEHDR {
+            public IntPtr lpData;
+            public uint dwBufferLength;
+            public uint dwBytesRecorded;
+            public IntPtr dwUser;
+            public uint dwFlags;
+            public uint dwLoops;
+            public IntPtr lpNext;
+            public IntPtr reserved;
+        }
+
+        [DllImport("winmm.dll")]
+        public static extern int waveOutOpen(out IntPtr hWaveOut, int uDeviceID, ref WAVEFORMATEX lpFormat, IntPtr dwCallback, IntPtr dwInstance, uint fdwOpen);
+
+        [DllImport("winmm.dll")]
+        public static extern int waveOutPrepareHeader(IntPtr hWaveOut, ref WAVEHDR lpWaveHdr, int uSize);
+
+        [DllImport("winmm.dll")]
+        public static extern int waveOutWrite(IntPtr hWaveOut, ref WAVEHDR lpWaveHdr, int uSize);
+
+        [DllImport("winmm.dll")]
+        public static extern int waveOutReset(IntPtr hWaveOut);
+
+        [DllImport("winmm.dll")]
+        public static extern int waveOutClose(IntPtr hWaveOut);
+
+        [DllImport("winmm.dll")]
+        public static extern int waveOutUnprepareHeader(IntPtr hWaveOut, ref WAVEHDR lpWaveHdr, int uSize);
+
+        private static volatile bool isPlaying = false;
+        private static bool isEnabled = true;
+        private static System.Threading.Thread loopThread = null;
+        private static System.Media.SoundPlayer fallbackPlayer = null;
+
+        public static bool IsEnabled {
+            get { return isEnabled; }
+            set {
+                isEnabled = value;
+                if (!isEnabled) {
+                    Stop();
+                } else if (!isPlaying) {
+                    Start();
+                }
+            }
+        }
+
+        public static string FindBgmPath() {
+            string baseDir = SettingsManager.BaseDir;
+            string[] candidates = new string[] {
+                Path.Combine(baseDir, "audio", "title_bgm.wav"),
+                Path.Combine(baseDir, "core", "user", "title_bgm.wav"),
+                Path.Combine(baseDir, "..", "audio", "title_bgm.wav"),
+                Path.Combine(baseDir, "title_bgm.wav")
+            };
+            foreach (var c in candidates) {
+                if (File.Exists(c)) return Path.GetFullPath(c);
+            }
+            return null;
+        }
+
+        public static void Start() {
+            if (!isEnabled) return;
+            string bgm = FindBgmPath();
+            if (bgm == null) return;
+            try {
+                Stop();
+                isPlaying = true;
+                loopThread = new System.Threading.Thread(() => MultiDeviceWorker(bgm));
+                loopThread.IsBackground = true;
+                loopThread.Start();
+            } catch {
+                try {
+                    fallbackPlayer = new System.Media.SoundPlayer(bgm);
+                    fallbackPlayer.Load();
+                    fallbackPlayer.PlayLooping();
+                } catch { }
+            }
+        }
+
+        public static void Stop() {
+            isPlaying = false;
+            if (loopThread != null) {
+                try { loopThread.Join(400); } catch { }
+                loopThread = null;
+            }
+            if (fallbackPlayer != null) {
+                try {
+                    fallbackPlayer.Stop();
+                    fallbackPlayer.Dispose();
+                } catch { }
+                fallbackPlayer = null;
+            }
+        }
+
+        private static void MultiDeviceWorker(string wavPath) {
+            try {
+                byte[] fileBytes = File.ReadAllBytes(wavPath);
+                if (fileBytes.Length < 44) return;
+                ushort channels = BitConverter.ToUInt16(fileBytes, 22);
+                uint sampleRate = BitConverter.ToUInt32(fileBytes, 24);
+                uint byteRate = BitConverter.ToUInt32(fileBytes, 28);
+                ushort blockAlign = BitConverter.ToUInt16(fileBytes, 32);
+                ushort bitsPerSample = BitConverter.ToUInt16(fileBytes, 34);
+
+                int dataPos = 12;
+                while (dataPos < fileBytes.Length - 8) {
+                    string chunkId = Encoding.ASCII.GetString(fileBytes, dataPos, 4);
+                    int chunkSize = BitConverter.ToInt32(fileBytes, dataPos + 4);
+                    if (chunkId == "data") {
+                        dataPos += 8;
+                        break;
+                    }
+                    dataPos += 8 + chunkSize;
+                }
+
+                int audioDataLen = fileBytes.Length - dataPos;
+                if (audioDataLen <= 0) return;
+
+                WAVEFORMATEX wfx = new WAVEFORMATEX();
+                wfx.wFormatTag = 1; // PCM
+                wfx.nChannels = channels;
+                wfx.nSamplesPerSec = sampleRate;
+                wfx.nAvgBytesPerSec = byteRate;
+                wfx.nBlockAlign = blockAlign;
+                wfx.wBitsPerSample = bitsPerSample;
+                wfx.cbSize = 0;
+
+                IntPtr pAudioData = Marshal.AllocHGlobal(audioDataLen);
+                Marshal.Copy(fileBytes, dataPos, pAudioData, audioDataLen);
+
+                int numDevs = waveOutGetNumDevs();
+                List<int> targetDevs = new List<int>();
+                for (int d = 0; d < numDevs; d++) {
+                    targetDevs.Add(d);
+                }
+
+                while (isPlaying) {
+                    List<IntPtr> handles = new List<IntPtr>();
+                    List<WAVEHDR> hdrs = new List<WAVEHDR>();
+
+                    foreach (int d in targetDevs) {
+                        IntPtr hWave = IntPtr.Zero;
+                        if (waveOutOpen(out hWave, d, ref wfx, IntPtr.Zero, IntPtr.Zero, 0) == 0) {
+                            WAVEHDR hdr = new WAVEHDR();
+                            hdr.lpData = pAudioData;
+                            hdr.dwBufferLength = (uint)audioDataLen;
+                            hdr.dwFlags = 0;
+                            waveOutPrepareHeader(hWave, ref hdr, Marshal.SizeOf(typeof(WAVEHDR)));
+                            waveOutWrite(hWave, ref hdr, Marshal.SizeOf(typeof(WAVEHDR)));
+                            handles.Add(hWave);
+                            hdrs.Add(hdr);
+                        }
+                    }
+
+                    double durationMs = ((double)audioDataLen / byteRate) * 1000.0;
+                    int sleepInterval = 200;
+                    double elapsed = 0;
+                    while (isPlaying && elapsed < durationMs - 100) {
+                        System.Threading.Thread.Sleep(sleepInterval);
+                        elapsed += sleepInterval;
+                    }
+
+                    for (int i = 0; i < handles.Count; i++) {
+                        waveOutReset(handles[i]);
+                        WAVEHDR h = hdrs[i];
+                        waveOutUnprepareHeader(handles[i], ref h, Marshal.SizeOf(typeof(WAVEHDR)));
+                        waveOutClose(handles[i]);
+                    }
+                }
+
+                Marshal.FreeHGlobal(pAudioData);
+            } catch { }
         }
     }
 
@@ -144,6 +345,7 @@ namespace GravityRush2Launcher {
         private ComboBox cbScreenMode;
         private ComboBox cbResolution;
         private ComboBox cbRcas;
+        private ComboBox cbBgm;
         private Button btnLaunch;
         private Button btnResetAudio;
         private Label lblStatus;
@@ -159,7 +361,7 @@ namespace GravityRush2Launcher {
 
         private void InitializeComponent() {
             this.Text = isOverlayMode ? "Gravity Rush 2 — In-Game Control Panel (F1 to Toggle)" : "Gravity Rush 2 PC Port — Master Launcher & Control Panel";
-            this.Size = new Size(580, 560);
+            this.Size = new Size(580, 615);
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
             this.StartPosition = FormStartPosition.CenterScreen;
@@ -280,7 +482,19 @@ namespace GravityRush2Launcher {
             this.Controls.Add(lblRcas);
             this.Controls.Add(cbRcas);
 
-            // 7. Audio Reset & Fix Helper
+            // 7. Background Orchestral Soundtrack (BGM)
+            startY += rowSpacing;
+            Label lblBgm = new Label() { Text = "Background Soundtrack (BGM):", Location = new Point(labelX, startY), AutoSize = true };
+            cbBgm = new ComboBox() { Location = new Point(ctrlX, startY - 2), Width = 260, DropDownStyle = ComboBoxStyle.DropDownList };
+            cbBgm.Items.AddRange(new object[] {
+                "Enabled (Official Kohei Tanaka Theme)",
+                "Muted / Disabled"
+            });
+            cbBgm.SelectedIndex = BgmPlayer.IsEnabled ? 0 : 1;
+            this.Controls.Add(lblBgm);
+            this.Controls.Add(cbBgm);
+
+            // 8. Audio Reset & Fix Helper
             startY += rowSpacing + 5;
             btnResetAudio = new Button();
             btnResetAudio.Text = "🔧 One-Click In-Game Sound Slider & Audio Reset";
@@ -317,6 +531,48 @@ namespace GravityRush2Launcher {
 
             this.KeyPreview = true;
             this.KeyDown += ControlPanelForm_KeyDown;
+            LoadCurrentSettings();
+        }
+
+        public void LoadCurrentSettings() {
+            try {
+                string cfgPath = SettingsManager.GetConfigPath();
+                if (!File.Exists(cfgPath)) cfgPath = SettingsManager.GetBaseConfigPath();
+                if (File.Exists(cfgPath)) {
+                    string txt = File.ReadAllText(cfgPath);
+                    var mFps = Regex.Match(txt, "\"vblank_frequency\"\\s*:\\s*(\\d+)");
+                    if (mFps.Success) {
+                        int v = int.Parse(mFps.Groups[1].Value);
+                        if (v == 120) cbFps.SelectedIndex = 1;
+                        else if (v == 144) cbFps.SelectedIndex = 2;
+                        else if (v == 30) cbFps.SelectedIndex = 3;
+                        else cbFps.SelectedIndex = 0; // 60
+                    }
+                    var mAudio = Regex.Match(txt, "\"audio_backend\"\\s*:\\s*(\\d+)");
+                    if (mAudio.Success) {
+                        int a = int.Parse(mAudio.Groups[1].Value);
+                        cbAudioBackend.SelectedIndex = (a == 1) ? 0 : 1;
+                    }
+                    var mVol = Regex.Match(txt, "\"volume_slider\"\\s*:\\s*(\\d+)");
+                    if (mVol.Success) {
+                        int vol = int.Parse(mVol.Groups[1].Value);
+                        if (vol <= 100) cbVolumeBoost.SelectedIndex = 0;
+                        else if (vol <= 150) cbVolumeBoost.SelectedIndex = 1;
+                        else if (vol <= 200) cbVolumeBoost.SelectedIndex = 2;
+                        else cbVolumeBoost.SelectedIndex = 3;
+                    }
+                    var mScr = Regex.Match(txt, "\"full_screen_mode\"\\s*:\\s*\"([^\"]*)\"");
+                    if (mScr.Success) {
+                        string s = mScr.Groups[1].Value;
+                        if (s.IndexOf("Windowed", StringComparison.OrdinalIgnoreCase) >= 0) cbScreenMode.SelectedIndex = 1;
+                        else if (s.IndexOf("Fullscreen", StringComparison.OrdinalIgnoreCase) >= 0) cbScreenMode.SelectedIndex = 2;
+                        else cbScreenMode.SelectedIndex = 0;
+                    }
+                }
+                if (cbBgm != null) {
+                    cbBgm.SelectedIndex = BgmPlayer.IsEnabled ? 0 : 1;
+                }
+            } catch { }
         }
 
         private void ControlPanelForm_KeyDown(object sender, KeyEventArgs e) {
@@ -331,10 +587,13 @@ namespace GravityRush2Launcher {
         private void BtnResetAudio_Click(object sender, EventArgs e) {
             SettingsManager.ResetAudioSavedata();
             SettingsManager.UpdateConfig(60, 1, 200, "Windowed", 1920, 1080, 250);
+            BgmPlayer.Start();
+            if (cbBgm != null) cbBgm.SelectedIndex = 0;
             MessageBox.Show(
                 "Audio sliders and settings have been restored to clean defaults!\n\n" +
                 "• All sound sliders (Master, BGM, SFX, Voice) are reset to 100% full volume.\n" +
                 "• OpenAL Soft surround engine configured with 2.0x volume gain.\n" +
+                "• Background Orchestral Soundtrack active (Official Kohei Tanaka Theme).\n" +
                 "• In-Game Tip: In Sound Options, ensure 'Controller Speaker' is OFF so dialogue routes to your headphones/speakers.",
                 "Gravity Rush 2 Audio Restored",
                 MessageBoxButtons.OK,
@@ -368,6 +627,10 @@ namespace GravityRush2Launcher {
             if (cbRcas.SelectedIndex == 1) rcas = 400;
             else if (cbRcas.SelectedIndex == 2) rcas = 150;
             else if (cbRcas.SelectedIndex == 3) rcas = 0;
+
+            if (cbBgm != null) {
+                BgmPlayer.IsEnabled = (cbBgm.SelectedIndex == 0);
+            }
 
             SettingsManager.UpdateConfig(vblank, audioBackend, volumeSlider, screenMode, resW, resH, rcas);
         }
@@ -453,12 +716,15 @@ namespace GravityRush2Launcher {
                 this.Hide();
                 runningProcess = Process.Start(psi);
                 if (runningProcess != null) {
+                    BgmPlayer.Start();
+
                     // Create in-game overlay instance
                     ControlPanelForm overlay = new ControlPanelForm(true, runningProcess);
                     hotkey = new GlobalHotkey(this.Handle, 0, (uint)Keys.F1, () => {
                         if (overlay.Visible) {
                             overlay.Hide();
                         } else {
+                            overlay.LoadCurrentSettings();
                             overlay.Show();
                             overlay.BringToFront();
                             overlay.Focus();
@@ -471,6 +737,7 @@ namespace GravityRush2Launcher {
                     exitTimer.Tick += (s, args_) => {
                         if (runningProcess.HasExited) {
                             exitTimer.Stop();
+                            BgmPlayer.Stop();
                             if (hotkey != null) hotkey.Unregister();
                             if (overlay != null && !overlay.IsDisposed) overlay.Dispose();
                             Application.Exit();

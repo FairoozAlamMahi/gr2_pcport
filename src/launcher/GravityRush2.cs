@@ -261,17 +261,17 @@ namespace GravityRush2Launcher {
                 if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
                 StringBuilder sb = new StringBuilder();
-                sb.AppendLine("[video]");
-                sb.AppendLine("display_mode = " + displayMode);
-                sb.AppendLine("vsync = " + (vsync ? "1" : "0"));
-                sb.AppendLine("show_fps = " + (showFps ? "1" : "0"));
-                sb.AppendLine("engine_fps = " + engineFps);
-                sb.AppendLine("fps_limit = 0");
-                sb.AppendLine("deferred_readback = 1");
-                sb.AppendLine("stale_readback = 1");
-                sb.AppendLine("async_shaders = 1");
-                sb.AppendLine("frames_queued = 2");
-                sb.AppendLine("freeze_report_seconds = 5");
+                sb.AppendLine("# tlg settings (in-game menu: Insert / R3+L2)");
+                sb.AppendLine("display_mode=" + displayMode);
+                sb.AppendLine("vsync=" + (vsync ? "1" : "0"));
+                sb.AppendLine("show_fps=" + (showFps ? "1" : "0"));
+                sb.AppendLine("engine_fps=" + engineFps);
+                sb.AppendLine("fps_limit=0");
+                sb.AppendLine("deferred_readback=1");
+                sb.AppendLine("stale_readback=0");
+                sb.AppendLine("async_shaders=1");
+                sb.AppendLine("frames_queued=2");
+                sb.AppendLine("freeze_report_seconds=5");
                 File.WriteAllText(path, sb.ToString());
             } catch { }
         }
@@ -618,11 +618,18 @@ namespace GravityRush2Launcher {
                 else if (cbFpsMode.SelectedIndex == 2) fps = "144";
                 else if (cbFpsMode.SelectedIndex == 3) fps = "30";
 
+                string mode = "borderless";
+                if (cbDisplayMode.SelectedIndex == 1) mode = "windowed";
+                else if (cbDisplayMode.SelectedIndex == 2) mode = "fullscreen";
+
+                // Window & Fullscreen display mode (1 = Borderless / Fullscreen, 0 = Windowed)
+                psi.EnvironmentVariables["TLG_FULLSCREEN"] = (mode != "windowed") ? "1" : "0";
+
                 // Rock-solid zero-stutter zero-stall settings:
-                // Prevents CPU stalls waiting for GPU readbacks (which delayed miner NPC spawning and savedata),
-                // and eliminates deadlock freeze while audio keeps playing.
+                // Prevents CPU stalls waiting for GPU readbacks, ensures fresh visibility buffers for fast NPC/miner spawning,
+                // and eliminates deadlock freezes while audio keeps playing.
                 psi.EnvironmentVariables["TLG_DEFERRED_READBACK"] = "1";
-                psi.EnvironmentVariables["TLG_STALE_READBACK"] = "1";
+                psi.EnvironmentVariables["TLG_STALE_READBACK"] = "0";
                 psi.EnvironmentVariables["TLG_ASYNC_SHADERS"] = "1";
                 psi.EnvironmentVariables["TLG_ASYNC_FENCES"] = "1";
                 psi.EnvironmentVariables["TLG_COPY_THREADS"] = "4";
@@ -639,6 +646,25 @@ namespace GravityRush2Launcher {
                 psi.EnvironmentVariables["TLG_SKIP_ADJACENCY"] = "1";
                 psi.EnvironmentVariables["TLG_CONFIG"] = SettingsManager.GetTlgIniPath();
                 psi.EnvironmentVariables["TLG_ENGINE_FPS"] = fps;
+
+                // Anti-Freeze & Stability Fixes:
+                // 1. Disable speculative draw prep background workers:
+                // Prevents secondary threads (DrawPrep0..5) from concurrently faulting on guest VRAM pages
+                // and deadlocking with DrawThread on GpuCommandProcessor.
+                psi.EnvironmentVariables["TLG_PREP_WORKERS"] = "0";
+
+                // 2. Disable in-flight draw packet drain stalls on the scheduler thread:
+                psi.EnvironmentVariables["TLG_DRAW_PIPE"] = "0";
+
+                // 3. Audio synthesis stabilization:
+                // Pass reverb through without multi-bus recursive feedback cycles,
+                // mute custom rack loops and disable userfx handlers that can cause sndx_out_thread loops.
+                psi.EnvironmentVariables["TLG_NGS2_REVERB"] = "pass";
+                psi.EnvironmentVariables["TLG_NGS2_CUSTOM"] = "mute";
+                psi.EnvironmentVariables["TLG_NGS2_USERFX"] = "0";
+
+                // 4. Fast read fault handling
+                psi.EnvironmentVariables["TLG_FAST_READ_FAULT"] = "1";
 
                 psi.RedirectStandardOutput = true;
                 psi.RedirectStandardError = true;

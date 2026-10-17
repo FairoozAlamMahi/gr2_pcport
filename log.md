@@ -565,9 +565,23 @@ During intensive shader translation or synchronous file streaming, running the W
 23. [x] Seed initial savedata templates to bypass first-boot null save initialization faults.
 24. [x] Deploy 1-click desktop and root launchers for genuine retail 60 FPS execution.
 
+---
 
+## 30. Authentic Retail Engine Restoration, GPU Fence Synchronization & Configuration Alignment
 
-
-
-
-
+* **GPU Synchronization Spinloop Repair:**
+  * Identified and removed the premature fence satisfaction override at `0x0044e0a0` (`4889164889d79090` / `mov [rsi], rdx; mov rdi, rdx; nop; nop`).
+  * *Mechanism:* The engine polls `[rsi]` against `rdx` to wait for GNM/Vulkan command buffer completion before queueing the swapchain presentation. The manual override forced the CPU to skip GPU synchronization and present unrendered, blank swapchain frames in a loop, resulting in a black screen running at 60 FPS.
+  * Preserved verified Illusion 60 FPS engine patches across all configurations:
+    - Native 60 FPS mode flag at `0x00454ac5` (`c605bc656a0100`).
+    - 60 Hz flip rate at `0x00446980` (`be00000000`).
+    - Render thread 30ms `usleep` throttle bypass at `0x0044dda4` (`e90f00000090...`).
+    - Half-rate enemy motion frame rate sync at `0x018c7374` (`0x41f00000`).
+    - Save data DLC requirement bypass at `0x0095de96` (`9090909090`).
+* **Linear Image Readbacks & Memory Configuration:**
+  * Enabled `"readback_linear_images_enabled": true` and `"readbacks_mode": 2` across `exodus_core/user/config.json`, `%APPDATA%/shadPS4/config.json`, and `custom_configs/CUSA04943.json`.
+  * Configured `"sys_modules_dir": "user/sys_modules"` to guarantee proper resolution of decrypted modules (`libc.prx`, `libSceFios2.prx`, `libSceJobManager.prx`, `libSceNpToolkit.prx`, `libSceSecure.prx`).
+* **Binary Integrity:**
+  * Confirmed genuine, uncorrupted Sony binaries from `eboot.bin.bak` and `eboot.elf.bak` across all packages (`merged_game`, `patch_extracted`, and `gr2port/game`).
+* **Launcher Synchronization:**
+  * Aligned all launcher entry points (`Desktop/Play Gravity Rush 2.bat`, `gravityrush2port/launch_game.bat`, and `gr2port/launch_game.bat`) directly to the verified retail engine running under Vulkan 1.3 on NVIDIA GeForce RTX 4060 Ti.

@@ -83,7 +83,7 @@ namespace GravityRush2Launcher {
         public bool IsHeadset { get; set; }
 
         public override string ToString() {
-            return Name + (IsHeadset ? " [Headset - Recommended]" : (IsDefault ? " [Default]" : ""));
+            return Name + (IsDefault ? " [Active Windows Default]" : "");
         }
     }
 
@@ -227,9 +227,9 @@ namespace GravityRush2Launcher {
 
         public static void ReadTlgIni(out string displayMode, out bool vsync, out bool showFps, out string engineFps) {
             displayMode = "borderless";
-            vsync = true;
+            vsync = false;
             showFps = true;
-            engineFps = "60";
+            engineFps = "120";
             string path = GetTlgIniPath();
             if (File.Exists(path)) {
                 try {
@@ -371,8 +371,7 @@ namespace GravityRush2Launcher {
             int selectedAudioIdx = 0;
             for (int i = 0; i < audioDevices.Count; i++) {
                 cbAudioDevice.Items.Add(audioDevices[i]);
-                if (audioDevices[i].IsHeadset) selectedAudioIdx = i;
-                else if (audioDevices[i].IsDefault && selectedAudioIdx == 0) selectedAudioIdx = i;
+                if (audioDevices[i].IsDefault) selectedAudioIdx = i;
             }
             if (cbAudioDevice.Items.Count > 0) cbAudioDevice.SelectedIndex = selectedAudioIdx;
             this.Controls.Add(lblAudio);
@@ -383,8 +382,8 @@ namespace GravityRush2Launcher {
             Label lblFps = new Label() { Text = "Framerate & Performance:", Location = new Point(labelX, startY), AutoSize = true };
             cbFpsMode = new ComboBox() { Location = new Point(ctrlX, startY - 2), Width = 300, DropDownStyle = ComboBoxStyle.DropDownList };
             cbFpsMode.Items.AddRange(new object[] {
-                "60 FPS (Rock-Solid 60.0 FPS - Dynamic Timestep)",
-                "120 FPS (High-Refresh Gaming Displays)",
+                "120 FPS (High Performance & Ultra-Smooth - Recommended)",
+                "60 FPS (Rock-Solid 60.0 FPS - Standard Mode)",
                 "144 FPS (Ultra-Fast Gaming Displays)",
                 "30 FPS (PS4 Original Cinematic Mode)"
             });
@@ -398,8 +397,8 @@ namespace GravityRush2Launcher {
             cbDisplayMode = new ComboBox() { Location = new Point(ctrlX, startY - 2), Width = 300, DropDownStyle = ComboBoxStyle.DropDownList };
             cbDisplayMode.Items.AddRange(new object[] {
                 "Borderless Fullscreen (Recommended)",
-                "Windowed (1080p)",
-                "Exclusive Fullscreen"
+                "Exclusive Fullscreen",
+                "Windowed (1080p)"
             });
             cbDisplayMode.SelectedIndex = 0;
             this.Controls.Add(lblDisplay);
@@ -422,8 +421,8 @@ namespace GravityRush2Launcher {
             Label lblVsync = new Label() { Text = "Vertical Sync (VSync):", Location = new Point(labelX, startY), AutoSize = true };
             cbVsync = new ComboBox() { Location = new Point(ctrlX, startY - 2), Width = 300, DropDownStyle = ComboBoxStyle.DropDownList };
             cbVsync.Items.AddRange(new object[] {
-                "Enabled (Smooth Frame Pacing - 0 Stutter)",
-                "Disabled (Variable Refresh)"
+                "Disabled (Mailbox Ultra-Smooth - Max GPU/CPU Power & 0 Tearing - Recommended)",
+                "Enabled (Standard FIFO Sync)"
             });
             cbVsync.SelectedIndex = 0;
             this.Controls.Add(lblVsync);
@@ -478,17 +477,18 @@ namespace GravityRush2Launcher {
                 bool vsync, showFps;
                 SettingsManager.ReadTlgIni(out mode, out vsync, out showFps, out engineFps);
 
-                if (mode == "windowed") cbDisplayMode.SelectedIndex = 1;
-                else if (mode == "fullscreen") cbDisplayMode.SelectedIndex = 2;
+                if (mode == "windowed") cbDisplayMode.SelectedIndex = 2;
+                else if (mode == "fullscreen") cbDisplayMode.SelectedIndex = 1;
                 else cbDisplayMode.SelectedIndex = 0; // borderless
 
-                cbVsync.SelectedIndex = vsync ? 0 : 1;
+                cbVsync.SelectedIndex = vsync ? 1 : 0;
                 cbShowFps.SelectedIndex = showFps ? 0 : 1;
 
-                if (engineFps == "120") cbFpsMode.SelectedIndex = 1;
+                if (engineFps == "120") cbFpsMode.SelectedIndex = 0;
+                else if (engineFps == "60") cbFpsMode.SelectedIndex = 1;
                 else if (engineFps == "144") cbFpsMode.SelectedIndex = 2;
                 else if (engineFps == "30") cbFpsMode.SelectedIndex = 3;
-                else cbFpsMode.SelectedIndex = 0; // 60
+                else cbFpsMode.SelectedIndex = 0; // default 120 FPS
             } catch { }
         }
 
@@ -504,7 +504,7 @@ namespace GravityRush2Launcher {
         private void BtnResetAudio_Click(object sender, EventArgs e) {
             SettingsManager.ResetAudioSavedata();
             AudioDeviceInfo info = cbAudioDevice.SelectedItem as AudioDeviceInfo;
-            if (info != null) {
+            if (info != null && !info.IsDefault) {
                 AudioDeviceManager.SetDefaultEndpoint(info.Id);
             }
             MessageBox.Show(
@@ -521,21 +521,21 @@ namespace GravityRush2Launcher {
 
         private void ApplySettings() {
             string mode = "borderless";
-            if (cbDisplayMode.SelectedIndex == 1) mode = "windowed";
-            else if (cbDisplayMode.SelectedIndex == 2) mode = "fullscreen";
+            if (cbDisplayMode.SelectedIndex == 1) mode = "fullscreen";
+            else if (cbDisplayMode.SelectedIndex == 2) mode = "windowed";
 
-            bool vsync = (cbVsync.SelectedIndex == 0);
+            bool vsync = (cbVsync.SelectedIndex == 1);
             bool showFps = (cbShowFps.SelectedIndex == 0);
 
-            string fps = "60";
-            if (cbFpsMode.SelectedIndex == 1) fps = "120";
+            string fps = "120";
+            if (cbFpsMode.SelectedIndex == 1) fps = "60";
             else if (cbFpsMode.SelectedIndex == 2) fps = "144";
             else if (cbFpsMode.SelectedIndex == 3) fps = "30";
 
             SettingsManager.WriteTlgIni(mode, vsync, showFps, fps);
 
             AudioDeviceInfo info = cbAudioDevice.SelectedItem as AudioDeviceInfo;
-            if (info != null) {
+            if (info != null && !info.IsDefault) {
                 AudioDeviceManager.SetDefaultEndpoint(info.Id);
             }
         }
@@ -617,41 +617,44 @@ namespace GravityRush2Launcher {
                 psi.UseShellExecute = false;
 
                 // Target frame rate
-                string fps = "60";
-                if (cbFpsMode.SelectedIndex == 1) fps = "120";
+                string fps = "120";
+                if (cbFpsMode.SelectedIndex == 1) fps = "60";
                 else if (cbFpsMode.SelectedIndex == 2) fps = "144";
                 else if (cbFpsMode.SelectedIndex == 3) fps = "30";
 
                 string mode = "borderless";
-                if (cbDisplayMode.SelectedIndex == 1) mode = "windowed";
-                else if (cbDisplayMode.SelectedIndex == 2) mode = "fullscreen";
+                if (cbDisplayMode.SelectedIndex == 1) mode = "fullscreen";
+                else if (cbDisplayMode.SelectedIndex == 2) mode = "windowed";
 
                 // Window & Fullscreen display mode (1 = Borderless / Fullscreen, 0 = Windowed)
                 psi.EnvironmentVariables["TLG_FULLSCREEN"] = (mode != "windowed") ? "1" : "0";
 
-                // Authenticated, validated Gravity Rush 2 PC Port environment:
-                // 1. TLG_READBACKS=2 is REQUIRED for AsyncMap: CPU reads GPU compute results for collision queries,
-                //    interaction volumes (mining prompt "Press this to start mining"), and ore streaming.
-                psi.EnvironmentVariables["TLG_READBACKS"] = "2";
-                psi.EnvironmentVariables["TLG_DEFERRED_READBACK"] = "0";
-                psi.EnvironmentVariables["TLG_STALE_READBACK"] = "0";
+                // High-Performance Engine Tuning: Maximize RTX 4060 Ti & Ryzen 5 5600G CPU/GPU Utilization
+                psi.EnvironmentVariables["TLG_DMEM_MB"] = "10240";           // 10GB direct memory allocation pool to eliminate flexible map ENOMEM
+                psi.EnvironmentVariables["TLG_COPY_THREADS"] = "4";          // 4 parallel buffer & texture upload threads
+                psi.EnvironmentVariables["TLG_ASYNC_SHADERS"] = "1";         // Parallel asynchronous shader compilation
+                psi.EnvironmentVariables["TLG_ASYNC_FENCES"] = "1";          // Non-blocking fence synchronizations
+                psi.EnvironmentVariables["TLG_TEXTURE_HELPER"] = "1";        // Dedicated worker thread for texture tiling decompression
+                psi.EnvironmentVariables["TLG_FAST_READ_FAULT"] = "1";       // Instant guest VRAM fault resolution
+                psi.EnvironmentVariables["TLG_ENGINE_FPS"] = fps;            // 120 FPS high performance target
+                psi.EnvironmentVariables["TLG_VBLANK_HZ"] = fps;             // 120 Hz vblank pacing
+                psi.EnvironmentVariables["TLG_FPS_LIMIT"] = "0";             // No artificial FPS throttle
+
+                // Collision, prompt, and asset streaming accuracy:
+                psi.EnvironmentVariables["TLG_READBACKS"] = "2";             // Required for AsyncMap collision queries & ore/NPC trigger volumes
+                psi.EnvironmentVariables["TLG_DEFERRED_READBACK"] = "0";     // Synchronous readbacks ensure instant collision / prompt updates
+                psi.EnvironmentVariables["TLG_STALE_READBACK"] = "0";        // Always fresh collision state
+                psi.EnvironmentVariables["TLG_PREP_WORKERS"] = "0";          // Anti-freeze: prevents secondary draw-prep page fault races
                 psi.EnvironmentVariables["TLG_PIPELINE_BINARIES"] = "0";
                 psi.EnvironmentVariables["TLG_GC_BUDGET_MB"] = "5600";
                 psi.EnvironmentVariables["TLG_UPSCALER"] = "off";
                 psi.EnvironmentVariables["TLG_JITTER"] = "0";
                 psi.EnvironmentVariables["TLG_OBJECT_MOTION"] = "0";
                 psi.EnvironmentVariables["TLG_FRAME_STATS"] = "1";
-                psi.EnvironmentVariables["TLG_LANGUAGE"] = "1"; // English
-                psi.EnvironmentVariables["TLG_NGS2"] = "hle";    // Clean-room C NGS2 audio synthesizer
-                psi.EnvironmentVariables["TLG_SKIP_ADJACENCY"] = "1"; // No black streaks near characters
+                psi.EnvironmentVariables["TLG_LANGUAGE"] = "1";              // English
+                psi.EnvironmentVariables["TLG_NGS2"] = "hle";                // Clean-room C NGS2 audio synthesizer
+                psi.EnvironmentVariables["TLG_SKIP_ADJACENCY"] = "1";        // Fix black streaks near characters
                 psi.EnvironmentVariables["TLG_CONFIG"] = SettingsManager.GetTlgIniPath();
-                psi.EnvironmentVariables["TLG_ENGINE_FPS"] = fps;
-
-                // Anti-Freeze Fix (Deadlock Prevention):
-                // Disable speculative draw prep background workers (DrawPrep0..5).
-                // Prevents secondary threads from concurrently faulting on guest VRAM pages
-                // and deadlocking with DrawThread on GpuCommandProcessor.
-                psi.EnvironmentVariables["TLG_PREP_WORKERS"] = "0";
 
                 psi.RedirectStandardOutput = true;
                 psi.RedirectStandardError = true;

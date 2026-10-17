@@ -44,7 +44,8 @@ The port is currently in an **In-Game / Playable** milestone state with continuo
 | **5** | **Controller & Input Subsystem** | DualShock 4, DualSense, Xbox 360/One, PC Keyboard/Mouse; hold-combo synthetic touchpad swipes (`L1 + D-Pad`) for Gravity Styles | Verified | **100%** |
 | **6** | **FMV & Cutscene Video Decoder** | `libSceVideodec2` and `AvPlayer` hardware video streaming to EOF with seamless loopback | Verified | **100%** |
 | **7** | **Vulkan 3D Graphics & Presentation** | GCN-to-Vulkan 1.3 recompiler on RTX 4060 Ti, Mailbox presentation, ~4,500 draw passes/interval, background 6-thread pipeline prewarming (0 stutter) | Verified | **100%** |
-| **8** | **In-Game State & Playability** | Retail engine progression, seeded savedata (`data0000`, `system0020`), rock-solid 60.0 FPS locked dynamic timestep, DLC requirement bypass | Playable | **100%** |
+| **8** | **Zero-Stall GPU Readbacks & Async Fences** | Deferred & stale readback (`deferred_readback=1`, `stale_readback=1`), PM4 async signal fences (`TLG_ASYNC_FENCES=1`), 4x staging copy threads; eliminates NPC spawner delay, late saves, and command buffer deadlock | Verified | **100%** |
+| **9** | **In-Game State & Playability** | Retail engine progression, seeded savedata (`data0000`, `system0020`), rock-solid 60.0 FPS locked dynamic timestep, DLC requirement bypass | Playable | **100%** |
 
 ---
 

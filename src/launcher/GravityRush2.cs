@@ -225,10 +225,11 @@ namespace GravityRush2Launcher {
             return Path.Combine(BaseDir, "user", "launcher_settings.ini");
         }
 
-        public static void ReadTlgIni(out string displayMode, out bool vsync, out bool showFps) {
+        public static void ReadTlgIni(out string displayMode, out bool vsync, out bool showFps, out string engineFps) {
             displayMode = "borderless";
             vsync = true;
             showFps = true;
+            engineFps = "60";
             string path = GetTlgIniPath();
             if (File.Exists(path)) {
                 try {
@@ -244,13 +245,16 @@ namespace GravityRush2Launcher {
                         } else if (tr.StartsWith("show_fps", StringComparison.OrdinalIgnoreCase)) {
                             var parts = tr.Split('=');
                             if (parts.Length > 1) showFps = (parts[1].Trim() == "1");
+                        } else if (tr.StartsWith("engine_fps", StringComparison.OrdinalIgnoreCase)) {
+                            var parts = tr.Split('=');
+                            if (parts.Length > 1) engineFps = parts[1].Trim();
                         }
                     }
                 } catch { }
             }
         }
 
-        public static void WriteTlgIni(string displayMode, bool vsync, bool showFps) {
+        public static void WriteTlgIni(string displayMode, bool vsync, bool showFps, string engineFps) {
             try {
                 string path = GetTlgIniPath();
                 string dir = Path.GetDirectoryName(path);
@@ -261,6 +265,13 @@ namespace GravityRush2Launcher {
                 sb.AppendLine("display_mode = " + displayMode);
                 sb.AppendLine("vsync = " + (vsync ? "1" : "0"));
                 sb.AppendLine("show_fps = " + (showFps ? "1" : "0"));
+                sb.AppendLine("engine_fps = " + engineFps);
+                sb.AppendLine("fps_limit = 0");
+                sb.AppendLine("deferred_readback = 1");
+                sb.AppendLine("stale_readback = 1");
+                sb.AppendLine("async_shaders = 1");
+                sb.AppendLine("frames_queued = 2");
+                sb.AppendLine("freeze_report_seconds = 5");
                 File.WriteAllText(path, sb.ToString());
             } catch { }
         }
@@ -462,9 +473,9 @@ namespace GravityRush2Launcher {
 
         public void LoadSettings() {
             try {
-                string mode;
+                string mode, engineFps;
                 bool vsync, showFps;
-                SettingsManager.ReadTlgIni(out mode, out vsync, out showFps);
+                SettingsManager.ReadTlgIni(out mode, out vsync, out showFps, out engineFps);
 
                 if (mode == "windowed") cbDisplayMode.SelectedIndex = 1;
                 else if (mode == "fullscreen") cbDisplayMode.SelectedIndex = 2;
@@ -472,6 +483,11 @@ namespace GravityRush2Launcher {
 
                 cbVsync.SelectedIndex = vsync ? 0 : 1;
                 cbShowFps.SelectedIndex = showFps ? 0 : 1;
+
+                if (engineFps == "120") cbFpsMode.SelectedIndex = 1;
+                else if (engineFps == "144") cbFpsMode.SelectedIndex = 2;
+                else if (engineFps == "30") cbFpsMode.SelectedIndex = 3;
+                else cbFpsMode.SelectedIndex = 0; // 60
             } catch { }
         }
 
@@ -510,7 +526,12 @@ namespace GravityRush2Launcher {
             bool vsync = (cbVsync.SelectedIndex == 0);
             bool showFps = (cbShowFps.SelectedIndex == 0);
 
-            SettingsManager.WriteTlgIni(mode, vsync, showFps);
+            string fps = "60";
+            if (cbFpsMode.SelectedIndex == 1) fps = "120";
+            else if (cbFpsMode.SelectedIndex == 2) fps = "144";
+            else if (cbFpsMode.SelectedIndex == 3) fps = "30";
+
+            SettingsManager.WriteTlgIni(mode, vsync, showFps, fps);
 
             AudioDeviceInfo info = cbAudioDevice.SelectedItem as AudioDeviceInfo;
             if (info != null) {
@@ -591,7 +612,21 @@ namespace GravityRush2Launcher {
                 psi.WorkingDirectory = engineDir;
                 psi.UseShellExecute = false;
 
-                // Environment variables for rock-solid 60 FPS, stutter-free pipeline prewarming, and native NGS2 audio
+                // Target frame rate
+                string fps = "60";
+                if (cbFpsMode.SelectedIndex == 1) fps = "120";
+                else if (cbFpsMode.SelectedIndex == 2) fps = "144";
+                else if (cbFpsMode.SelectedIndex == 3) fps = "30";
+
+                // Rock-solid zero-stutter zero-stall settings:
+                // Prevents CPU stalls waiting for GPU readbacks (which delayed miner NPC spawning and savedata),
+                // and eliminates deadlock freeze while audio keeps playing.
+                psi.EnvironmentVariables["TLG_DEFERRED_READBACK"] = "1";
+                psi.EnvironmentVariables["TLG_STALE_READBACK"] = "1";
+                psi.EnvironmentVariables["TLG_ASYNC_SHADERS"] = "1";
+                psi.EnvironmentVariables["TLG_ASYNC_FENCES"] = "1";
+                psi.EnvironmentVariables["TLG_COPY_THREADS"] = "4";
+                psi.EnvironmentVariables["TLG_FREEZE_REPORT_SECONDS"] = "5";
                 psi.EnvironmentVariables["TLG_PIPELINE_BINARIES"] = "0";
                 psi.EnvironmentVariables["TLG_READBACKS"] = "2";
                 psi.EnvironmentVariables["TLG_GC_BUDGET_MB"] = "5600";
@@ -603,38 +638,68 @@ namespace GravityRush2Launcher {
                 psi.EnvironmentVariables["TLG_NGS2"] = "hle";    // Clean-room C NGS2 audio synthesizer
                 psi.EnvironmentVariables["TLG_SKIP_ADJACENCY"] = "1";
                 psi.EnvironmentVariables["TLG_CONFIG"] = SettingsManager.GetTlgIniPath();
+                psi.EnvironmentVariables["TLG_ENGINE_FPS"] = fps;
+
+                psi.RedirectStandardOutput = true;
+                psi.RedirectStandardError = true;
 
                 try {
                     this.Hide();
-                    runningProcess = Process.Start(psi);
-                    if (runningProcess != null) {
-                        // Register global F1 overlay hotkey
-                        ControlPanelForm overlay = new ControlPanelForm(true, runningProcess);
-                        hotkey = new GlobalHotkey(this.Handle, 0, (uint)Keys.F1, () => {
-                            if (overlay.Visible) {
-                                overlay.Hide();
-                            } else {
-                                overlay.LoadSettings();
-                                overlay.Show();
-                                overlay.BringToFront();
-                                overlay.Focus();
-                            }
-                        });
 
-                        // Watchdog timer to restore audio and exit cleanly on game close
-                        Timer exitTimer = new Timer();
-                        exitTimer.Interval = 1000;
-                        exitTimer.Tick += (s, args_) => {
-                            if (runningProcess.HasExited) {
-                                exitTimer.Stop();
-                                AudioDeviceManager.RestoreOriginalDefault();
-                                if (hotkey != null) hotkey.Unregister();
-                                if (overlay != null && !overlay.IsDisposed) overlay.Dispose();
-                                Application.Exit();
-                            }
+                    string logPath = Path.Combine(userDir, "last_run.log");
+                    StreamWriter logWriter = null;
+                    try {
+                        logWriter = new StreamWriter(new FileStream(logPath, FileMode.Create, FileAccess.Write, FileShare.ReadWrite)) { AutoFlush = true };
+                    } catch { }
+
+                    runningProcess = new Process();
+                    runningProcess.StartInfo = psi;
+
+                    if (logWriter != null) {
+                        runningProcess.OutputDataReceived += (s, ev) => {
+                            if (ev.Data != null) lock (logWriter) { logWriter.WriteLine(ev.Data); }
                         };
-                        exitTimer.Start();
+                        runningProcess.ErrorDataReceived += (s, ev) => {
+                            if (ev.Data != null) lock (logWriter) { logWriter.WriteLine(ev.Data); }
+                        };
                     }
+
+                    runningProcess.Start();
+
+                    if (logWriter != null) {
+                        runningProcess.BeginOutputReadLine();
+                        runningProcess.BeginErrorReadLine();
+                    }
+
+                    // Register global F1 overlay hotkey
+                    ControlPanelForm overlay = new ControlPanelForm(true, runningProcess);
+                    hotkey = new GlobalHotkey(this.Handle, 0, (uint)Keys.F1, () => {
+                        if (overlay.Visible) {
+                            overlay.Hide();
+                        } else {
+                            overlay.LoadSettings();
+                            overlay.Show();
+                            overlay.BringToFront();
+                            overlay.Focus();
+                        }
+                    });
+
+                    // Watchdog timer to restore audio and exit cleanly on game close
+                    Timer exitTimer = new Timer();
+                    exitTimer.Interval = 1000;
+                    exitTimer.Tick += (s, args_) => {
+                        if (runningProcess.HasExited) {
+                            exitTimer.Stop();
+                            if (logWriter != null) {
+                                try { logWriter.Dispose(); } catch { }
+                            }
+                            AudioDeviceManager.RestoreOriginalDefault();
+                            if (hotkey != null) hotkey.Unregister();
+                            if (overlay != null && !overlay.IsDisposed) overlay.Dispose();
+                            Application.Exit();
+                        }
+                    };
+                    exitTimer.Start();
                 } catch (Exception ex) {
                     this.Show();
                     MessageBox.Show("Failed to launch native engine:\n" + ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);

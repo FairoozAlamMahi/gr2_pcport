@@ -260,18 +260,19 @@ namespace GravityRush2Launcher {
                 string dir = Path.GetDirectoryName(path);
                 if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
+                string normMode = "Borderless";
+                if (displayMode.Equals("windowed", StringComparison.OrdinalIgnoreCase)) normMode = "Windowed";
+                else if (displayMode.Equals("fullscreen", StringComparison.OrdinalIgnoreCase)) normMode = "Fullscreen";
+
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine("# tlg settings (in-game menu: Insert / R3+L2)");
-                sb.AppendLine("display_mode=" + displayMode);
+                sb.AppendLine("display_mode=" + normMode);
                 sb.AppendLine("vsync=" + (vsync ? "1" : "0"));
                 sb.AppendLine("show_fps=" + (showFps ? "1" : "0"));
                 sb.AppendLine("engine_fps=" + engineFps);
                 sb.AppendLine("fps_limit=0");
-                sb.AppendLine("deferred_readback=1");
+                sb.AppendLine("deferred_readback=0");
                 sb.AppendLine("stale_readback=0");
-                sb.AppendLine("async_shaders=1");
-                sb.AppendLine("frames_queued=2");
-                sb.AppendLine("freeze_report_seconds=5");
                 File.WriteAllText(path, sb.ToString());
             } catch { }
         }
@@ -547,6 +548,9 @@ namespace GravityRush2Launcher {
                 return;
             }
 
+            // Restore audio savedata sliders to pristine 100% volume state
+            SettingsManager.ResetAudioSavedata();
+
             string baseDir = SettingsManager.BaseDir;
 
             // Search for native engine probe
@@ -625,17 +629,13 @@ namespace GravityRush2Launcher {
                 // Window & Fullscreen display mode (1 = Borderless / Fullscreen, 0 = Windowed)
                 psi.EnvironmentVariables["TLG_FULLSCREEN"] = (mode != "windowed") ? "1" : "0";
 
-                // Rock-solid zero-stutter zero-stall settings:
-                // Prevents CPU stalls waiting for GPU readbacks, ensures fresh visibility buffers for fast NPC/miner spawning,
-                // and eliminates deadlock freezes while audio keeps playing.
-                psi.EnvironmentVariables["TLG_DEFERRED_READBACK"] = "1";
-                psi.EnvironmentVariables["TLG_STALE_READBACK"] = "0";
-                psi.EnvironmentVariables["TLG_ASYNC_SHADERS"] = "1";
-                psi.EnvironmentVariables["TLG_ASYNC_FENCES"] = "1";
-                psi.EnvironmentVariables["TLG_COPY_THREADS"] = "4";
-                psi.EnvironmentVariables["TLG_FREEZE_REPORT_SECONDS"] = "5";
-                psi.EnvironmentVariables["TLG_PIPELINE_BINARIES"] = "0";
+                // Authenticated, validated Gravity Rush 2 PC Port environment:
+                // 1. TLG_READBACKS=2 is REQUIRED for AsyncMap: CPU reads GPU compute results for collision queries,
+                //    interaction volumes (mining prompt "Press this to start mining"), and ore streaming.
                 psi.EnvironmentVariables["TLG_READBACKS"] = "2";
+                psi.EnvironmentVariables["TLG_DEFERRED_READBACK"] = "0";
+                psi.EnvironmentVariables["TLG_STALE_READBACK"] = "0";
+                psi.EnvironmentVariables["TLG_PIPELINE_BINARIES"] = "0";
                 psi.EnvironmentVariables["TLG_GC_BUDGET_MB"] = "5600";
                 psi.EnvironmentVariables["TLG_UPSCALER"] = "off";
                 psi.EnvironmentVariables["TLG_JITTER"] = "0";
@@ -643,28 +643,15 @@ namespace GravityRush2Launcher {
                 psi.EnvironmentVariables["TLG_FRAME_STATS"] = "1";
                 psi.EnvironmentVariables["TLG_LANGUAGE"] = "1"; // English
                 psi.EnvironmentVariables["TLG_NGS2"] = "hle";    // Clean-room C NGS2 audio synthesizer
-                psi.EnvironmentVariables["TLG_SKIP_ADJACENCY"] = "1";
+                psi.EnvironmentVariables["TLG_SKIP_ADJACENCY"] = "1"; // No black streaks near characters
                 psi.EnvironmentVariables["TLG_CONFIG"] = SettingsManager.GetTlgIniPath();
                 psi.EnvironmentVariables["TLG_ENGINE_FPS"] = fps;
 
-                // Anti-Freeze & Stability Fixes:
-                // 1. Disable speculative draw prep background workers:
-                // Prevents secondary threads (DrawPrep0..5) from concurrently faulting on guest VRAM pages
+                // Anti-Freeze Fix (Deadlock Prevention):
+                // Disable speculative draw prep background workers (DrawPrep0..5).
+                // Prevents secondary threads from concurrently faulting on guest VRAM pages
                 // and deadlocking with DrawThread on GpuCommandProcessor.
                 psi.EnvironmentVariables["TLG_PREP_WORKERS"] = "0";
-
-                // 2. Disable in-flight draw packet drain stalls on the scheduler thread:
-                psi.EnvironmentVariables["TLG_DRAW_PIPE"] = "0";
-
-                // 3. Audio synthesis stabilization:
-                // Pass reverb through without multi-bus recursive feedback cycles,
-                // mute custom rack loops and disable userfx handlers that can cause sndx_out_thread loops.
-                psi.EnvironmentVariables["TLG_NGS2_REVERB"] = "pass";
-                psi.EnvironmentVariables["TLG_NGS2_CUSTOM"] = "mute";
-                psi.EnvironmentVariables["TLG_NGS2_USERFX"] = "0";
-
-                // 4. Fast read fault handling
-                psi.EnvironmentVariables["TLG_FAST_READ_FAULT"] = "1";
 
                 psi.RedirectStandardOutput = true;
                 psi.RedirectStandardError = true;

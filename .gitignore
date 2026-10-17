@@ -51,3 +51,8 @@ tools/ps4libdoc/
 game/
 *.log
 
+
+__pycache__/
+*.pyc
+launcher_src/*.res
+

@@ -585,3 +585,25 @@ During intensive shader translation or synchronous file streaming, running the W
   * Confirmed genuine, uncorrupted Sony binaries from `eboot.bin.bak` and `eboot.elf.bak` across all packages (`merged_game`, `patch_extracted`, and `gr2port/game`).
 * **Launcher Synchronization:**
   * Aligned all launcher entry points (`Desktop/Play Gravity Rush 2.bat`, `gravityrush2port/launch_game.bat`, and `gr2port/launch_game.bat`) directly to the verified retail engine running under Vulkan 1.3 on NVIDIA GeForce RTX 4060 Ti.
+
+---
+
+## 31. Host Mutex Hardening, Secondary Heap Manager Bypass & Continuous 60 FPS Engine Execution
+
+* **Host Mutex Crash Resolution (`0x7000007957e4`):**
+  * *Root Cause Analysis:* Address `0x7000007957e0` is host code in `shadPS4.exe` (`scePthreadMutexUnlock`). A misaligned, unmapped trampoline hook in `.text` padding was dereferencing `[rdi]` without validating the pointer, causing `0xc0000005` access violations when invalid or null mutex pointers were passed from uninitialized guest subsystems.
+  * *Resolution:* Deployed clean, safe 32-byte inline trampolines in `.text` padding (`0x1766830..0x17668b0` / RVA `0x1767430..0x17674b0`) with `< 0x10000` pointer validation and safe `SCE_KERNEL_ERROR_EINVAL` (`0x80020016`) returns for `_Mtx_lock`, `_Mtx_unlock`, `_Cnd_wait`, and `_Cnd_signal`. Updated PE header `VirtualSize` to `0x1766600` for valid execution mapping.
+
+* **Secondary Heap Manager List Dereference Bypass (`0x00fb0e51` / `0x013b0e51`):**
+  * *Root Cause Analysis:* At VA `0x00fb0e51` in `eboot.bin`, the engine checks secondary heap manager `[0x1b1e2a0]`. When this manager is uninitialized (`r13 == NULL`), the engine attempted `lea rdi, [r13 + 0x390]` followed by `mov rbx, [r13 + 0x30]`, causing an unhandled `0xc0000005` crash at `0x00fb0e69`.
+  * *Address Space Alignment:* In shadPS4 XML patches, patch addresses are biased by default PS4 SDK base `+ 0x00400000`. Biased address `0x00fb0e51 + 0x00400000 = 0x013b0e51`.
+  * *Resolution:* Applied in-place jump patch `e9b40000009090` (`jmp +0xb4` to `0x00fb0f0a` + 2 NOPs) across all patch sets (`GravityDaze2-Orbis.xml`, `CUSA04943.xml`). This safely bypasses the uninitialized secondary manager registration and mutex lock, allowing the engine's primary heap manager (`[0x1b1e298]`) to drive execution.
+
+* **VMA Staging Buffer Budget Fix & Memory Leak Elimination:**
+  * *Root Cause Analysis:* Having `"readback_linear_images_enabled": true` caused continuous allocation of 16 MB host-visible linear readback staging buffers on every frame without fast enough garbage collection, exhausting Vulkan device memory (`VK_ERROR_OUT_OF_DEVICE_MEMORY` in `buffer.cpp:112`).
+  * *Resolution:* Disabled linear image readbacks (`"readback_linear_images_enabled": false`, `"readback_linear_images_async": false`) across all configuration files, unblocking `draw_glue_memo` and preventing memory bloat.
+
+* **Continuous Execution Verification:**
+  * Executed live engine testing on NVIDIA GeForce RTX 4060 Ti.
+  * The retail game engine runs continuously past 30+ minutes without crashes, maintaining steady 60 FPS presentation, thousands of 3D draw passes, and active NGS2 voice / audio mixing.
+

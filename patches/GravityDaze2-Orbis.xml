@@ -12,6 +12,9 @@
             <Line Type="bytes" Address="0x00854ac5" Value="c605bc656a0100" />
             <!-- No fliprate (60 Hz presentation) -->
             <Line Type="bytes" Address="0x00846980" Value="be00000000" />
+            <!-- No wait in render thread (unlock beyond 30 FPS) -->
+            <Line Type="bytes" Address="0x0084dda4" Value="bf46100000" />
+            <Line Type="bytes" Address="0x0084dda9" Value="eb08" />
         </PatchList>
     </Metadata>
     <Metadata Title="Gravity Rush 2 (Gravity Daze 2)" Name="Remove DLC Requirement for loading save data" Note="Removes CE-33678-7 error message when loading save that used DLC previously." Author="illusion" PatchVer="1.0" AppVer="01.11" AppElf="eboot.bin" isEnabled="true">

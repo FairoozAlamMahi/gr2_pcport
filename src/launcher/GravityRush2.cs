@@ -640,13 +640,6 @@ namespace GravityRush2Launcher {
                 psi.EnvironmentVariables["TLG_STAGING_KEEP_MB"] = "512";  // 512MB staging memory retention, eliminates streaming thrashing
                 psi.EnvironmentVariables["TLG_FRAMES_AHEAD"] = "2";       // Triple-buffering pipeline queue depth for 3,800-draw elevator scenes
 
-                // CPU Draw Preparation Multithreading & Pipelining:
-                // Parallelize draw packet preparation across 4 worker threads (DrawPrep0..3).
-                // Eliminates single-thread CPU draw bottleneck in 3,800-draw elevator descent scenes,
-                // maintaining rock-solid 60.0 FPS.
-                psi.EnvironmentVariables["TLG_PREP_WORKERS"] = "4";
-                psi.EnvironmentVariables["TLG_DRAW_PIPE"] = "1";
-
                 psi.RedirectStandardOutput = true;
                 psi.RedirectStandardError = true;
 

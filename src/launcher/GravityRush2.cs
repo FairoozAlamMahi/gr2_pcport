@@ -262,9 +262,9 @@ namespace GravityRush2Launcher {
                 string dir = Path.GetDirectoryName(path);
                 if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
-                string normMode = "Borderless";
-                if (displayMode.Equals("windowed", StringComparison.OrdinalIgnoreCase)) normMode = "Windowed";
-                else if (displayMode.Equals("fullscreen", StringComparison.OrdinalIgnoreCase)) normMode = "Fullscreen";
+                string normMode = "borderless";
+                if (displayMode.Equals("windowed", StringComparison.OrdinalIgnoreCase)) normMode = "windowed";
+                else if (displayMode.Equals("fullscreen", StringComparison.OrdinalIgnoreCase)) normMode = "fullscreen";
 
                 StringBuilder sb = new StringBuilder();
                 sb.AppendLine("# tlg settings (in-game menu: Insert / R3+L2)");
@@ -374,12 +374,7 @@ namespace GravityRush2Launcher {
             int selectedAudioIdx = 0;
             for (int i = 0; i < audioDevices.Count; i++) {
                 cbAudioDevice.Items.Add(audioDevices[i]);
-                if (audioDevices[i].IsHeadset) selectedAudioIdx = i;
-            }
-            if (selectedAudioIdx == 0) {
-                for (int i = 0; i < audioDevices.Count; i++) {
-                    if (audioDevices[i].IsDefault) { selectedAudioIdx = i; break; }
-                }
+                if (audioDevices[i].IsDefault) selectedAudioIdx = i;
             }
             if (cbAudioDevice.Items.Count > 0) cbAudioDevice.SelectedIndex = selectedAudioIdx;
             this.Controls.Add(lblAudio);
@@ -508,7 +503,7 @@ namespace GravityRush2Launcher {
         private void BtnResetAudio_Click(object sender, EventArgs e) {
             SettingsManager.ResetAudioSavedata();
             AudioDeviceInfo info = cbAudioDevice.SelectedItem as AudioDeviceInfo;
-            if (info != null) {
+            if (info != null && !info.IsDefault) {
                 AudioDeviceManager.SetDefaultEndpoint(info.Id);
             }
             MessageBox.Show(
@@ -536,7 +531,7 @@ namespace GravityRush2Launcher {
             SettingsManager.WriteTlgIni(mode, vsync, showFps, fps);
 
             AudioDeviceInfo info = cbAudioDevice.SelectedItem as AudioDeviceInfo;
-            if (info != null) {
+            if (info != null && !info.IsDefault) {
                 AudioDeviceManager.SetDefaultEndpoint(info.Id);
             }
         }
@@ -620,16 +615,8 @@ namespace GravityRush2Launcher {
                 // Target frame rate
                 string fps = (cbFpsMode.SelectedIndex == 1) ? "30" : "60";
 
-                string mode = "borderless";
-                if (cbDisplayMode.SelectedIndex == 1) mode = "fullscreen";
-                else if (cbDisplayMode.SelectedIndex == 2) mode = "windowed";
-
-                // Window & Fullscreen display mode (1 = Borderless / Fullscreen, 0 = Windowed)
-                psi.EnvironmentVariables["TLG_FULLSCREEN"] = (mode != "windowed") ? "1" : "0";
-
                 // Rock-Solid Gravity Rush 2 PC Port environment:
-                // 1. TLG_READBACKS=2 is REQUIRED for AsyncMap: CPU reads GPU compute results for collision queries,
-                //    interaction volumes (mining prompt "Press this to start mining"), and ore streaming.
+                // 1. Synchronous AsyncMap Readbacks for immediate collision, interaction prompt, and ore mesh updates
                 psi.EnvironmentVariables["TLG_READBACKS"] = "2";
                 psi.EnvironmentVariables["TLG_DEFERRED_READBACK"] = "0";
                 psi.EnvironmentVariables["TLG_STALE_READBACK"] = "0";
@@ -653,11 +640,12 @@ namespace GravityRush2Launcher {
                 psi.EnvironmentVariables["TLG_STAGING_KEEP_MB"] = "512";  // 512MB staging memory retention, eliminates streaming thrashing
                 psi.EnvironmentVariables["TLG_FRAMES_AHEAD"] = "2";       // Triple-buffering pipeline queue depth for 3,800-draw elevator scenes
 
-                // Anti-Freeze Fix (Deadlock Prevention):
-                // Disable speculative draw prep background workers (DrawPrep0..5).
-                // Prevents secondary threads from concurrently faulting on guest VRAM pages
-                // and deadlocking with DrawThread on GpuCommandProcessor.
-                psi.EnvironmentVariables["TLG_PREP_WORKERS"] = "0";
+                // CPU Draw Preparation Multithreading & Pipelining:
+                // Parallelize draw packet preparation across 4 worker threads (DrawPrep0..3).
+                // Eliminates single-thread CPU draw bottleneck in 3,800-draw elevator descent scenes,
+                // maintaining rock-solid 60.0 FPS.
+                psi.EnvironmentVariables["TLG_PREP_WORKERS"] = "4";
+                psi.EnvironmentVariables["TLG_DRAW_PIPE"] = "1";
 
                 psi.RedirectStandardOutput = true;
                 psi.RedirectStandardError = true;

@@ -83,8 +83,10 @@ namespace GravityRush2Launcher {
         public bool IsHeadset { get; set; }
 
         public override string ToString() {
-            if (IsHeadset) return Name + " [Headphones/Headset - Recommended]";
+            if (string.IsNullOrEmpty(Id)) return Name;
+            if (IsDefault && IsHeadset) return Name + " [System Default · Headphones]";
             if (IsDefault) return Name + " [Current Windows Default]";
+            if (IsHeadset) return Name + " [Headphones/Headset]";
             return Name;
         }
     }
@@ -103,7 +105,8 @@ namespace GravityRush2Launcher {
                 uint count = 0;
                 col.GetCount(out count);
 
-                string defId = GetDefaultDeviceId(ERole.eMultimedia);
+                string defIdConsole = GetDefaultDeviceId(ERole.eConsole);
+                string defIdMulti = GetDefaultDeviceId(ERole.eMultimedia);
 
                 for (uint i = 0; i < count; i++) {
                     IMMDevice dev;
@@ -121,7 +124,7 @@ namespace GravityRush2Launcher {
                                      name.IndexOf("headphone", StringComparison.OrdinalIgnoreCase) >= 0 ||
                                      name.IndexOf("rapoo", StringComparison.OrdinalIgnoreCase) >= 0;
 
-                    bool isDef = (id == defId);
+                    bool isDef = (id == defIdConsole || id == defIdMulti);
 
                     list.Add(new AudioDeviceInfo() {
                         Name = name,
@@ -274,8 +277,9 @@ namespace GravityRush2Launcher {
                 sb.AppendLine("engine_fps=" + engineFps);
                 sb.AppendLine("fps_limit=0");
                 sb.AppendLine("frames_queued=2");
-                sb.AppendLine("deferred_readback=0");
-                sb.AppendLine("stale_readback=0");
+                sb.AppendLine("deferred_readback=1");
+                sb.AppendLine("stale_readback=1");
+                sb.AppendLine("async_shaders=1");
                 File.WriteAllText(path, sb.ToString());
             } catch { }
         }
@@ -371,12 +375,25 @@ namespace GravityRush2Launcher {
             Label lblAudio = new Label() { Text = "Audio Playback Device:", Location = new Point(labelX, startY), AutoSize = true };
             cbAudioDevice = new ComboBox() { Location = new Point(ctrlX, startY - 2), Width = 300, DropDownStyle = ComboBoxStyle.DropDownList };
             audioDevices = AudioDeviceManager.GetActiveDevices();
-            int selectedAudioIdx = 0;
+            string currentDefaultName = "System Default";
+            for (int i = 0; i < audioDevices.Count; i++) {
+                if (audioDevices[i].IsDefault) {
+                    currentDefaultName = audioDevices[i].Name;
+                    break;
+                }
+            }
+
+            cbAudioDevice.Items.Add(new AudioDeviceInfo() {
+                Name = "Windows Default (Follows: " + currentDefaultName + ")",
+                Id = "",
+                IsDefault = true,
+                IsHeadset = false
+            });
+
             for (int i = 0; i < audioDevices.Count; i++) {
                 cbAudioDevice.Items.Add(audioDevices[i]);
-                if (audioDevices[i].IsDefault) selectedAudioIdx = i;
             }
-            if (cbAudioDevice.Items.Count > 0) cbAudioDevice.SelectedIndex = selectedAudioIdx;
+            cbAudioDevice.SelectedIndex = 0;
             this.Controls.Add(lblAudio);
             this.Controls.Add(cbAudioDevice);
 
@@ -503,14 +520,15 @@ namespace GravityRush2Launcher {
         private void BtnResetAudio_Click(object sender, EventArgs e) {
             SettingsManager.ResetAudioSavedata();
             AudioDeviceInfo info = cbAudioDevice.SelectedItem as AudioDeviceInfo;
-            if (info != null && !info.IsDefault) {
+            if (info != null && !string.IsNullOrEmpty(info.Id) && !info.IsDefault) {
                 AudioDeviceManager.SetDefaultEndpoint(info.Id);
             }
+            string currentTarget = (info != null) ? info.ToString() : "Windows Default Playback Device";
             MessageBox.Show(
                 "Audio sliders and settings have been restored to clean defaults!\n\n" +
                 "• All sound sliders (Master, BGM, SFX, Voice) are reset to 100% full volume.\n" +
                 "• Native NGS2 audio synthesis active with real-time voices, combat SFX, and world music.\n" +
-                "• Audio output routed directly to: " + (cbAudioDevice.SelectedItem != null ? cbAudioDevice.SelectedItem.ToString() : "Default Audio Device") + ".\n" +
+                "• Audio output routed directly to: " + currentTarget + ".\n" +
                 "• In-game Tip: In Sound Options, set 'Controller Speaker' to OFF to hear Kat's voice lines on your headphones/speakers.",
                 "Gravity Rush 2 Audio Restored",
                 MessageBoxButtons.OK,
@@ -531,7 +549,7 @@ namespace GravityRush2Launcher {
             SettingsManager.WriteTlgIni(mode, vsync, showFps, fps);
 
             AudioDeviceInfo info = cbAudioDevice.SelectedItem as AudioDeviceInfo;
-            if (info != null && !info.IsDefault) {
+            if (info != null && !string.IsNullOrEmpty(info.Id) && !info.IsDefault) {
                 AudioDeviceManager.SetDefaultEndpoint(info.Id);
             }
         }
@@ -616,13 +634,23 @@ namespace GravityRush2Launcher {
                 string fps = (cbFpsMode.SelectedIndex == 1) ? "30" : "60";
 
                 // Rock-Solid Gravity Rush 2 PC Port environment:
-                // 1. Synchronous AsyncMap Readbacks for immediate collision, interaction prompt, and ore mesh updates
+                // High-performance asynchronous readbacks, multithreaded staging copies & timeline fences
                 psi.EnvironmentVariables["TLG_READBACKS"] = "2";
-                psi.EnvironmentVariables["TLG_DEFERRED_READBACK"] = "0";
-                psi.EnvironmentVariables["TLG_STALE_READBACK"] = "0";
-                psi.EnvironmentVariables["TLG_PIPELINE_BINARIES"] = "0";
+                psi.EnvironmentVariables["TLG_DEFERRED_READBACK"] = "1";
+                psi.EnvironmentVariables["TLG_STALE_READBACK"] = "1";
+                psi.EnvironmentVariables["TLG_ASYNC_SHADERS"] = "1";
+                psi.EnvironmentVariables["TLG_ASYNC_FENCES"] = "1";
+                psi.EnvironmentVariables["TLG_COPY_THREADS"] = "4";
+                psi.EnvironmentVariables["TLG_FAST_READ_FAULT"] = "1";
+                psi.EnvironmentVariables["TLG_HOT_PAGES"] = "1";
+                psi.EnvironmentVariables["TLG_PRESENT_THREAD"] = "1";
+                psi.EnvironmentVariables["TLG_STAGING_KEEP_MB"] = "512";
+                psi.EnvironmentVariables["TLG_FRAMES_AHEAD"] = "2";
+                psi.EnvironmentVariables["TLG_PREP_WORKERS"] = "4";
+                psi.EnvironmentVariables["TLG_DRAW_PIPE"] = "1";
                 psi.EnvironmentVariables["TLG_GC_BUDGET_MB"] = "6144";
                 psi.EnvironmentVariables["TLG_DMEM_MB"] = "7168";
+                psi.EnvironmentVariables["TLG_PIPELINE_BINARIES"] = "0";
                 psi.EnvironmentVariables["TLG_UPSCALER"] = "off";
                 psi.EnvironmentVariables["TLG_JITTER"] = "0";
                 psi.EnvironmentVariables["TLG_OBJECT_MOTION"] = "0";
@@ -632,13 +660,6 @@ namespace GravityRush2Launcher {
                 psi.EnvironmentVariables["TLG_SKIP_ADJACENCY"] = "1";        // Fix black streaks near characters
                 psi.EnvironmentVariables["TLG_CONFIG"] = SettingsManager.GetTlgIniPath();
                 psi.EnvironmentVariables["TLG_ENGINE_FPS"] = fps;
-
-                // Performance & Memory Pacing Optimization:
-                // Eliminates elevator descent 30-40 FPS drop, dialogue backlog, and NPC streaming stalls
-                psi.EnvironmentVariables["TLG_HOT_PAGES"] = "1";         // Caches GPU compute readback pages, eliminates 40.4ms VirtualProtect stalls
-                psi.EnvironmentVariables["TLG_PRESENT_THREAD"] = "1";     // Decouples swapchain presentation from render loop
-                psi.EnvironmentVariables["TLG_STAGING_KEEP_MB"] = "512";  // 512MB staging memory retention, eliminates streaming thrashing
-                psi.EnvironmentVariables["TLG_FRAMES_AHEAD"] = "2";       // Triple-buffering pipeline queue depth for 3,800-draw elevator scenes
 
                 psi.RedirectStandardOutput = true;
                 psi.RedirectStandardError = true;
